@@ -1,0 +1,57 @@
+{
+  "name": "ffm2v",
+  "version": "0.1.0",
+  "description": "A personalized FFmpeg CLI tool for video processing using H.265 with easy-to-run commands",
+  "main": "dist/index.mjs",
+  "bin": {
+    "ffm2v": "dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.20.0"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "type": "tsc",
+    "type:watch": "tsc --watch",
+    "lint": "eslint",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tsconfig/node24": "^24.0.4",
+    "@types/cli-progress": "^3.11.6",
+    "@types/node": "^25.3.0",
+    "@types/which": "^3.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.3.0",
+    "jiti": "^2.6.1",
+    "prettier": "3.8.1",
+    "tsdown": "^0.20.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
+  },
+  "dependencies": {
+    "@tsconfig/node20": "^20.1.9",
+    "chalk": "^5.6.2",
+    "cli-progress": "^3.12.0",
+    "commander": "^14.0.3",
+    "ora": "^9.3.0",
+    "which": "^6.0.1"
+  },
+  "volta": {
+    "node": "20.20.0"
+  }
+}
