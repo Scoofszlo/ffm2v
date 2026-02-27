@@ -1,0 +1,15 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    uses: ./.github/workflows/check_lint.yml
+  
+  type:
+    uses: ./.github/workflows/check_type.yml
+
+  build:
+    uses: ./.github/workflows/test_build.yml
