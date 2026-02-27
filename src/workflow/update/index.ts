@@ -122,7 +122,7 @@ function runUpdate(opts: UpdateOptions) {
 
   spinnerPrint("Setting up the new version...", () => {
     try {
-      extractAndMove(archivePath, extractionPath,ffmpegDirPath);
+      extractAndMove(archivePath, extractionPath, ffmpegDirPath);
     } catch (error) {
       const errorMsg = `Failed to set up the new FFmpeg version: ${error}`;
       print(errorMsg, "error");
