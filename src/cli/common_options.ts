@@ -108,6 +108,6 @@ function generateOption(opt: CommonCLIOption<keyof CLIOptions>): Option {
     option.argParser(validation);
   }
   return option;
-};
+}
 
 export { applyCommonOptions };

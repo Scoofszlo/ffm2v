@@ -31,8 +31,8 @@ export type CommonCLIOption<K extends keyof CLIOptions> = {
   options: {
     flags: string;
     description: string;
-    default?: CLIOptions[K] | null; 
+    default?: CLIOptions[K] | null;
     choices?: string[];
   };
-  validation?: (value: any) => CLIOptions[K]; 
+  validation?: (value: any) => CLIOptions[K]; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
