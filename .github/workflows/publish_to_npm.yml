@@ -5,9 +5,6 @@ on:
     tags:
       - 'v*.*.*' # Trigger on version tags
   workflow_dispatch:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
 
 permissions:
   id-token: write
@@ -17,7 +14,6 @@ jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
     
     steps:
       - name: Checkout repository
@@ -36,5 +32,15 @@ jobs:
       - name: Build package
         run: npm run build
     
+      - name: Determine npm tag
+        id: get_tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *-* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish to npm
-        run: npm publish
+        run: npm publish --tag ${{ steps.get_tag.outputs.tag }}
