@@ -3,6 +3,7 @@ import path from "path";
 import { execSync, spawnSync } from "child_process";
 import { REMOTE_FFMPEG_VERSION_URL } from "../../constants.ts";
 import fs from "fs";
+import { print } from "../../cli/printer.ts";
 
 const FFMPEG_VERSION_REGEX = /ffmpeg version (\d{4}-\d{2}-\d{2}-git-[a-f0-9]+)/;
 
@@ -113,11 +114,10 @@ export function downloadNewVersion(
 }
 
 export function extractAndMove(
-  archiveDir: string,
   archivePath: string,
+  extractionPath: string,
   ffmpegDirPath: string,
 ): void {
-  const extractionPath = path.join(archiveDir, "extracted");
   const extractionCommand = ["x", archivePath, `-o${extractionPath}`, "-y"];
   const result = spawnSync("7z", extractionCommand, { stdio: "inherit" });
 
@@ -141,8 +141,18 @@ export function extractAndMove(
   }
 }
 
-export function cleanup(dir: string): void {
-  if (fs.existsSync(dir)) {
-    fs.rmSync(dir, { recursive: true, force: true });
+export function cleanup(paths: string[]): void {
+  for (const path of paths) {
+    if (fs.existsSync(path)) {
+      const stat = fs.lstatSync(path);
+
+      if (stat.isDirectory()) {
+        fs.rmSync(path, { recursive: true, force: true });
+      } else {
+        fs.unlinkSync(path);
+      }
+    } else {
+      print("Cleanup path does not exist, skipping: " + path, "warning");
+    }
   }
 }

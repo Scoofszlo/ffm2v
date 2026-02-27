@@ -105,6 +105,7 @@ function runUpdate(opts: UpdateOptions) {
 
   const archiveDir = os.tmpdir();
   const archivePath = path.join(archiveDir, `ffmpeg-${remoteVersion}.7z`);
+  const extractionPath = path.join(archiveDir, "extracted");
 
   spinnerPrint("Downloading new FFmpeg version...", () => {
     try {
@@ -121,13 +122,13 @@ function runUpdate(opts: UpdateOptions) {
 
   spinnerPrint("Setting up the new version...", () => {
     try {
-      extractAndMove(archiveDir, archivePath, ffmpegDirPath);
+      extractAndMove(archivePath, extractionPath,ffmpegDirPath);
     } catch (error) {
       const errorMsg = `Failed to set up the new FFmpeg version: ${error}`;
       print(errorMsg, "error");
       process.exit(1);
     } finally {
-      cleanup(archivePath);
+      cleanup([archivePath, extractionPath]);
     }
   });
 
