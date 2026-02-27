@@ -1,0 +1,168 @@
+import { spawnSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import type { FFmpegEncodingParams } from "../../param/model.ts";
+
+export function validateInputVideos(
+  input: string[],
+): [string, string, ...string[]] {
+  if (input.length < 2) {
+    throw new Error("At least two video files must be provided for merging.");
+  }
+  for (const filePath of input) {
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Input file '${filePath}' does not exist.`);
+    }
+    if (!fs.statSync(filePath).isFile()) {
+      throw new Error(`Input path '${filePath}' is not a file.`);
+    }
+  }
+  return input as [string, string, ...string[]];
+}
+
+export function getOutputPath(inputPath: string, outputPath?: string): string {
+  if (outputPath) {
+    if (!fs.existsSync(outputPath)) {
+      throw new Error(`Output path '${outputPath}' does not exist.`);
+    }
+    return outputPath;
+  }
+  const dir = path.dirname(inputPath);
+  const baseName = path.basename(inputPath, path.extname(inputPath));
+  return path.join(dir, `${baseName}-merged.mkv`);
+}
+
+export function getHighestResolution(videoPaths: string[]): [number, number] {
+  let highestResolutionArea = 0;
+  let highestResolution: [number, number] = [0, 0];
+
+  for (const videoPath of videoPaths) {
+    const resolution = getVideoResolution(videoPath);
+    const area = resolution[0] * resolution[1];
+    if (area > highestResolutionArea) {
+      highestResolutionArea = area;
+      highestResolution = resolution;
+    }
+  }
+  return highestResolution;
+}
+
+export function getMaxFps(videoPaths: string[]): number {
+  let maxFps = 0;
+  for (const videoPath of videoPaths) {
+    const fps = getVideoFps(videoPath);
+    if (fps > maxFps) {
+      maxFps = fps;
+    }
+  }
+  return maxFps;
+}
+
+export function generateFiltergraph(
+  videoPaths: string[],
+  highestResolution: [number, number],
+  maxFps: number,
+): { input: string[]; filtergraph: string } {
+  const input: string[] = [];
+  let filtergraph = "";
+
+  videoPaths.forEach((videoPath, index) => {
+    input.push("-i", videoPath);
+    filtergraph += `[${index}:v]scale=${highestResolution[0]}:${highestResolution[1]},setsar=1,fps=${maxFps}[v${index}];`;
+    // TO-DO: This works but if video has no audio, the program will crash.
+    // filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
+  });
+
+  filtergraph += " ";
+
+  for (let i = 0; i < videoPaths.length; i++) {
+    filtergraph += `[v${i}]`;
+    // TO-DO: This works but if video has no audio, the program will crash.
+    // filtergraph += `[a${i}]`;
+  }
+
+  // TO-DO: This works but if video has no audio, the program will crash.
+  // filtergraph += ` concat=n=${videoPaths.length}:v=1:a=1 [outv][outa]`;
+  filtergraph += ` concat=n=${videoPaths.length}:v=1:a=0 [outv]`;
+
+  return {
+    input,
+    filtergraph,
+  };
+}
+
+export function generateFFMpegCommand(
+  input: string[],
+  outputPath: string,
+  filtergraph: string,
+  maxFps: number,
+  params: FFmpegEncodingParams,
+): string[] {
+  const command: string[] = [];
+
+  command.push(...input);
+  command.push("-filter_complex", filtergraph);
+  command.push("-map", "[outv]");
+  // TO-DO: This works but if video has no audio, the program will crash.
+  // command.push("-map", "[outa]");
+  command.push("-r", `${maxFps}`);
+  command.push(...params.videoCodec);
+  command.push(...params.crf);
+  command.push("-x265-params", "no-info=1");
+  command.push(outputPath);
+  return command;
+}
+
+function getVideoResolution(videoPath: string): [number, number] {
+  const result = spawnSync(
+    "ffprobe",
+    [
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-show_entries",
+      "stream=width,height",
+      "-of",
+      "csv=p=0",
+      videoPath,
+    ],
+    { encoding: "utf-8" },
+  );
+  if (result.status !== 0) {
+    throw new Error(`Failed to get video resolution for '${videoPath}'`);
+  }
+  const output = result.stdout.trim();
+  const [width, height] = output.split(",").map(Number);
+  if (!width || !height || isNaN(width) || isNaN(height)) {
+    throw new Error(`Invalid resolution format for '${videoPath}': ${output}`);
+  }
+  return [width, height];
+}
+
+function getVideoFps(videoPath: string): number {
+  const result = spawnSync(
+    "ffprobe",
+    [
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-show_entries",
+      "stream=r_frame_rate",
+      "-of",
+      "csv=p=0",
+      videoPath,
+    ],
+    { encoding: "utf-8" },
+  );
+  if (result.status !== 0) {
+    throw new Error(`Failed to get video fps for '${videoPath}'`);
+  }
+  const output = result.stdout.trim();
+  const [numerator, denominator] = output.split("/").map(Number);
+  if (!numerator || !denominator || isNaN(numerator) || isNaN(denominator)) {
+    throw new Error(`Invalid fps format for '${videoPath}': ${output}`);
+  }
+  return numerator / denominator;
+}
