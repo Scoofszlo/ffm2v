@@ -1,6 +1,6 @@
 {
   "name": "ffm2v",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A personalized FFmpeg CLI tool for video processing using H.265 with easy-to-run commands",
   "main": "dist/index.mjs",
   "bin": {
