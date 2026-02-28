@@ -46,9 +46,11 @@ export function getVideoFiles(
     const fileName = path.basename(source.path);
     const isAVideo = isVideo(fileName);
     const hasAnAudio = hasAudio(source.path);
-    let duration: number | null = null;
+    let duration: number | null;
     if (isAVideo) {
-      console.log(`Getting duration for '${source.path}', isAVideo: ${isAVideo}`);
+      console.log(
+        `Getting duration for '${source.path}', isAVideo: ${isAVideo}`,
+      );
       duration = getVideoDuration(source.path);
     } else {
       duration = null;
@@ -124,7 +126,7 @@ function collectVideoFiles(
     } else {
       const isAVideo = isVideo(file);
       const hasAnAudio = hasAudio(filePath);
-      let duration: number | null = null;
+      let duration: number | null;
       if (isAVideo) {
         duration = getVideoDuration(filePath);
       } else {
