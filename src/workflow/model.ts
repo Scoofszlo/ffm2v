@@ -1,6 +1,6 @@
 import path from "path";
 
-class MediaFile {
+class FileEntry {
   sourceDir: string;
   fileName: string;
   isVideo: boolean;
@@ -26,4 +26,4 @@ class MediaFile {
   }
 }
 
-export { MediaFile };
+export { FileEntry };

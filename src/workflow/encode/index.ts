@@ -3,7 +3,7 @@ import fs from "fs";
 import { print } from "../../cli/printer.ts";
 import type { EncodeOptions } from "../../cli/types.ts";
 import { FFmpegEncodingParams } from "../../param/model.ts";
-import type { MediaFile } from "../model.ts";
+import type { FileEntry } from "../model.ts";
 import {
   generateFFMpegCommand,
   getOutputDir,
@@ -49,7 +49,7 @@ function getSourceAndOutput(opts: EncodeOptions) {
 }
 
 function encodeVideo(
-  file: MediaFile,
+  file: FileEntry,
   outputPath: string,
   params: FFmpegEncodingParams,
 ) {

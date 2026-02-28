@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
 import { checkHasAudio, checkIsVideo, getVideoDuration } from "../helpers.ts";
-import { MediaFile } from "../model.ts";
+import { FileEntry } from "../model.ts";
 import type { InputSource } from "./types.ts";
 
 export function getInputSource(source: string): InputSource | null {
@@ -37,9 +37,9 @@ export function getOutputDir(source: InputSource, output?: string): string {
 
 export function getFiles(
   inputSource: InputSource,
-  onSuccess: (file: MediaFile) => void,
-): MediaFile[] {
-  const files: MediaFile[] = [];
+  onSuccess: (file: FileEntry) => void,
+): FileEntry[] {
+  const files: FileEntry[] = [];
 
   if (inputSource.type === "file") {
     const sourceDir = path.dirname(inputSource.path);
@@ -52,7 +52,7 @@ export function getFiles(
     } else {
       duration = null;
     }
-    const file = new MediaFile(
+    const file = new FileEntry(
       sourceDir,
       fileName,
       isVideo,
@@ -68,7 +68,7 @@ export function getFiles(
 }
 
 export function getOutputPath(
-  video: MediaFile,
+  video: FileEntry,
   outputDir: string,
   isVideo: boolean,
 ): string {
@@ -111,8 +111,8 @@ export function generateFFMpegCommand(
 
 function collectFiles(
   dirPath: string,
-  files: MediaFile[],
-  onSuccess: (video: MediaFile) => void,
+  files: FileEntry[],
+  onSuccess: (video: FileEntry) => void,
 ): void {
   for (const fetchedFile of fs.readdirSync(dirPath)) {
     const filePath = path.join(dirPath, fetchedFile);
@@ -129,7 +129,7 @@ function collectFiles(
       } else {
         duration = null;
       }
-      const file = new MediaFile(
+      const file = new FileEntry(
         dirPath,
         fetchedFile,
         isVideo,

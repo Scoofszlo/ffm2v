@@ -3,12 +3,12 @@ import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
 import { getVideoDuration, checkHasAudio, checkIsVideo } from "../helpers.ts";
-import { MediaFile } from "../model.ts";
+import { FileEntry } from "../model.ts";
 
 export function getFiles(
   input: string[],
-): [MediaFile, MediaFile, ...MediaFile[]] {
-  const files: MediaFile[] = [];
+): [FileEntry, FileEntry, ...FileEntry[]] {
+  const files: FileEntry[] = [];
 
   if (input.length < 2) {
     throw new Error("At least two video files must be provided for merging.");
@@ -31,7 +31,7 @@ export function getFiles(
     const fileName = path.basename(filePath);
     const hasAudio = checkHasAudio(filePath);
     const duration = getVideoDuration(filePath);
-    const file = new MediaFile(
+    const file = new FileEntry(
       sourceDir,
       fileName,
       isVideo,
@@ -41,7 +41,7 @@ export function getFiles(
 
     files.push(file);
   }
-  return files as [MediaFile, MediaFile, ...MediaFile[]];
+  return files as [FileEntry, FileEntry, ...FileEntry[]];
 }
 
 export function getOutputPath(inputPath: string, outputPath?: string): string {
@@ -56,7 +56,7 @@ export function getOutputPath(inputPath: string, outputPath?: string): string {
   return path.join(dir, `${baseName}-merged.mkv`);
 }
 
-export function getHighestResolution(videos: MediaFile[]): [number, number] {
+export function getHighestResolution(videos: FileEntry[]): [number, number] {
   let highestResolutionArea = 0;
   let highestResolution: [number, number] = [0, 0];
 
@@ -71,7 +71,7 @@ export function getHighestResolution(videos: MediaFile[]): [number, number] {
   return highestResolution;
 }
 
-export function getMaxFps(videos: MediaFile[]): number {
+export function getMaxFps(videos: FileEntry[]): number {
   let maxFps = 0;
   for (const video of videos) {
     const fps = getVideoFps(video.fullPath);
@@ -83,7 +83,7 @@ export function getMaxFps(videos: MediaFile[]): number {
 }
 
 export function generateFiltergraph(
-  videos: MediaFile[],
+  videos: FileEntry[],
   highestResolution: [number, number],
   maxFps: number,
 ): { input: string[]; filtergraph: string } {
