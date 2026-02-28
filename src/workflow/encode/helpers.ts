@@ -1,9 +1,9 @@
-import { VIDEO_EXTENSIONS } from "../../constants.ts";
-import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { MediaFile } from "./model.ts";
-import type { Source } from "./types.ts";
 import fs from "fs";
 import path from "path";
+import type { FFmpegEncodingParams } from "../../param/model.ts";
+import { hasAudio, isVideo } from "../helpers.ts";
+import { MediaFile } from "../model.ts";
+import type { Source } from "./types.ts";
 
 export function getSource(source: string): Source | null {
   // Check if the source is a directory or a file
@@ -44,10 +44,9 @@ export function getVideoFiles(
   if (source.type === "file") {
     const sourceDir = path.dirname(source.path);
     const fileName = path.basename(source.path);
-    const isVideo = VIDEO_EXTENSIONS.includes(
-      path.extname(fileName).toLowerCase(),
-    );
-    const video = new MediaFile(sourceDir, fileName, isVideo);
+    const isAVideo = isVideo(fileName);
+    const hasAnAudio = hasAudio(source.path);
+    const video = new MediaFile(sourceDir, fileName, isAVideo, hasAnAudio);
     videos.push(video);
     onSuccess(video);
   } else if (source.type === "dir") {
@@ -110,10 +109,9 @@ function collectVideoFiles(
     if (stat.isDirectory()) {
       collectVideoFiles(filePath, videos, onSuccess);
     } else {
-      const isVideo = VIDEO_EXTENSIONS.includes(
-        path.extname(file).toLowerCase(),
-      );
-      const video = new MediaFile(dirPath, file, isVideo);
+      const isAVideo = isVideo(file);
+      const hasAnAudio = hasAudio(filePath);
+      const video = new MediaFile(dirPath, file, isAVideo, hasAnAudio);
       videos.push(video);
       onSuccess(video);
     }

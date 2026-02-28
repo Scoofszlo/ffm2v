@@ -8,18 +8,18 @@ import {
   getHighestResolution,
   getMaxFps,
   getOutputPath,
-  validateInputVideos,
+  getVideoFiles,
 } from "./helpers.ts";
 
 function runMerge(opts: MergeOptions) {
   try {
     const params = new FFmpegEncodingParams(opts);
-    const videoPaths = validateInputVideos(opts.input);
-    const outputPath = getOutputPath(videoPaths[0], opts.output);
-    const highestResolution = getHighestResolution(videoPaths);
-    const maxFps = getMaxFps(videoPaths);
+    const videos = getVideoFiles(opts.input);
+    const outputPath = getOutputPath(videos[0].fullPath, opts.output);
+    const highestResolution = getHighestResolution(videos);
+    const maxFps = getMaxFps(videos);
     const { input, filtergraph } = generateFiltergraph(
-      videoPaths,
+      videos,
       highestResolution,
       maxFps,
     );
@@ -55,3 +55,4 @@ function encodeVideo(command: string[], outputPath: string) {
 }
 
 export { runMerge };
+
