@@ -3,9 +3,9 @@ import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
 import { checkHasAudio, checkIsVideo, getVideoDuration } from "../helpers.ts";
 import { MediaFile } from "../model.ts";
-import type { Source } from "./types.ts";
+import type { InputSource } from "./types.ts";
 
-export function getInputSource(source: string): Source | null {
+export function getInputSource(source: string): InputSource | null {
   // Check if the source is a directory or a file
   if (!fs.existsSync(source)) return null;
 
@@ -20,7 +20,7 @@ export function getInputSource(source: string): Source | null {
   return null;
 }
 
-export function getOutputDir(source: Source, output?: string): string {
+export function getOutputDir(source: InputSource, output?: string): string {
   if (!output) {
     if (source.type === "file") {
       return path.dirname(source.path);
@@ -36,7 +36,7 @@ export function getOutputDir(source: Source, output?: string): string {
 }
 
 export function getVideoFiles(
-  source: Source,
+  source: InputSource,
   onSuccess: (video: MediaFile) => void,
 ): MediaFile[] {
   const videos: MediaFile[] = [];
