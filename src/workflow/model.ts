@@ -5,14 +5,14 @@ class MediaFile {
   fileName: string;
   isVideo: boolean = true;
   hasAudio: boolean = false;
-  duration: number;
+  duration: number | null = null;
 
   constructor(
     sourceDir: string,
     fileName: string,
     isVideo: boolean = true,
     hasAudio: boolean,
-    duration: number,
+    duration: number | null = null,
   ) {
     this.sourceDir = sourceDir;
     this.fileName = fileName;
