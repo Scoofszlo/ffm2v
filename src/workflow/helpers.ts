@@ -1,6 +1,23 @@
+import { spawnSync } from "child_process";
 import path from "path";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
-import { spawnSync } from "child_process";
+import { FileEntry } from "./model.ts";
+
+export function createFileEntry(filePath: string) {
+  const sourceDir = path.dirname(filePath);
+  const fileName = path.basename(filePath);
+  const isVideo = checkIsVideo(fileName);
+  const hasAudio = checkHasAudio(filePath);
+  let duration: number | null;
+  if (isVideo) {
+    duration = getVideoDuration(filePath);
+  } else {
+    duration = null;
+  }
+  const file = new FileEntry(sourceDir, fileName, isVideo, hasAudio, duration);
+
+  return file;
+}
 
 export function checkIsVideo(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());

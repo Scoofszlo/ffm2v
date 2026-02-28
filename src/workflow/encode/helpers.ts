@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { checkHasAudio, checkIsVideo, getVideoDuration } from "../helpers.ts";
+import { createFileEntry } from "../helpers.ts";
 import { FileEntry } from "../model.ts";
 import type { InputSource } from "./types.ts";
 
@@ -42,23 +42,7 @@ export function getFiles(
   const files: FileEntry[] = [];
 
   if (inputSource.type === "file") {
-    const sourceDir = path.dirname(inputSource.path);
-    const fileName = path.basename(inputSource.path);
-    const isVideo = checkIsVideo(fileName);
-    const hasAudio = checkHasAudio(inputSource.path);
-    let duration: number | null;
-    if (isVideo) {
-      duration = getVideoDuration(inputSource.path);
-    } else {
-      duration = null;
-    }
-    const file = new FileEntry(
-      sourceDir,
-      fileName,
-      isVideo,
-      hasAudio,
-      duration,
-    );
+    const file = createFileEntry(inputSource.path);
     files.push(file);
     onSuccess(file);
   } else if (inputSource.type === "dir") {
@@ -114,28 +98,15 @@ function collectFiles(
   files: FileEntry[],
   onSuccess: (video: FileEntry) => void,
 ): void {
-  for (const fetchedFile of fs.readdirSync(dirPath)) {
-    const filePath = path.join(dirPath, fetchedFile);
-    const stat = fs.lstatSync(filePath);
+  for (const fetchedPath of fs.readdirSync(dirPath)) {
+    const constructedPath = path.join(dirPath, fetchedPath);
+    const stat = fs.lstatSync(constructedPath);
 
     if (stat.isDirectory()) {
-      collectFiles(filePath, files, onSuccess);
+      collectFiles(constructedPath, files, onSuccess);
     } else {
-      const isVideo = checkIsVideo(fetchedFile);
-      const hasAudio = checkHasAudio(filePath);
-      let duration: number | null;
-      if (isVideo) {
-        duration = getVideoDuration(filePath);
-      } else {
-        duration = null;
-      }
-      const file = new FileEntry(
-        dirPath,
-        fetchedFile,
-        isVideo,
-        hasAudio,
-        duration,
-      );
+      const filePath = constructedPath;
+      const file = createFileEntry(filePath);
       files.push(file);
       onSuccess(file);
     }

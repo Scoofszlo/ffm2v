@@ -2,7 +2,7 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { getVideoDuration, checkHasAudio, checkIsVideo } from "../helpers.ts";
+import { checkIsVideo, createFileEntry } from "../helpers.ts";
 import { FileEntry } from "../model.ts";
 
 export function getFiles(
@@ -21,24 +21,11 @@ export function getFiles(
       throw new Error(`Input path '${filePath}' is not a file.`);
     }
 
-    const isVideo = checkIsVideo(filePath);
-
-    if (!isVideo) {
+    if (!checkIsVideo(filePath)) {
       throw new Error(`Input file '${filePath}' is not a valid video file.`);
     }
 
-    const sourceDir = path.dirname(filePath);
-    const fileName = path.basename(filePath);
-    const hasAudio = checkHasAudio(filePath);
-    const duration = getVideoDuration(filePath);
-    const file = new FileEntry(
-      sourceDir,
-      fileName,
-      isVideo,
-      hasAudio,
-      duration,
-    );
-
+    const file = createFileEntry(filePath);
     files.push(file);
   }
   return files as [FileEntry, FileEntry, ...FileEntry[]];
