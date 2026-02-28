@@ -9,26 +9,26 @@ import {
   getOutputDir,
   getOutputPath,
   getInputSource,
-  getVideoFiles,
+  getFiles,
 } from "./helpers.ts";
 
 function runEncode(opts: EncodeOptions) {
   const params = new FFmpegEncodingParams(opts);
   const { inputSource, outputDir } = getSourceAndOutput(opts);
 
-  const videoFiles = getVideoFiles(inputSource, (video) => {
-    print(`${video.fullPath} added to list.`);
+  const files = getFiles(inputSource, (file) => {
+    print(`${file.fullPath} added to list.`);
   });
 
-  for (const video of videoFiles) {
-    if (!video.isVideo) {
-      const outputPath = getOutputPath(video, outputDir, false);
-      moveFile(video.fullPath, outputPath);
+  for (const file of files) {
+    if (!file.isVideo) {
+      const outputPath = getOutputPath(file, outputDir, false);
+      moveFile(file.fullPath, outputPath);
       continue;
     }
 
-    const outputPath = getOutputPath(video, outputDir, true);
-    encodeVideo(video, outputPath, params);
+    const outputPath = getOutputPath(file, outputDir, true);
+    encodeVideo(file, outputPath, params);
   }
 }
 
@@ -49,28 +49,28 @@ function getSourceAndOutput(opts: EncodeOptions) {
 }
 
 function encodeVideo(
-  video: MediaFile,
+  file: MediaFile,
   outputPath: string,
   params: FFmpegEncodingParams,
 ) {
-  print(`Encoding '${video.fullPath}' to '${outputPath}'`);
-  const command = generateFFMpegCommand(video.fullPath, outputPath, params);
+  print(`Encoding '${file.fullPath}' to '${outputPath}'`);
+  const command = generateFFMpegCommand(file.fullPath, outputPath, params);
   print(`Running FFmpeg command: ffmpeg ${command.join(" ")}`);
 
   const result = spawnSync("ffmpeg", command, { stdio: "inherit" });
   if (result.error) {
     print(
-      `\nError encoding '${video.fullPath}': ${result.error.message}`,
+      `\nError encoding '${file.fullPath}': ${result.error.message}`,
       "error",
     );
   } else if (result.status !== 0) {
     print(
-      `\nFFmpeg exited with code ${result.status} while encoding '${video.fullPath}'.`,
+      `\nFFmpeg exited with code ${result.status} while encoding '${file.fullPath}'.`,
       "error",
     );
   } else {
     print(
-      `\nSuccessfully encoded '${video.fullPath}' to '${outputPath}'.`,
+      `\nSuccessfully encoded '${file.fullPath}' to '${outputPath}'.`,
       "success",
     );
   }

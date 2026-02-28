@@ -5,10 +5,10 @@ import type { FFmpegEncodingParams } from "../../param/model.ts";
 import { getVideoDuration, checkHasAudio, checkIsVideo } from "../helpers.ts";
 import { MediaFile } from "../model.ts";
 
-export function getVideoFiles(
+export function getFiles(
   input: string[],
 ): [MediaFile, MediaFile, ...MediaFile[]] {
-  const videos: MediaFile[] = [];
+  const files: MediaFile[] = [];
 
   if (input.length < 2) {
     throw new Error("At least two video files must be provided for merging.");
@@ -26,7 +26,7 @@ export function getVideoFiles(
     const isVideo = checkIsVideo(filePath);
     const hasAudio = checkHasAudio(filePath);
     const duration = getVideoDuration(filePath);
-    const video = new MediaFile(
+    const file = new MediaFile(
       sourceDir,
       fileName,
       isVideo,
@@ -34,9 +34,9 @@ export function getVideoFiles(
       duration,
     );
 
-    videos.push(video);
+    files.push(file);
   }
-  return videos as [MediaFile, MediaFile, ...MediaFile[]];
+  return files as [MediaFile, MediaFile, ...MediaFile[]];
 }
 
 export function getOutputPath(inputPath: string, outputPath?: string): string {

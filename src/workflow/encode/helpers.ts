@@ -35,36 +35,36 @@ export function getOutputDir(source: InputSource, output?: string): string {
   throw new Error(`Output path '${output}' does not exist.`);
 }
 
-export function getVideoFiles(
-  source: InputSource,
-  onSuccess: (video: MediaFile) => void,
+export function getFiles(
+  inputSource: InputSource,
+  onSuccess: (file: MediaFile) => void,
 ): MediaFile[] {
-  const videos: MediaFile[] = [];
+  const files: MediaFile[] = [];
 
-  if (source.type === "file") {
-    const sourceDir = path.dirname(source.path);
-    const fileName = path.basename(source.path);
+  if (inputSource.type === "file") {
+    const sourceDir = path.dirname(inputSource.path);
+    const fileName = path.basename(inputSource.path);
     const isVideo = checkIsVideo(fileName);
-    const hasAudio = checkHasAudio(source.path);
+    const hasAudio = checkHasAudio(inputSource.path);
     let duration: number | null;
     if (isVideo) {
-      duration = getVideoDuration(source.path);
+      duration = getVideoDuration(inputSource.path);
     } else {
       duration = null;
     }
-    const video = new MediaFile(
+    const file = new MediaFile(
       sourceDir,
       fileName,
       isVideo,
       hasAudio,
       duration,
     );
-    videos.push(video);
-    onSuccess(video);
-  } else if (source.type === "dir") {
-    collectVideoFiles(source.path, videos, onSuccess);
+    files.push(file);
+    onSuccess(file);
+  } else if (inputSource.type === "dir") {
+    collectFiles(inputSource.path, files, onSuccess);
   }
-  return videos;
+  return files;
 }
 
 export function getOutputPath(
@@ -109,19 +109,19 @@ export function generateFFMpegCommand(
   return command;
 }
 
-function collectVideoFiles(
+function collectFiles(
   dirPath: string,
-  videos: MediaFile[],
+  files: MediaFile[],
   onSuccess: (video: MediaFile) => void,
 ): void {
-  for (const file of fs.readdirSync(dirPath)) {
-    const filePath = path.join(dirPath, file);
+  for (const fetchedFile of fs.readdirSync(dirPath)) {
+    const filePath = path.join(dirPath, fetchedFile);
     const stat = fs.lstatSync(filePath);
 
     if (stat.isDirectory()) {
-      collectVideoFiles(filePath, videos, onSuccess);
+      collectFiles(filePath, files, onSuccess);
     } else {
-      const isVideo = checkIsVideo(file);
+      const isVideo = checkIsVideo(fetchedFile);
       const hasAudio = checkHasAudio(filePath);
       let duration: number | null;
       if (isVideo) {
@@ -129,9 +129,9 @@ function collectVideoFiles(
       } else {
         duration = null;
       }
-      const video = new MediaFile(dirPath, file, isVideo, hasAudio, duration);
-      videos.push(video);
-      onSuccess(video);
+      const file = new MediaFile(dirPath, fetchedFile, isVideo, hasAudio, duration);
+      files.push(file);
+      onSuccess(file);
     }
   }
 }
