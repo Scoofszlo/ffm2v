@@ -21,9 +21,14 @@ export function getFiles(
       throw new Error(`Input path '${filePath}' is not a file.`);
     }
 
+    const isVideo = checkIsVideo(filePath);
+
+    if (!isVideo) {
+      throw new Error(`Input file '${filePath}' is not a valid video file.`);
+    }
+
     const sourceDir = path.dirname(filePath);
     const fileName = path.basename(filePath);
-    const isVideo = checkIsVideo(filePath);
     const hasAudio = checkHasAudio(filePath);
     const duration = getVideoDuration(filePath);
     const file = new MediaFile(

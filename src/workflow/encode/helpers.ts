@@ -129,7 +129,13 @@ function collectFiles(
       } else {
         duration = null;
       }
-      const file = new MediaFile(dirPath, fetchedFile, isVideo, hasAudio, duration);
+      const file = new MediaFile(
+        dirPath,
+        fetchedFile,
+        isVideo,
+        hasAudio,
+        duration,
+      );
       files.push(file);
       onSuccess(file);
     }
