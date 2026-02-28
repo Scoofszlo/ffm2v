@@ -3,14 +3,14 @@ import path from "path";
 class MediaFile {
   sourceDir: string;
   fileName: string;
-  isVideo: boolean = true;
-  hasAudio: boolean = false;
+  isVideo: boolean;
+  hasAudio: boolean;
   duration: number | null = null;
 
   constructor(
     sourceDir: string,
     fileName: string,
-    isVideo: boolean = true,
+    isVideo: boolean,
     hasAudio: boolean,
     duration: number | null = null,
   ) {
