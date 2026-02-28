@@ -128,6 +128,12 @@ export function generateFFMpegCommand(
   command.push(...params.videoCodec);
   command.push(...params.crf);
   command.push("-x265-params", "no-info=1");
+  if (params.disableAudio[0] === "-an") {
+    command.push(...params.disableAudio);
+  } else {
+    command.push("-c:a", "libmp3lame");
+    command.push("-b:a", "320k");
+  }
   command.push(outputPath);
   return command;
 }
