@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { getVideoDuration, hasAudio, isVideo } from "../helpers.ts";
+import { checkHasAudio, checkIsVideo, getVideoDuration } from "../helpers.ts";
 import { MediaFile } from "../model.ts";
 import type { Source } from "./types.ts";
 
@@ -44,13 +44,10 @@ export function getVideoFiles(
   if (source.type === "file") {
     const sourceDir = path.dirname(source.path);
     const fileName = path.basename(source.path);
-    const isAVideo = isVideo(fileName);
-    const hasAnAudio = hasAudio(source.path);
+    const isVideo = checkIsVideo(fileName);
+    const hasAudio = checkHasAudio(source.path);
     let duration: number | null;
-    if (isAVideo) {
-      console.log(
-        `Getting duration for '${source.path}', isAVideo: ${isAVideo}`,
-      );
+    if (isVideo) {
       duration = getVideoDuration(source.path);
     } else {
       duration = null;
@@ -58,8 +55,8 @@ export function getVideoFiles(
     const video = new MediaFile(
       sourceDir,
       fileName,
-      isAVideo,
-      hasAnAudio,
+      isVideo,
+      hasAudio,
       duration,
     );
     videos.push(video);
@@ -124,21 +121,15 @@ function collectVideoFiles(
     if (stat.isDirectory()) {
       collectVideoFiles(filePath, videos, onSuccess);
     } else {
-      const isAVideo = isVideo(file);
-      const hasAnAudio = hasAudio(filePath);
+      const isVideo = checkIsVideo(file);
+      const hasAudio = checkHasAudio(filePath);
       let duration: number | null;
-      if (isAVideo) {
+      if (isVideo) {
         duration = getVideoDuration(filePath);
       } else {
         duration = null;
       }
-      const video = new MediaFile(
-        dirPath,
-        file,
-        isAVideo,
-        hasAnAudio,
-        duration,
-      );
+      const video = new MediaFile(dirPath, file, isVideo, hasAudio, duration);
       videos.push(video);
       onSuccess(video);
     }

@@ -2,11 +2,11 @@ import path from "path";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
 import { spawnSync } from "child_process";
 
-export function isVideo(filePath: string): boolean {
+export function checkIsVideo(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 
-export function hasAudio(filePath: string): boolean {
+export function checkHasAudio(filePath: string): boolean {
   const ffmpegCommand = [
     "-v",
     "error",

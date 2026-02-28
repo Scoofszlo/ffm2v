@@ -2,7 +2,7 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { getVideoDuration, hasAudio, isVideo } from "../helpers.ts";
+import { getVideoDuration, checkHasAudio, checkIsVideo } from "../helpers.ts";
 import { MediaFile } from "../model.ts";
 
 export function getVideoFiles(
@@ -23,14 +23,14 @@ export function getVideoFiles(
 
     const sourceDir = path.dirname(filePath);
     const fileName = path.basename(filePath);
-    const isAVideo = isVideo(filePath);
-    const hasAnAudio = hasAudio(filePath);
+    const isVideo = checkIsVideo(filePath);
+    const hasAudio = checkHasAudio(filePath);
     const duration = getVideoDuration(filePath);
     const video = new MediaFile(
       sourceDir,
       fileName,
-      isAVideo,
-      hasAnAudio,
+      isVideo,
+      hasAudio,
       duration,
     );
 
