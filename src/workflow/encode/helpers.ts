@@ -5,7 +5,7 @@ import { checkHasAudio, checkIsVideo, getVideoDuration } from "../helpers.ts";
 import { MediaFile } from "../model.ts";
 import type { Source } from "./types.ts";
 
-export function getSource(source: string): Source | null {
+export function getInputSource(source: string): Source | null {
   // Check if the source is a directory or a file
   if (!fs.existsSync(source)) return null;
 

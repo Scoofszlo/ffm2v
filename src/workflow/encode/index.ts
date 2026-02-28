@@ -8,15 +8,15 @@ import {
   generateFFMpegCommand,
   getOutputDir,
   getOutputPath,
-  getSource,
+  getInputSource,
   getVideoFiles,
 } from "./helpers.ts";
 
 function runEncode(opts: EncodeOptions) {
   const params = new FFmpegEncodingParams(opts);
-  const { source, outputDir } = getSourceAndOutput(opts);
+  const { inputSource, outputDir } = getSourceAndOutput(opts);
 
-  const videoFiles = getVideoFiles(source, (video) => {
+  const videoFiles = getVideoFiles(inputSource, (video) => {
     print(`${video.fullPath} added to list.`);
   });
 
@@ -33,15 +33,15 @@ function runEncode(opts: EncodeOptions) {
 }
 
 function getSourceAndOutput(opts: EncodeOptions) {
-  const source = getSource(opts.input);
-  if (!source) {
+  const inputSource = getInputSource(opts.input);
+  if (!inputSource) {
     print(`Input source '${opts.input}' does not exist.`, "error");
     process.exit(1);
   }
 
   try {
-    const outputDir = getOutputDir(source, opts.output);
-    return { source, outputDir };
+    const outputDir = getOutputDir(inputSource, opts.output);
+    return { inputSource, outputDir };
   } catch (error) {
     print(`${error}`, "error");
     process.exit(1);
