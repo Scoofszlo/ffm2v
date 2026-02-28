@@ -55,4 +55,3 @@ function encodeVideo(command: string[], outputPath: string) {
 }
 
 export { runMerge };
-

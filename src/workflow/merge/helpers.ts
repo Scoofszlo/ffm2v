@@ -2,7 +2,7 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { hasAudio, isVideo } from "../helpers.ts";
+import { getVideoDuration, hasAudio, isVideo } from "../helpers.ts";
 import { MediaFile } from "../model.ts";
 
 export function getVideoFiles(
@@ -25,7 +25,14 @@ export function getVideoFiles(
     const fileName = path.basename(filePath);
     const isAVideo = isVideo(filePath);
     const hasAnAudio = hasAudio(filePath);
-    const video = new MediaFile(sourceDir, fileName, isAVideo, hasAnAudio);
+    const duration = getVideoDuration(filePath);
+    const video = new MediaFile(
+      sourceDir,
+      fileName,
+      isAVideo,
+      hasAnAudio,
+      duration,
+    );
 
     videos.push(video);
   }
@@ -81,21 +88,22 @@ export function generateFiltergraph(
   videos.forEach((video, index) => {
     input.push("-i", video.fullPath);
     filtergraph += `[${index}:v]scale=${highestResolution[0]}:${highestResolution[1]},setsar=1,fps=${maxFps}[v${index}];`;
-    // TO-DO: This works but if video has no audio, the program will crash.
-    // filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
+
+    if (video.hasAudio) {
+      filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
+    } else {
+      filtergraph += `anullsrc=channel_layout=stereo:sample_rate=48000:duration=${video.duration}[a${index}];`;
+    }
   });
 
   filtergraph += " ";
 
   for (let i = 0; i < videos.length; i++) {
     filtergraph += `[v${i}]`;
-    // TO-DO: This works but if video has no audio, the program will crash.
-    // filtergraph += `[a${i}]`;
+    filtergraph += `[a${i}]`;
   }
 
-  // TO-DO: This works but if video has no audio, the program will crash.
-  // filtergraph += ` concat=n=${videoPaths.length}:v=1:a=1 [outv][outa]`;
-  filtergraph += ` concat=n=${videos.length}:v=1:a=0 [outv]`;
+  filtergraph += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
 
   return {
     input,
@@ -115,8 +123,7 @@ export function generateFFMpegCommand(
   command.push(...input);
   command.push("-filter_complex", filtergraph);
   command.push("-map", "[outv]");
-  // TO-DO: This works but if video has no audio, the program will crash.
-  // command.push("-map", "[outa]");
+  command.push("-map", "[outa]");
   command.push("-r", `${maxFps}`);
   command.push(...params.videoCodec);
   command.push(...params.crf);

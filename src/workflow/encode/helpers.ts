@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { hasAudio, isVideo } from "../helpers.ts";
+import { getVideoDuration, hasAudio, isVideo } from "../helpers.ts";
 import { MediaFile } from "../model.ts";
 import type { Source } from "./types.ts";
 
@@ -46,7 +46,14 @@ export function getVideoFiles(
     const fileName = path.basename(source.path);
     const isAVideo = isVideo(fileName);
     const hasAnAudio = hasAudio(source.path);
-    const video = new MediaFile(sourceDir, fileName, isAVideo, hasAnAudio);
+    const duration = getVideoDuration(source.path);
+    const video = new MediaFile(
+      sourceDir,
+      fileName,
+      isAVideo,
+      hasAnAudio,
+      duration,
+    );
     videos.push(video);
     onSuccess(video);
   } else if (source.type === "dir") {
@@ -111,7 +118,14 @@ function collectVideoFiles(
     } else {
       const isAVideo = isVideo(file);
       const hasAnAudio = hasAudio(filePath);
-      const video = new MediaFile(dirPath, file, isAVideo, hasAnAudio);
+      const duration = getVideoDuration(filePath);
+      const video = new MediaFile(
+        dirPath,
+        file,
+        isAVideo,
+        hasAnAudio,
+        duration,
+      );
       videos.push(video);
       onSuccess(video);
     }

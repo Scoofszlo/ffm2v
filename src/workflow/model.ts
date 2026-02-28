@@ -5,12 +5,20 @@ class MediaFile {
   fileName: string;
   isVideo: boolean = true;
   hasAudio: boolean = false;
+  duration: number;
 
-  constructor(sourceDir: string, fileName: string, isVideo: boolean = true, hasAudio: boolean) {
+  constructor(
+    sourceDir: string,
+    fileName: string,
+    isVideo: boolean = true,
+    hasAudio: boolean,
+    duration: number,
+  ) {
     this.sourceDir = sourceDir;
     this.fileName = fileName;
     this.isVideo = isVideo;
     this.hasAudio = hasAudio;
+    this.duration = duration;
   }
 
   get fullPath(): string {
