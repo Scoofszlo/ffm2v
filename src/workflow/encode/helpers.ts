@@ -1,9 +1,9 @@
-import { VIDEO_EXTENSIONS } from "../../constants.ts";
-import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { MediaFile } from "./model.ts";
-import type { Source } from "./types.ts";
 import fs from "fs";
 import path from "path";
+import type { FFmpegEncodingParams } from "../../param/model.ts";
+import { checkHasAudio, checkIsVideo, getVideoDuration } from "../helpers.ts";
+import { MediaFile } from "../model.ts";
+import type { Source } from "./types.ts";
 
 export function getSource(source: string): Source | null {
   // Check if the source is a directory or a file
@@ -44,10 +44,21 @@ export function getVideoFiles(
   if (source.type === "file") {
     const sourceDir = path.dirname(source.path);
     const fileName = path.basename(source.path);
-    const isVideo = VIDEO_EXTENSIONS.includes(
-      path.extname(fileName).toLowerCase(),
+    const isVideo = checkIsVideo(fileName);
+    const hasAudio = checkHasAudio(source.path);
+    let duration: number | null;
+    if (isVideo) {
+      duration = getVideoDuration(source.path);
+    } else {
+      duration = null;
+    }
+    const video = new MediaFile(
+      sourceDir,
+      fileName,
+      isVideo,
+      hasAudio,
+      duration,
     );
-    const video = new MediaFile(sourceDir, fileName, isVideo);
     videos.push(video);
     onSuccess(video);
   } else if (source.type === "dir") {
@@ -110,10 +121,15 @@ function collectVideoFiles(
     if (stat.isDirectory()) {
       collectVideoFiles(filePath, videos, onSuccess);
     } else {
-      const isVideo = VIDEO_EXTENSIONS.includes(
-        path.extname(file).toLowerCase(),
-      );
-      const video = new MediaFile(dirPath, file, isVideo);
+      const isVideo = checkIsVideo(file);
+      const hasAudio = checkHasAudio(filePath);
+      let duration: number | null;
+      if (isVideo) {
+        duration = getVideoDuration(filePath);
+      } else {
+        duration = null;
+      }
+      const video = new MediaFile(dirPath, file, isVideo, hasAudio, duration);
       videos.push(video);
       onSuccess(video);
     }

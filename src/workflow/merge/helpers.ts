@@ -2,10 +2,14 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
+import { getVideoDuration, checkHasAudio, checkIsVideo } from "../helpers.ts";
+import { MediaFile } from "../model.ts";
 
-export function validateInputVideos(
+export function getVideoFiles(
   input: string[],
-): [string, string, ...string[]] {
+): [MediaFile, MediaFile, ...MediaFile[]] {
+  const videos: MediaFile[] = [];
+
   if (input.length < 2) {
     throw new Error("At least two video files must be provided for merging.");
   }
@@ -16,8 +20,23 @@ export function validateInputVideos(
     if (!fs.statSync(filePath).isFile()) {
       throw new Error(`Input path '${filePath}' is not a file.`);
     }
+
+    const sourceDir = path.dirname(filePath);
+    const fileName = path.basename(filePath);
+    const isVideo = checkIsVideo(filePath);
+    const hasAudio = checkHasAudio(filePath);
+    const duration = getVideoDuration(filePath);
+    const video = new MediaFile(
+      sourceDir,
+      fileName,
+      isVideo,
+      hasAudio,
+      duration,
+    );
+
+    videos.push(video);
   }
-  return input as [string, string, ...string[]];
+  return videos as [MediaFile, MediaFile, ...MediaFile[]];
 }
 
 export function getOutputPath(inputPath: string, outputPath?: string): string {
@@ -32,12 +51,12 @@ export function getOutputPath(inputPath: string, outputPath?: string): string {
   return path.join(dir, `${baseName}-merged.mkv`);
 }
 
-export function getHighestResolution(videoPaths: string[]): [number, number] {
+export function getHighestResolution(videos: MediaFile[]): [number, number] {
   let highestResolutionArea = 0;
   let highestResolution: [number, number] = [0, 0];
 
-  for (const videoPath of videoPaths) {
-    const resolution = getVideoResolution(videoPath);
+  for (const video of videos) {
+    const resolution = getVideoResolution(video.fullPath);
     const area = resolution[0] * resolution[1];
     if (area > highestResolutionArea) {
       highestResolutionArea = area;
@@ -47,10 +66,10 @@ export function getHighestResolution(videoPaths: string[]): [number, number] {
   return highestResolution;
 }
 
-export function getMaxFps(videoPaths: string[]): number {
+export function getMaxFps(videos: MediaFile[]): number {
   let maxFps = 0;
-  for (const videoPath of videoPaths) {
-    const fps = getVideoFps(videoPath);
+  for (const video of videos) {
+    const fps = getVideoFps(video.fullPath);
     if (fps > maxFps) {
       maxFps = fps;
     }
@@ -59,31 +78,32 @@ export function getMaxFps(videoPaths: string[]): number {
 }
 
 export function generateFiltergraph(
-  videoPaths: string[],
+  videos: MediaFile[],
   highestResolution: [number, number],
   maxFps: number,
 ): { input: string[]; filtergraph: string } {
   const input: string[] = [];
   let filtergraph = "";
 
-  videoPaths.forEach((videoPath, index) => {
-    input.push("-i", videoPath);
+  videos.forEach((video, index) => {
+    input.push("-i", video.fullPath);
     filtergraph += `[${index}:v]scale=${highestResolution[0]}:${highestResolution[1]},setsar=1,fps=${maxFps}[v${index}];`;
-    // TO-DO: This works but if video has no audio, the program will crash.
-    // filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
+
+    if (video.hasAudio) {
+      filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
+    } else {
+      filtergraph += `anullsrc=channel_layout=stereo:sample_rate=48000:duration=${video.duration}[a${index}];`;
+    }
   });
 
   filtergraph += " ";
 
-  for (let i = 0; i < videoPaths.length; i++) {
+  for (let i = 0; i < videos.length; i++) {
     filtergraph += `[v${i}]`;
-    // TO-DO: This works but if video has no audio, the program will crash.
-    // filtergraph += `[a${i}]`;
+    filtergraph += `[a${i}]`;
   }
 
-  // TO-DO: This works but if video has no audio, the program will crash.
-  // filtergraph += ` concat=n=${videoPaths.length}:v=1:a=1 [outv][outa]`;
-  filtergraph += ` concat=n=${videoPaths.length}:v=1:a=0 [outv]`;
+  filtergraph += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
 
   return {
     input,
@@ -103,12 +123,17 @@ export function generateFFMpegCommand(
   command.push(...input);
   command.push("-filter_complex", filtergraph);
   command.push("-map", "[outv]");
-  // TO-DO: This works but if video has no audio, the program will crash.
-  // command.push("-map", "[outa]");
+  command.push("-map", "[outa]");
   command.push("-r", `${maxFps}`);
   command.push(...params.videoCodec);
   command.push(...params.crf);
   command.push("-x265-params", "no-info=1");
+  if (params.disableAudio[0] === "-an") {
+    command.push(...params.disableAudio);
+  } else {
+    command.push("-c:a", "libmp3lame");
+    command.push("-b:a", "320k");
+  }
   command.push(outputPath);
   return command;
 }

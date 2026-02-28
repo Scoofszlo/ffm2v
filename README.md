@@ -121,7 +121,7 @@ It is possible in the future but for now, it is not a priority as my use cases j
 
 ### Is audio re-encoded?
 
-When using `encode` command, it doesn't re-encode audio and is keep as is to preserve the original audio quality. The `merge` command currently outputs no audio as I haven't fully implemented the audio merging part yet.
+When using `encode` command, it doesn't re-encode audio and is keep as is to preserve the original audio quality. However, the `merge` command re-encodes the audio to MP3 320kbps to ensure that audio works properly across all merged videos.
 
 ### Why merging doesn't result in lossless format?
 
