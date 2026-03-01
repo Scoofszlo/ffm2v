@@ -7,12 +7,14 @@ export function createFileEntry(filePath: string) {
   const sourceDir = path.dirname(filePath);
   const fileName = path.basename(filePath);
   const isVideo = checkIsVideo(fileName);
-  const hasAudio = checkHasAudio(filePath);
+  let hasAudio: boolean;
   let duration: number | null;
   if (isVideo) {
     duration = getVideoDuration(filePath);
+    hasAudio = checkHasAudio(filePath);
   } else {
     duration = null;
+    hasAudio = false;
   }
   const file = new FileEntry(sourceDir, fileName, isVideo, hasAudio, duration);
 
