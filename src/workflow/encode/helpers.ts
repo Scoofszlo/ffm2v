@@ -45,12 +45,26 @@ export function getFiles(
 ): FileEntry[] {
   const files: FileEntry[] = [];
 
+  const collect = (dirPath: string) => {
+    for (const fetchedPath of fs.readdirSync(dirPath)) {
+      const constructedPath = path.join(dirPath, fetchedPath);
+      const stat = fs.lstatSync(constructedPath);
+      if (stat.isDirectory()) {
+        collect(constructedPath);
+      } else {
+        const file = createFileEntry(constructedPath);
+        files.push(file);
+        onSuccess(file);
+      }
+    }
+  };
+
   if (inputSource.type === "file") {
     const file = createFileEntry(inputSource.path);
     files.push(file);
     onSuccess(file);
   } else if (inputSource.type === "dir") {
-    collectFiles(inputSource.path, files, onSuccess);
+    collect(inputSource.path);
   }
   return files;
 }
@@ -95,24 +109,4 @@ export function generateFFMpegCommand(
   command.push(outputPath);
 
   return command;
-}
-
-function collectFiles(
-  dirPath: string,
-  files: FileEntry[],
-  onSuccess: (video: FileEntry) => void,
-): void {
-  for (const fetchedPath of fs.readdirSync(dirPath)) {
-    const constructedPath = path.join(dirPath, fetchedPath);
-    const stat = fs.lstatSync(constructedPath);
-
-    if (stat.isDirectory()) {
-      collectFiles(constructedPath, files, onSuccess);
-    } else {
-      const filePath = constructedPath;
-      const file = createFileEntry(filePath);
-      files.push(file);
-      onSuccess(file);
-    }
-  }
 }
