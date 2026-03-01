@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { spawnSync } from "child_process";
 import fs from "fs";
 import { print } from "../../cli/printer.ts";
@@ -17,10 +18,12 @@ function runEncode(opts: EncodeOptions) {
     const params = new FFmpegEncodingParams(opts);
     const { inputSource, outputDir } = getSourceAndOutput(opts);
 
+    print(`\n${chalk.bold("Collecting files to encode...")}`);
     const files = getFiles(inputSource, (file) => {
-      print(`${file.fullPath} added to list.`);
+      print(`${chalk.green("+")} ${file.fullPath} added to list.`);
     });
 
+    print(`\n${chalk.bold("Starting encoding process...")}`);
     for (const file of files) {
       if (!file.isVideo) {
         const outputPath = getOutputPath(file, inputSource, outputDir, false);
@@ -29,6 +32,7 @@ function runEncode(opts: EncodeOptions) {
       }
 
       const outputPath = getOutputPath(file, inputSource, outputDir, true);
+
       encodeVideo(file, outputPath, params);
     }
   } catch (error) {
@@ -48,9 +52,9 @@ function encodeVideo(
   outputPath: string,
   params: FFmpegEncodingParams,
 ) {
-  print(`Encoding '${file.fullPath}' to '${outputPath}'`);
+  print(`\n${chalk.gray(`Encoding '${file.fullPath}' to '${outputPath}'`)}`);
   const command = generateFFMpegCommand(file.fullPath, outputPath, params);
-  print(`Running FFmpeg command: ffmpeg ${command.join(" ")}`);
+  print(chalk.gray(`Running FFmpeg command: ffmpeg ${command.join(" ")}\n`));
 
   const result = spawnSync("ffmpeg", command, { stdio: "inherit" });
   if (result.error) {
@@ -84,3 +88,4 @@ function moveFile(src: string, dest: string) {
 }
 
 export { runEncode };
+
