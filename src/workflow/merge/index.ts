@@ -8,13 +8,13 @@ import {
   getHighestResolution,
   getMaxFps,
   getOutputPath,
-  getVideoFiles,
+  getFiles,
 } from "./helpers.ts";
 
 function runMerge(opts: MergeOptions) {
   try {
     const params = new FFmpegEncodingParams(opts);
-    const videos = getVideoFiles(opts.input);
+    const videos = getFiles(opts.input);
     const outputPath = getOutputPath(videos[0].fullPath, opts.output);
     const highestResolution = getHighestResolution(videos);
     const maxFps = getMaxFps(videos);
@@ -32,7 +32,7 @@ function runMerge(opts: MergeOptions) {
     );
     encodeVideo(command, outputPath);
   } catch (error) {
-    print(`An error occurred: ${error}`, "error");
+    print(`${error}`, "error");
     process.exit(1);
   }
 }

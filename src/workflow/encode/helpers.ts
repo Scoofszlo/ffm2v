@@ -1,26 +1,30 @@
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { checkHasAudio, checkIsVideo, getVideoDuration } from "../helpers.ts";
-import { MediaFile } from "../model.ts";
-import type { Source } from "./types.ts";
+import { checkIsVideo, createFileEntry } from "../helpers.ts";
+import { FileEntry } from "../model.ts";
+import type { InputSource } from "./types.ts";
 
-export function getSource(source: string): Source | null {
+export function getInputSource(source: string): InputSource {
   // Check if the source is a directory or a file
-  if (!fs.existsSync(source)) return null;
+  if (!fs.existsSync(source)) {
+    throw new Error(`Input source '${source}' does not exist.`);
+  }
 
   const stat = fs.lstatSync(source);
 
   if (stat.isDirectory()) {
-    return { path: source, type: "dir" };
-  } else if (stat.isFile()) {
-    return { path: source, type: "file" };
+    return { path: source, dirName: source, type: "dir" };
   }
 
-  return null;
+  if (!checkIsVideo(source)) {
+    throw new Error(`File '${source}' is not a video file.`);
+  }
+
+  return { path: source, dirName: path.dirname(source), type: "file" };
 }
 
-export function getOutputDir(source: Source, output?: string): string {
+export function getOutputDir(source: InputSource, output?: string): string {
   if (!output) {
     if (source.type === "file") {
       return path.dirname(source.path);
@@ -35,50 +39,64 @@ export function getOutputDir(source: Source, output?: string): string {
   throw new Error(`Output path '${output}' does not exist.`);
 }
 
-export function getVideoFiles(
-  source: Source,
-  onSuccess: (video: MediaFile) => void,
-): MediaFile[] {
-  const videos: MediaFile[] = [];
+export function getFiles(
+  inputSource: InputSource,
+  onSuccess: (file: FileEntry) => void,
+): FileEntry[] {
+  const files: FileEntry[] = [];
 
-  if (source.type === "file") {
-    const sourceDir = path.dirname(source.path);
-    const fileName = path.basename(source.path);
-    const isVideo = checkIsVideo(fileName);
-    const hasAudio = checkHasAudio(source.path);
-    let duration: number | null;
-    if (isVideo) {
-      duration = getVideoDuration(source.path);
-    } else {
-      duration = null;
+  const collect = (dirPath: string) => {
+    for (const fetchedPath of fs.readdirSync(dirPath)) {
+      const constructedPath = path.join(dirPath, fetchedPath);
+      const stat = fs.lstatSync(constructedPath);
+      if (stat.isDirectory()) {
+        collect(constructedPath);
+      } else {
+        const file = createFileEntry(constructedPath);
+        files.push(file);
+        onSuccess(file);
+      }
     }
-    const video = new MediaFile(
-      sourceDir,
-      fileName,
-      isVideo,
-      hasAudio,
-      duration,
-    );
-    videos.push(video);
-    onSuccess(video);
-  } else if (source.type === "dir") {
-    collectVideoFiles(source.path, videos, onSuccess);
+  };
+
+  if (inputSource.type === "file") {
+    const file = createFileEntry(inputSource.path);
+    files.push(file);
+    onSuccess(file);
+  } else if (inputSource.type === "dir") {
+    collect(inputSource.path);
   }
-  return videos;
+  return files;
 }
 
 export function getOutputPath(
-  video: MediaFile,
+  video: FileEntry,
+  inputSource: InputSource,
   outputDir: string,
   isVideo: boolean,
 ): string {
+  let outputFilename: string;
+
   if (isVideo) {
-    const fileNameWithoutExt = path.parse(video.fileName).name;
-    const outputFileName = `${fileNameWithoutExt}-encoded${path.extname(video.fileName)}`;
-    return path.join(outputDir, outputFileName);
+    outputFilename = `${video.fileNameWithoutExt}-encoded${path.extname(video.fileName)}`;
   } else {
-    return path.join(outputDir, video.fileName);
+    outputFilename = video.fileName;
   }
+
+  const SourceDirRelativePathToOutputPath = path.relative(
+    inputSource.dirName,
+    video.sourceDir,
+  );
+
+  fs.mkdirSync(path.join(outputDir, SourceDirRelativePathToOutputPath), {
+    recursive: true,
+  });
+
+  return path.join(
+    outputDir,
+    SourceDirRelativePathToOutputPath,
+    outputFilename,
+  );
 }
 
 export function generateFFMpegCommand(
@@ -107,31 +125,4 @@ export function generateFFMpegCommand(
   command.push(outputPath);
 
   return command;
-}
-
-function collectVideoFiles(
-  dirPath: string,
-  videos: MediaFile[],
-  onSuccess: (video: MediaFile) => void,
-): void {
-  for (const file of fs.readdirSync(dirPath)) {
-    const filePath = path.join(dirPath, file);
-    const stat = fs.lstatSync(filePath);
-
-    if (stat.isDirectory()) {
-      collectVideoFiles(filePath, videos, onSuccess);
-    } else {
-      const isVideo = checkIsVideo(file);
-      const hasAudio = checkHasAudio(filePath);
-      let duration: number | null;
-      if (isVideo) {
-        duration = getVideoDuration(filePath);
-      } else {
-        duration = null;
-      }
-      const video = new MediaFile(dirPath, file, isVideo, hasAudio, duration);
-      videos.push(video);
-      onSuccess(video);
-    }
-  }
 }

@@ -2,13 +2,13 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { getVideoDuration, checkHasAudio, checkIsVideo } from "../helpers.ts";
-import { MediaFile } from "../model.ts";
+import { checkIsVideo, createFileEntry } from "../helpers.ts";
+import { FileEntry } from "../model.ts";
 
-export function getVideoFiles(
+export function getFiles(
   input: string[],
-): [MediaFile, MediaFile, ...MediaFile[]] {
-  const videos: MediaFile[] = [];
+): [FileEntry, FileEntry, ...FileEntry[]] {
+  const files: FileEntry[] = [];
 
   if (input.length < 2) {
     throw new Error("At least two video files must be provided for merging.");
@@ -21,22 +21,14 @@ export function getVideoFiles(
       throw new Error(`Input path '${filePath}' is not a file.`);
     }
 
-    const sourceDir = path.dirname(filePath);
-    const fileName = path.basename(filePath);
-    const isVideo = checkIsVideo(filePath);
-    const hasAudio = checkHasAudio(filePath);
-    const duration = getVideoDuration(filePath);
-    const video = new MediaFile(
-      sourceDir,
-      fileName,
-      isVideo,
-      hasAudio,
-      duration,
-    );
+    if (!checkIsVideo(filePath)) {
+      throw new Error(`Input file '${filePath}' is not a valid video file.`);
+    }
 
-    videos.push(video);
+    const file = createFileEntry(filePath);
+    files.push(file);
   }
-  return videos as [MediaFile, MediaFile, ...MediaFile[]];
+  return files as [FileEntry, FileEntry, ...FileEntry[]];
 }
 
 export function getOutputPath(inputPath: string, outputPath?: string): string {
@@ -48,10 +40,10 @@ export function getOutputPath(inputPath: string, outputPath?: string): string {
   }
   const dir = path.dirname(inputPath);
   const baseName = path.basename(inputPath, path.extname(inputPath));
-  return path.join(dir, `${baseName}-merged.mkv`);
+  return path.join(dir, `${baseName}-merged.mp4`);
 }
 
-export function getHighestResolution(videos: MediaFile[]): [number, number] {
+export function getHighestResolution(videos: FileEntry[]): [number, number] {
   let highestResolutionArea = 0;
   let highestResolution: [number, number] = [0, 0];
 
@@ -66,7 +58,7 @@ export function getHighestResolution(videos: MediaFile[]): [number, number] {
   return highestResolution;
 }
 
-export function getMaxFps(videos: MediaFile[]): number {
+export function getMaxFps(videos: FileEntry[]): number {
   let maxFps = 0;
   for (const video of videos) {
     const fps = getVideoFps(video.fullPath);
@@ -78,7 +70,7 @@ export function getMaxFps(videos: MediaFile[]): number {
 }
 
 export function generateFiltergraph(
-  videos: MediaFile[],
+  videos: FileEntry[],
   highestResolution: [number, number],
   maxFps: number,
 ): { input: string[]; filtergraph: string } {

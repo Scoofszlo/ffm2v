@@ -1,4 +1,5 @@
-export type Source = {
+export type InputSource = {
   path: string;
+  dirName: string;
   type: "dir" | "file";
 };

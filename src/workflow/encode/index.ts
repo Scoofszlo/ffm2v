@@ -3,74 +3,69 @@ import fs from "fs";
 import { print } from "../../cli/printer.ts";
 import type { EncodeOptions } from "../../cli/types.ts";
 import { FFmpegEncodingParams } from "../../param/model.ts";
-import type { MediaFile } from "../model.ts";
+import type { FileEntry } from "../model.ts";
 import {
   generateFFMpegCommand,
+  getFiles,
+  getInputSource,
   getOutputDir,
   getOutputPath,
-  getSource,
-  getVideoFiles,
 } from "./helpers.ts";
 
 function runEncode(opts: EncodeOptions) {
-  const params = new FFmpegEncodingParams(opts);
-  const { source, outputDir } = getSourceAndOutput(opts);
-
-  const videoFiles = getVideoFiles(source, (video) => {
-    print(`${video.fullPath} added to list.`);
-  });
-
-  for (const video of videoFiles) {
-    if (!video.isVideo) {
-      const outputPath = getOutputPath(video, outputDir, false);
-      moveFile(video.fullPath, outputPath);
-      continue;
-    }
-
-    const outputPath = getOutputPath(video, outputDir, true);
-    encodeVideo(video, outputPath, params);
-  }
-}
-
-function getSourceAndOutput(opts: EncodeOptions) {
-  const source = getSource(opts.input);
-  if (!source) {
-    print(`Input source '${opts.input}' does not exist.`, "error");
-    process.exit(1);
-  }
-
   try {
-    const outputDir = getOutputDir(source, opts.output);
-    return { source, outputDir };
+    const params = new FFmpegEncodingParams(opts);
+    const { inputSource, outputDir } = getSourceAndOutput(opts);
+
+    const files = getFiles(inputSource, (file) => {
+      print(`${file.fullPath} added to list.`);
+    });
+
+    for (const file of files) {
+      if (!file.isVideo) {
+        const outputPath = getOutputPath(file, inputSource, outputDir, false);
+        moveFile(file.fullPath, outputPath);
+        continue;
+      }
+
+      const outputPath = getOutputPath(file, inputSource, outputDir, true);
+      encodeVideo(file, outputPath, params);
+    }
   } catch (error) {
     print(`${error}`, "error");
     process.exit(1);
   }
 }
 
+function getSourceAndOutput(opts: EncodeOptions) {
+  const inputSource = getInputSource(opts.input);
+  const outputDir = getOutputDir(inputSource, opts.output);
+  return { inputSource, outputDir };
+}
+
 function encodeVideo(
-  video: MediaFile,
+  file: FileEntry,
   outputPath: string,
   params: FFmpegEncodingParams,
 ) {
-  print(`Encoding '${video.fullPath}' to '${outputPath}'`);
-  const command = generateFFMpegCommand(video.fullPath, outputPath, params);
+  print(`Encoding '${file.fullPath}' to '${outputPath}'`);
+  const command = generateFFMpegCommand(file.fullPath, outputPath, params);
   print(`Running FFmpeg command: ffmpeg ${command.join(" ")}`);
 
   const result = spawnSync("ffmpeg", command, { stdio: "inherit" });
   if (result.error) {
     print(
-      `\nError encoding '${video.fullPath}': ${result.error.message}`,
+      `\nError encoding '${file.fullPath}': ${result.error.message}`,
       "error",
     );
   } else if (result.status !== 0) {
     print(
-      `\nFFmpeg exited with code ${result.status} while encoding '${video.fullPath}'.`,
+      `\nFFmpeg exited with code ${result.status} while encoding '${file.fullPath}'.`,
       "error",
     );
   } else {
     print(
-      `\nSuccessfully encoded '${video.fullPath}' to '${outputPath}'.`,
+      `\nSuccessfully encoded '${file.fullPath}' to '${outputPath}'.`,
       "success",
     );
   }
