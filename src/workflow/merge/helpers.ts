@@ -7,6 +7,7 @@ import { FileEntry } from "../model.ts";
 
 export function getFiles(
   input: string[],
+  onSuccess: (file: FileEntry) => void,
 ): [FileEntry, FileEntry, ...FileEntry[]] {
   const files: FileEntry[] = [];
 
@@ -26,6 +27,7 @@ export function getFiles(
     }
 
     const file = createFileEntry(filePath);
+    onSuccess(file);
     files.push(file);
   }
   return files as [FileEntry, FileEntry, ...FileEntry[]];
@@ -73,6 +75,7 @@ export function generateFiltergraph(
   videos: FileEntry[],
   highestResolution: [number, number],
   maxFps: number,
+  onSuccess: (filtergraph: string) => void,
 ): { input: string[]; filtergraph: string } {
   const input: string[] = [];
   let filtergraph = "";
@@ -97,6 +100,7 @@ export function generateFiltergraph(
 
   filtergraph += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
 
+  onSuccess(filtergraph);
   return {
     input,
     filtergraph,
