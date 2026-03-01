@@ -1,23 +1,27 @@
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { createFileEntry } from "../helpers.ts";
+import { checkIsVideo, createFileEntry } from "../helpers.ts";
 import { FileEntry } from "../model.ts";
 import type { InputSource } from "./types.ts";
 
-export function getInputSource(source: string): InputSource | null {
+export function getInputSource(source: string): InputSource {
   // Check if the source is a directory or a file
-  if (!fs.existsSync(source)) return null;
+  if (!fs.existsSync(source)) {
+    throw new Error(`Input source '${source}' does not exist.`);
+  }
 
   const stat = fs.lstatSync(source);
 
   if (stat.isDirectory()) {
     return { path: source, type: "dir" };
-  } else if (stat.isFile()) {
-    return { path: source, type: "file" };
   }
 
-  return null;
+  if (!checkIsVideo(source)) {
+    throw new Error(`File '${source}' is not a video file.`);
+  }
+
+  return { path: source, type: "file" };
 }
 
 export function getOutputDir(source: InputSource, output?: string): string {

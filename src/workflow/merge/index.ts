@@ -32,7 +32,7 @@ function runMerge(opts: MergeOptions) {
     );
     encodeVideo(command, outputPath);
   } catch (error) {
-    print(`An error occurred: ${error}`, "error");
+    print(`${error}`, "error");
     process.exit(1);
   }
 }

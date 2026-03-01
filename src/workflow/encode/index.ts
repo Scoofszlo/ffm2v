@@ -6,46 +6,41 @@ import { FFmpegEncodingParams } from "../../param/model.ts";
 import type { FileEntry } from "../model.ts";
 import {
   generateFFMpegCommand,
+  getFiles,
+  getInputSource,
   getOutputDir,
   getOutputPath,
-  getInputSource,
-  getFiles,
 } from "./helpers.ts";
 
 function runEncode(opts: EncodeOptions) {
-  const params = new FFmpegEncodingParams(opts);
-  const { inputSource, outputDir } = getSourceAndOutput(opts);
+  try {
+    const params = new FFmpegEncodingParams(opts);
+    const { inputSource, outputDir } = getSourceAndOutput(opts);
 
-  const files = getFiles(inputSource, (file) => {
-    print(`${file.fullPath} added to list.`);
-  });
+    const files = getFiles(inputSource, (file) => {
+      print(`${file.fullPath} added to list.`);
+    });
 
-  for (const file of files) {
-    if (!file.isVideo) {
-      const outputPath = getOutputPath(file, outputDir, false);
-      moveFile(file.fullPath, outputPath);
-      continue;
+    for (const file of files) {
+      if (!file.isVideo) {
+        const outputPath = getOutputPath(file, outputDir, false);
+        moveFile(file.fullPath, outputPath);
+        continue;
+      }
+
+      const outputPath = getOutputPath(file, outputDir, true);
+      encodeVideo(file, outputPath, params);
     }
-
-    const outputPath = getOutputPath(file, outputDir, true);
-    encodeVideo(file, outputPath, params);
+  } catch (error) {
+    print(`${error}`, "error");
+    process.exit(1);
   }
 }
 
 function getSourceAndOutput(opts: EncodeOptions) {
   const inputSource = getInputSource(opts.input);
-  if (!inputSource) {
-    print(`Input source '${opts.input}' does not exist.`, "error");
-    process.exit(1);
-  }
-
-  try {
-    const outputDir = getOutputDir(inputSource, opts.output);
-    return { inputSource, outputDir };
-  } catch (error) {
-    print(`${error}`, "error");
-    process.exit(1);
-  }
+  const outputDir = getOutputDir(inputSource, opts.output);
+  return { inputSource, outputDir };
 }
 
 function encodeVideo(
