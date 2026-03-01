@@ -14,14 +14,14 @@ export function getInputSource(source: string): InputSource {
   const stat = fs.lstatSync(source);
 
   if (stat.isDirectory()) {
-    return { path: source, type: "dir" };
+    return { path: source, dirName: source, type: "dir" };
   }
 
   if (!checkIsVideo(source)) {
     throw new Error(`File '${source}' is not a video file.`);
   }
 
-  return { path: source, type: "file" };
+  return { path: source, dirName: path.dirname(source), type: "file" };
 }
 
 export function getOutputDir(source: InputSource, output?: string): string {
@@ -71,16 +71,32 @@ export function getFiles(
 
 export function getOutputPath(
   video: FileEntry,
+  inputSource: InputSource,
   outputDir: string,
   isVideo: boolean,
 ): string {
+  let outputFilename: string;
+
   if (isVideo) {
-    const fileNameWithoutExt = path.parse(video.fileName).name;
-    const outputFileName = `${fileNameWithoutExt}-encoded${path.extname(video.fileName)}`;
-    return path.join(outputDir, outputFileName);
+    outputFilename = `${video.fileNameWithoutExt}-encoded${path.extname(video.fileName)}`;
   } else {
-    return path.join(outputDir, video.fileName);
+    outputFilename = video.fileName;
   }
+
+  const SourceDirRelativePathToOutputPath = path.relative(
+    inputSource.dirName,
+    video.sourceDir,
+  );
+
+  fs.mkdirSync(path.join(outputDir, SourceDirRelativePathToOutputPath), {
+    recursive: true,
+  });
+
+  return path.join(
+    outputDir,
+    SourceDirRelativePathToOutputPath,
+    outputFilename,
+  );
 }
 
 export function generateFFMpegCommand(

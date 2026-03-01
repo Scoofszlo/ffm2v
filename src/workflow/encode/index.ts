@@ -23,12 +23,12 @@ function runEncode(opts: EncodeOptions) {
 
     for (const file of files) {
       if (!file.isVideo) {
-        const outputPath = getOutputPath(file, outputDir, false);
+        const outputPath = getOutputPath(file, inputSource, outputDir, false);
         moveFile(file.fullPath, outputPath);
         continue;
       }
 
-      const outputPath = getOutputPath(file, outputDir, true);
+      const outputPath = getOutputPath(file, inputSource, outputDir, true);
       encodeVideo(file, outputPath, params);
     }
   } catch (error) {
