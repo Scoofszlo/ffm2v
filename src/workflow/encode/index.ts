@@ -88,4 +88,3 @@ function moveFile(src: string, dest: string) {
 }
 
 export { runEncode };
-
