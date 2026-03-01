@@ -40,7 +40,7 @@ export function getOutputPath(inputPath: string, outputPath?: string): string {
   }
   const dir = path.dirname(inputPath);
   const baseName = path.basename(inputPath, path.extname(inputPath));
-  return path.join(dir, `${baseName}-merged.mkv`);
+  return path.join(dir, `${baseName}-merged.mp4`);
 }
 
 export function getHighestResolution(videos: FileEntry[]): [number, number] {
