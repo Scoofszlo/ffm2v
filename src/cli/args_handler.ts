@@ -16,6 +16,11 @@ class ArgsHandler {
   constructor() {
     this.program = new Command();
 
+    this.program.configureOutput({
+      writeErr: (str) =>
+        print(str.replace(/^error:\s*/, "").trimEnd(), "error"),
+    });
+
     // Generate program introduction and version
     this.program
       .name("ffm2v")
