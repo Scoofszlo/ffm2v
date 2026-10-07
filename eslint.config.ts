@@ -1,8 +1,9 @@
 import js from "@eslint/js";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
+import eslintPluginPrettier from "eslint-plugin-prettier/recommended";
+import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import { defineConfig } from "eslint/config";
-import eslintPluginPrettier from "eslint-plugin-prettier/recommended";
 
 export default defineConfig([
   {
@@ -15,5 +16,6 @@ export default defineConfig([
     ignores: ["node_modules/**", "dist/**"],
   },
   tseslint.configs.recommended,
+  eslintConfigPrettier,
   eslintPluginPrettier,
 ]);

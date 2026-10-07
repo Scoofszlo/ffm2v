@@ -1,10 +1,10 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import type { MergeOptions } from "../../cli/types.ts";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
 import { checkIsVideo, createFileEntry } from "../helpers.ts";
 import { FileEntry } from "../model.ts";
-import type { MergeOptions } from "../../cli/types.ts";
 
 export function getFiles(
   input: string[],

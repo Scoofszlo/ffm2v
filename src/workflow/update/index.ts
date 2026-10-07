@@ -1,6 +1,6 @@
-import chalk from "chalk";
 import os from "os";
 import path from "path";
+import chalk from "chalk";
 import { print, spinnerPrint } from "../../cli/printer.ts";
 import type { UpdateOptions } from "../../cli/types.ts";
 import { FFMPEG_LATEST_DOWNLOAD_URL } from "../../constants.ts";

@@ -1,6 +1,6 @@
-import chalk from "chalk";
 import { spawnSync } from "child_process";
 import fs from "fs";
+import chalk from "chalk";
 import { print } from "../../cli/printer.ts";
 import type { EncodeOptions } from "../../cli/types.ts";
 import { FFmpegEncodingParams } from "../../param/model.ts";
