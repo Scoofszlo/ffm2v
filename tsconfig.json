@@ -26,12 +26,14 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    // @ alias for src directory
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
+    }
   },
   "include": ["./src/**/*"],
-  "exclude": [
-    "./node_modules/**/*",
-    "./dist/**/*",
-    "./scripts/**/*"
-  ]
+  "exclude": ["./node_modules/**/*", "./dist/**/*", "./scripts/**/*"]
 }
