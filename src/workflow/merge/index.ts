@@ -8,6 +8,7 @@ import {
   generateFiltergraph,
   getFiles,
   getHighestResolution,
+  getInputPaths,
   getMaxFps,
   getOutputPath,
 } from "./helpers.ts";
@@ -20,12 +21,13 @@ function runMerge(opts: MergeOptions) {
     const videos = getFiles(opts.input, (file) => {
       print(`${chalk.green("+")} ${file.fullPath} added to merge list.`);
     });
+    const inputPaths = getInputPaths(videos);
     const outputPath = getOutputPath(videos[0].fullPath, opts.output);
     const highestResolution = getHighestResolution(videos);
     const maxFps = getMaxFps(videos);
 
     print(`\n${chalk.bold("Generating FFmpeg filtergraph for merging...")}`);
-    const { input, filtergraph } = generateFiltergraph(
+    const filtergraph = generateFiltergraph(
       videos,
       highestResolution,
       maxFps,
@@ -36,7 +38,7 @@ function runMerge(opts: MergeOptions) {
       },
     );
     const command = generateFFMpegCommand(
-      input,
+      inputPaths,
       outputPath,
       filtergraph,
       maxFps,

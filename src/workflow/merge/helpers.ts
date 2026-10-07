@@ -34,6 +34,10 @@ export function getFiles(
   return files as [FileEntry, FileEntry, ...FileEntry[]];
 }
 
+export function getInputPaths(videos: FileEntry[]): string[] {
+  return videos.map((video) => ["-i", video.fullPath]).flat();
+}
+
 export function getOutputPath(inputPath: string, outputPath?: string): string {
   if (outputPath) {
     if (!fs.existsSync(outputPath)) {
@@ -78,12 +82,10 @@ export function generateFiltergraph(
   maxFps: number,
   opts: MergeOptions,
   onSuccess: (filtergraph: string) => void,
-): { input: string[]; filtergraph: string } {
-  const input: string[] = [];
+): string {
   let filtergraph = "";
 
   videos.forEach((video, index) => {
-    input.push("-i", video.fullPath);
     filtergraph += `[${index}:v]scale=${highestResolution[0]}:${highestResolution[1]},setsar=1,fps=${maxFps}[v${index}];`;
 
     if (video.hasAudio && opts.disableAudio === false) {
@@ -108,10 +110,7 @@ export function generateFiltergraph(
   }
 
   onSuccess(filtergraph);
-  return {
-    input,
-    filtergraph,
-  };
+  return filtergraph;
 }
 
 export function generateFFMpegCommand(
