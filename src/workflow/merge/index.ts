@@ -1,8 +1,9 @@
-import chalk from "chalk";
 import { spawnSync } from "child_process";
+import chalk from "chalk";
 import { print } from "../../cli/printer.ts";
 import type { MergeOptions } from "../../cli/types.ts";
 import { FFmpegEncodingParams } from "../../param/model.ts";
+import { generateFiltergraph } from "./filtergraph.ts";
 import {
   generateFFMpegCommand,
   getFiles,
@@ -11,7 +12,6 @@ import {
   getMaxFps,
   getOutputPath,
 } from "./helpers.ts";
-import { generateFiltergraph } from "./filtergraph.ts";
 
 function runMerge(opts: MergeOptions) {
   try {

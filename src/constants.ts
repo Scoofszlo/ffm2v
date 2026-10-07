@@ -1,4 +1,5 @@
 import pkgDetails from "../package.json" with { type: "json" };
+
 export const APP_VERSION = pkgDetails.version;
 
 export const VIDEO_EXTENSIONS = [

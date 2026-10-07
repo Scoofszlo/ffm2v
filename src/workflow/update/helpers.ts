@@ -1,9 +1,9 @@
-import which from "which";
-import path from "path";
 import { execSync, spawnSync } from "child_process";
-import { REMOTE_FFMPEG_VERSION_URL } from "../../constants.ts";
 import fs from "fs";
+import path from "path";
+import which from "which";
 import { print } from "../../cli/printer.ts";
+import { REMOTE_FFMPEG_VERSION_URL } from "../../constants.ts";
 
 const FFMPEG_VERSION_REGEX = /ffmpeg version (\d{4}-\d{2}-\d{2}-git-[a-f0-9]+)/;
 
