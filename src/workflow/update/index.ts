@@ -63,15 +63,15 @@ function runUpdate(opts: UpdateOptions) {
 
   try {
     if (!isVersionOutdated(localVersion, remoteVersion)) {
-      console.log(chalk.green("FFmpeg is up to date."));
-      console.log(`Current version: '${localVersion}'`);
+      print(chalk.green("FFmpeg is up to date."));
+      print(`Current version: '${localVersion}'`);
       return;
     } else {
-      console.log(chalk.yellow.bold("Update available!"));
-      console.log(`Upgradable from '${localVersion}' to '${remoteVersion}'`);
+      print(chalk.yellow.bold("Update available!"));
+      print(`Upgradable from '${localVersion}' to '${remoteVersion}'`);
     }
   } catch (error) {
-    console.error("Error comparing versions:", error);
+    print(`Error comparing versions: ${error}`, "error");
     process.exit(1);
   }
 
