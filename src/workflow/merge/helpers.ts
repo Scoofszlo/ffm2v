@@ -4,6 +4,7 @@ import path from "path";
 import type { FFmpegEncodingParams } from "../../param/model.ts";
 import { checkIsVideo, createFileEntry } from "../helpers.ts";
 import { FileEntry } from "../model.ts";
+import type { MergeOptions } from "../../cli/types.ts";
 
 export function getFiles(
   input: string[],
@@ -75,6 +76,7 @@ export function generateFiltergraph(
   videos: FileEntry[],
   highestResolution: [number, number],
   maxFps: number,
+  opts: MergeOptions,
   onSuccess: (filtergraph: string) => void,
 ): { input: string[]; filtergraph: string } {
   const input: string[] = [];
@@ -84,21 +86,26 @@ export function generateFiltergraph(
     input.push("-i", video.fullPath);
     filtergraph += `[${index}:v]scale=${highestResolution[0]}:${highestResolution[1]},setsar=1,fps=${maxFps}[v${index}];`;
 
-    if (video.hasAudio) {
+    if (video.hasAudio && opts.disableAudio === false) {
       filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
-    } else {
-      filtergraph += `anullsrc=channel_layout=stereo:sample_rate=48000:duration=${video.duration}[a${index}];`;
     }
   });
 
   filtergraph += " ";
 
-  for (let i = 0; i < videos.length; i++) {
-    filtergraph += `[v${i}]`;
-    filtergraph += `[a${i}]`;
-  }
+  videos.forEach((video, index) => {
+    filtergraph += `[v${index}]`;
 
-  filtergraph += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
+    if (video.hasAudio && opts.disableAudio === false) {
+      filtergraph += `[a${index}]`;
+    }
+  });
+
+  if (opts.disableAudio === false) {
+    filtergraph += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
+  } else {
+    filtergraph += ` concat=n=${videos.length}:v=1:a=0 [outv]`;
+  }
 
   onSuccess(filtergraph);
   return {
@@ -113,13 +120,18 @@ export function generateFFMpegCommand(
   filtergraph: string,
   maxFps: number,
   params: FFmpegEncodingParams,
+  opts: MergeOptions,
 ): string[] {
   const command: string[] = [];
 
   command.push(...input);
   command.push("-filter_complex", filtergraph);
   command.push("-map", "[outv]");
-  command.push("-map", "[outa]");
+
+  if (opts.disableAudio === false) {
+    command.push("-map", "[outa]");
+  }
+
   command.push("-r", `${maxFps}`);
   command.push(...params.videoCodec);
   command.push(...params.crf);

@@ -29,6 +29,7 @@ function runMerge(opts: MergeOptions) {
       videos,
       highestResolution,
       maxFps,
+      opts,
       (filtergraph) => {
         print(`${chalk.green("+")} Filtergraph generated successfully.`);
         print(chalk.gray(filtergraph));
@@ -40,6 +41,7 @@ function runMerge(opts: MergeOptions) {
       filtergraph,
       maxFps,
       params,
+      opts,
     );
     encodeVideo(command, outputPath);
   } catch (error) {
