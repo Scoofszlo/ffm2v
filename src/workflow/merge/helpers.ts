@@ -76,43 +76,6 @@ export function getMaxFps(videos: FileEntry[]): number {
   return maxFps;
 }
 
-export function generateFiltergraph(
-  videos: FileEntry[],
-  highestResolution: [number, number],
-  maxFps: number,
-  opts: MergeOptions,
-  onSuccess: (filtergraph: string) => void,
-): string {
-  let filtergraph = "";
-
-  videos.forEach((video, index) => {
-    filtergraph += `[${index}:v]scale=${highestResolution[0]}:${highestResolution[1]},setsar=1,fps=${maxFps}[v${index}];`;
-
-    if (video.hasAudio && opts.disableAudio === false) {
-      filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
-    }
-  });
-
-  filtergraph += " ";
-
-  videos.forEach((video, index) => {
-    filtergraph += `[v${index}]`;
-
-    if (video.hasAudio && opts.disableAudio === false) {
-      filtergraph += `[a${index}]`;
-    }
-  });
-
-  if (opts.disableAudio === false) {
-    filtergraph += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
-  } else {
-    filtergraph += ` concat=n=${videos.length}:v=1:a=0 [outv]`;
-  }
-
-  onSuccess(filtergraph);
-  return filtergraph;
-}
-
 export function generateFFMpegCommand(
   input: string[],
   outputPath: string,

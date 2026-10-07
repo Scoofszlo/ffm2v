@@ -5,13 +5,13 @@ import type { MergeOptions } from "../../cli/types.ts";
 import { FFmpegEncodingParams } from "../../param/model.ts";
 import {
   generateFFMpegCommand,
-  generateFiltergraph,
   getFiles,
   getHighestResolution,
   getInputPaths,
   getMaxFps,
   getOutputPath,
 } from "./helpers.ts";
+import { generateFiltergraph } from "./filtergraph.ts";
 
 function runMerge(opts: MergeOptions) {
   try {
