@@ -19,15 +19,15 @@ This is really just a personal project and is not meant to be a replacement of f
 2. Install `ffmpeg` and make sure it is added to your system's PATH.
 3. Install `ffm2v` globally using npm:
 
-    ```bash
-    npm install -g ffm2v
-    ```
+   ```bash
+   npm install -g ffm2v
+   ```
 
 4. Verify if it is installed correctly:
 
-    ```bash
-    ffm2v --version
-    ```
+   ```bash
+   ffm2v --version
+   ```
 
 ## Usage
 
@@ -41,13 +41,13 @@ ffm2v encode -i <file> [options]
 
 where `<file>` is the path of your chosen video. By default, the exported video will be created in the same directory as the input file, with `-encoded` appended to the base name.
 
-By default, the video will be encoded using the H.265 codec with a CRF of 18, which provides a good balance between quality and file size. This value is a bit lower than what typical users would use (like around 23).
+By default, the video will be encoded using the H.265 codec with a CRF of 23, which provides a good balance between quality and file size.
 
 You can customize the encoding options using the available flags:
 
 - `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, an error will pop up.
-- `--vc, --video-codec <codec>`: Specify the video codec to use  (default: libx265). Currently, only H.265 is supported as this is really just my preferred codec so there's no point on using this flag. I just added this for future additional codec support.
-- `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 18). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size.
+- `--vc, --video-codec <codec>`: Specify the video codec to use (default: libx265). Currently, only H.265 is supported as this is really just my preferred codec so there's no point on using this flag. I just added this for future additional codec support.
+- `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size.
 - `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
 - `--disable-audio`: Disable audio in the output video.
 - `--allow-auto-rotate`: Automatically rotate the video based on its rotation metadata (default: false). This value has no effect if video has no rotation metadata.
@@ -93,7 +93,7 @@ To check only update without actually performing it, you can use:
 
 ```bash
 ffm2v update-ffmpeg --check-only
-# or 
+# or
 ffm2v update-ffmpeg -c
 ```
 
@@ -101,13 +101,13 @@ When updating and you want to disable archiving of old installed ffmpeg, use the
 
 ```bash
 ffm2v update-ffmpeg --disable-archive
-``` 
+```
 
 > [!IMPORTANT]
 > I highly suggest to not use this update command as this is tweaked for my own use and might not work well for your ffmpeg setup.
 
 > [!WARNING]  
-> This operation will touch your ffmpeg installation directory and by default, the old version will be archived properly but might fail if error occurs midway. Make sure to backup your ffmpeg installation if you have custom configurations or builds that you have there  before performing the update.
+> This operation will touch your ffmpeg installation directory and by default, the old version will be archived properly but might fail if error occurs midway. Make sure to backup your ffmpeg installation if you have custom configurations or builds that you have there before performing the update.
 
 ## FAQs
 
@@ -125,7 +125,7 @@ When using `encode` command, it doesn't re-encode audio and is keep as is to pre
 
 ### Why merging doesn't result in lossless format?
 
-I have tried using `concat` filter for merging videos losslessly and they only worked strictly if videos have similar codecs and same codec parameters. But in most use cases, it just doesn't work so I just use a  filterchain based on [this documentation](https://trac.ffmpeg.org/wiki/Concatenate#filter) to merge videos and it works for all videos but with some very slight quality loss due to re-encoding.
+I have tried using `concat` filter for merging videos losslessly and they only worked strictly if videos have similar codecs and same codec parameters. But in most use cases, it just doesn't work so I just use a filterchain based on [this documentation](https://trac.ffmpeg.org/wiki/Concatenate#filter) to merge videos and it works for all videos but with some very slight quality loss due to re-encoding.
 
 ## Project versioning policy
 
@@ -140,6 +140,7 @@ ffm2v is an open-source program licensed under the MIT License. See the [LICENSE
 ## Contact
 
 For questions or concerns, feel free to contact me via the following!:
+
 - [Gmail](mailto:scoofszlo@gmail.com) - scoofszlo@gmail.com
 - Discord - @scoofszlo
 - [Reddit](https://www.reddit.com/user/Scoofszlo/) - u/Scoofszlo
