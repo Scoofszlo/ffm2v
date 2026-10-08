@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
-import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { checkIsVideo, createFileEntry } from "../helpers.ts";
-import { FileEntry } from "../model.ts";
+import type { FFmpegEncodingParams } from "@/param/model.ts";
+import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
+import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { InputSource } from "./types.ts";
 
 export function getInputSource(source: string): InputSource {
@@ -24,7 +24,10 @@ export function getInputSource(source: string): InputSource {
   return { path: source, dirName: path.dirname(source), type: "file" };
 }
 
-export function getOutputDir(source: InputSource, output?: string): string {
+export function getOutputDir(
+  source: InputSource,
+  output: string | null,
+): string {
   if (!output) {
     if (source.type === "file") {
       return path.dirname(source.path);

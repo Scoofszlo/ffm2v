@@ -1,9 +1,12 @@
-import type { EncodeOptions, MergeOptions } from "../cli/types.ts";
+import type {
+  EncodeWorkflowOpts,
+  MergeWorkflowOpts,
+} from "@/workflow/model/workflow.ts";
 
 class FFmpegEncodingParams {
-  opts: EncodeOptions | MergeOptions;
+  opts: EncodeWorkflowOpts | MergeWorkflowOpts;
 
-  constructor(params?: EncodeOptions | MergeOptions) {
+  constructor(params?: EncodeWorkflowOpts | MergeWorkflowOpts) {
     if (!params) {
       console.error("error: No parameters provided for FFmpeg encoding.");
       process.exit(1);
@@ -20,7 +23,7 @@ class FFmpegEncodingParams {
   }
 
   get resolution() {
-    if (this.opts.resolution) {
+    if ("resolution" in this.opts && this.opts.resolution) {
       const { width, height } = this.opts.resolution;
       return ["-vf", `scale=${width}:${height}`];
     }

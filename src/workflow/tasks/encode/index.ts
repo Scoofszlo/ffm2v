@@ -1,10 +1,13 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
+import type {
+  EncodeWorkflow,
+  EncodeWorkflowOpts,
+} from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
-import { print } from "../../cli/printer.ts";
-import type { EncodeOptions } from "../../cli/types.ts";
-import { FFmpegEncodingParams } from "../../param/model.ts";
-import type { FileEntry } from "../model.ts";
+import { print } from "../../../cli/printer.ts";
+import { FFmpegEncodingParams } from "../../../param/model.ts";
+import type { FileEntry } from "../../model/fileEntry.ts";
 import {
   generateFFMpegCommand,
   getFiles,
@@ -13,7 +16,9 @@ import {
   getOutputPath,
 } from "./helpers.ts";
 
-function runEncode(opts: EncodeOptions) {
+function runEncode(workflow: EncodeWorkflow) {
+  const opts = workflow.options;
+
   try {
     const params = new FFmpegEncodingParams(opts);
     const { inputSource, outputDir } = getSourceAndOutput(opts);
@@ -41,7 +46,7 @@ function runEncode(opts: EncodeOptions) {
   }
 }
 
-function getSourceAndOutput(opts: EncodeOptions) {
+function getSourceAndOutput(opts: EncodeWorkflowOpts) {
   const inputSource = getInputSource(opts.input);
   const outputDir = getOutputDir(inputSource, opts.output);
   return { inputSource, outputDir };
