@@ -1,7 +1,7 @@
 import { spawnSync } from "child_process";
 import path from "path";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
-import { FileEntry } from "./model.ts";
+import { FileEntry } from "./model/fileEntry.ts";
 
 export function createFileEntry(filePath: string) {
   const sourceDir = path.dirname(filePath);
