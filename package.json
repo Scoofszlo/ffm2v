@@ -23,8 +23,10 @@
     "type": "tsc",
     "type:watch": "tsc --watch",
     "lint": "eslint",
-    "test": "npm run lint && npm run type && vitest run && npm run build",
-    "vitest:watch": "vitest watch"
+    "lint:fix": "eslint --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run type && npm run test && npm run build"
   },
   "keywords": [],
   "author": "",
