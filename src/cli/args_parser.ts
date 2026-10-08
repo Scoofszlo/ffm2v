@@ -3,11 +3,9 @@ import { Command } from "commander";
 import { applyCommonOptions } from "./commands.ts";
 import { print } from "./printer.ts";
 
-type ParsedOptions = {
-  options: [x: unknown];
-};
+type ParsedOptions = Record<string, unknown>;
 
-class ArgsParser {
+export class ArgsParser {
   program: Command;
   parseCommand: string | null = null;
   parsedOptions: ParsedOptions | null = null;
@@ -73,9 +71,9 @@ class ArgsParser {
       });
   }
 
-  parseArgs() {
+  parseArgs(argv: string[] = process.argv) {
     try {
-      this.program.parse(process.argv);
+      this.program.parse(argv);
       return {
         type: this.parseCommand,
         options: this.parsedOptions,

@@ -3,13 +3,26 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
 
 jobs:
   lint:
+    name: Check lint
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/check_lint.yml
-  
+
   type:
+    name: Check type
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/check_type.yml
 
+  test:
+    name: Test unit
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ./.github/workflows/test_unit.yml
+
   build:
+    name: Test build
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     uses: ./.github/workflows/test_build.yml

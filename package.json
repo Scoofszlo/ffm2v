@@ -23,7 +23,10 @@
     "type": "tsc",
     "type:watch": "tsc --watch",
     "lint": "eslint",
-    "test": "npm run lint && npm run type && npm run build"
+    "lint:fix": "eslint --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run type && npm run test && npm run build"
   },
   "keywords": [],
   "author": "",
@@ -46,7 +49,8 @@
     "tsdown": "0.20.3",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.56.1"
+    "typescript-eslint": "8.56.1",
+    "vitest": "4.1.11"
   },
   "dependencies": {
     "@tsconfig/node20": "20.1.9",
