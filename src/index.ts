@@ -1,19 +1,31 @@
-import { ArgsHandler } from "./cli/args_handler.ts";
+import { ZodError } from "zod";
+import { argsParser } from "./cli/args_parser.ts";
 import { print } from "./cli/printer.ts";
-import { runEncode } from "./workflow/encode/index.ts";
-import { runMerge } from "./workflow/merge/index.ts";
-import { runUpdate } from "./workflow/update/index.ts";
+import { WorkflowSchema } from "./workflow/model/workflow.ts";
+import { runEncode } from "./workflow/tasks/encode/index.ts";
+import { runMerge } from "./workflow/tasks/merge/index.ts";
+import { runUpdate } from "./workflow/tasks/update/index.ts";
 
-const argsHandler = new ArgsHandler();
-const parsed = argsHandler.parse(process.argv);
+try {
+  const parsedArgs = argsParser.parseArgs();
+  console.log("Parsed Arguments:", parsedArgs);
+  const workflow = WorkflowSchema.parse(parsedArgs);
 
-if (!parsed) {
-  print("Failed to parse arguments.", "error");
-  process.exit(1);
-} else if (parsed.command === "update") {
-  runUpdate(parsed.options);
-} else if (parsed.command === "encode") {
-  runEncode(parsed.options);
-} else if (parsed.command === "merge") {
-  runMerge(parsed.options);
+  if (workflow.type === "update") {
+    runUpdate(workflow);
+  } else if (workflow.type === "encode") {
+    runEncode(workflow);
+  } else if (workflow.type === "merge") {
+    runMerge(workflow);
+  }
+} catch (error) {
+  if (error instanceof ZodError) {
+    // Print the first issue instead of all issues to avoid overwhelming the
+    // user with too much errors
+    const firstIssue = error.issues[0]?.message ?? "Unknown issue detected";
+
+    print(firstIssue, "error");
+  } else {
+    print(error as string, "error");
+  }
 }

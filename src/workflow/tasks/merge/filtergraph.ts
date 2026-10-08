@@ -1,7 +1,7 @@
-import type { MergeOptions } from "../../cli/types.ts";
-import type { FileEntry } from "../model.ts";
+import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
+import type { FileEntry } from "../../model/fileEntry.ts";
 
-function getConcatFilter(videos: FileEntry[], opts: MergeOptions): string {
+function getConcatFilter(videos: FileEntry[], opts: MergeWorkflowOpts): string {
   let filtergraph = "";
 
   videos.forEach((video, index) => {
@@ -25,7 +25,7 @@ function getPerVideoFilter(
   videos: FileEntry[],
   highestResolution: [number, number],
   maxFps: number,
-  opts: MergeOptions,
+  opts: MergeWorkflowOpts,
 ): string {
   let filtergraph = "";
 
@@ -45,7 +45,7 @@ export function generateFiltergraph(
   videos: FileEntry[],
   highestResolution: [number, number],
   maxFps: number,
-  opts: MergeOptions,
+  opts: MergeWorkflowOpts,
   onSuccess: (filtergraph: string) => void,
 ): string {
   let filtergraph = "";

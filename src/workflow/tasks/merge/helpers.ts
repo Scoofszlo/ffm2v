@@ -1,10 +1,10 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import type { MergeOptions } from "../../cli/types.ts";
-import type { FFmpegEncodingParams } from "../../param/model.ts";
-import { checkIsVideo, createFileEntry } from "../helpers.ts";
-import { FileEntry } from "../model.ts";
+import type { FFmpegEncodingParams } from "@/param/model.ts";
+import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
+import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
 export function getFiles(
   input: string[],
@@ -38,7 +38,10 @@ export function getInputPaths(videos: FileEntry[]): string[] {
   return videos.map((video) => ["-i", video.fullPath]).flat();
 }
 
-export function getOutputPath(inputPath: string, outputPath?: string): string {
+export function getOutputPath(
+  inputPath: string,
+  outputPath: string | null,
+): string {
   if (outputPath) {
     if (!fs.existsSync(outputPath)) {
       throw new Error(`Output path '${outputPath}' does not exist.`);
@@ -82,7 +85,7 @@ export function generateFFMpegCommand(
   filtergraph: string,
   maxFps: number,
   params: FFmpegEncodingParams,
-  opts: MergeOptions,
+  opts: MergeWorkflowOpts,
 ): string[] {
   const command: string[] = [];
 

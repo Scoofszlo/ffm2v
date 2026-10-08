@@ -1,9 +1,12 @@
-import type { EncodeOptions, MergeOptions } from "../cli/types.ts";
+import type {
+  EncodeWorkflowOpts,
+  MergeWorkflowOpts,
+} from "@/workflow/model/workflow.ts";
 
 class FFmpegEncodingParams {
-  opts: EncodeOptions | MergeOptions;
+  opts: EncodeWorkflowOpts | MergeWorkflowOpts;
 
-  constructor(params?: EncodeOptions | MergeOptions) {
+  constructor(params?: EncodeWorkflowOpts | MergeWorkflowOpts) {
     if (!params) {
       console.error("error: No parameters provided for FFmpeg encoding.");
       process.exit(1);

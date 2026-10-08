@@ -1,9 +1,9 @@
 import os from "os";
 import path from "path";
+import type { UpdateWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
-import { print, spinnerPrint } from "../../cli/printer.ts";
-import type { UpdateOptions } from "../../cli/types.ts";
-import { FFMPEG_LATEST_DOWNLOAD_URL } from "../../constants.ts";
+import { print, spinnerPrint } from "../../../cli/printer.ts";
+import { FFMPEG_LATEST_DOWNLOAD_URL } from "../../../constants.ts";
 import {
   archiveOldVersion,
   checkDeps,
@@ -18,7 +18,9 @@ import {
   isVersionOutdated,
 } from "./helpers.ts";
 
-function runUpdate(opts: UpdateOptions) {
+function runUpdate(workflow: UpdateWorkflow) {
+  const opts = workflow.options;
+
   if (process.platform !== "win32") {
     print(
       "The update feature is currently only supported on Windows.",
