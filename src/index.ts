@@ -8,7 +8,6 @@ import { runUpdate } from "./workflow/tasks/update/index.ts";
 
 try {
   const parsedArgs = argsParser.parseArgs();
-  console.log("Parsed Arguments:", parsedArgs);
   const workflow = WorkflowSchema.parse(parsedArgs);
 
   if (workflow.type === "update") {
