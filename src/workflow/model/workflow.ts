@@ -15,30 +15,6 @@ const commonOptionsSchema = z.object({
     .min(0, { message: "CRF must be between 0 and 51" })
     .max(51, { message: "CRF must be be between 0 and 51" })
     .default(23),
-  resolution: z
-    .string()
-    .nullable()
-    .refine((value) => {
-      if (value === null) return true;
-
-      const match = value.match(SCALE_REGEX);
-      return match !== null;
-    }, "Resolution must be in the format 'width:height' (e.g., 1920:1080, -2:1080, 1920:-2)")
-    .default(null)
-    .transform((value, ctx) => {
-      if (value === null) return null;
-      const [width, height] = value.split(":").map(Number);
-
-      if (height === undefined || width === undefined) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Height/width is in undefined value.",
-        });
-        return z.NEVER;
-      }
-
-      return { width, height };
-    }),
   disableAudio: z.boolean().default(false),
   allowAutoRotate: z.boolean().default(false),
 });
@@ -48,6 +24,30 @@ const encodeOptionsSchema = commonOptionsSchema
     input: z
       .string("Input file must be specified")
       .min(1, "Input file must be specified"),
+    resolution: z
+      .string()
+      .nullable()
+      .refine((value) => {
+        if (value === null) return true;
+
+        const match = value.match(SCALE_REGEX);
+        return match !== null;
+      }, "Resolution must be in the format 'width:height' (e.g., 1920:1080, -2:1080, 1920:-2)")
+      .default(null)
+      .transform((value, ctx) => {
+        if (value === null) return null;
+        const [width, height] = value.split(":").map(Number);
+
+        if (height === undefined || width === undefined) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Height/width is in undefined value.",
+          });
+          return z.NEVER;
+        }
+
+        return { width, height };
+      }),
   })
   .superRefine((data, ctx) => {
     if (data.input === data.output) {

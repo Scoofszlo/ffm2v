@@ -47,6 +47,7 @@ class ArgsParser {
         .command("merge")
         .description("Merge multiple video files")
         .option("-i, --input <file...>", "Input video files"),
+      ["resolution"],
     ).action((options) => {
       this.parseCommand = "merge";
       this.parsedOptions = options;

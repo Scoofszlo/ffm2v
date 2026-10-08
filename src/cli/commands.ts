@@ -43,8 +43,15 @@ export const commonOptions = [
   ),
 ];
 
-export function applyCommonOptions(commandObj: Command) {
+export function applyCommonOptions(
+  commandObj: Command,
+  skipOptions: string[] = [],
+): Command {
   commonOptions.forEach((option) => {
+    if (skipOptions.includes(option.name)) {
+      return;
+    }
+
     const commandOption = new Option(option.flags, option.description);
 
     if (option.defaultValue !== undefined) {

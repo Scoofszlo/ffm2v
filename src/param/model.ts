@@ -23,7 +23,7 @@ class FFmpegEncodingParams {
   }
 
   get resolution() {
-    if (this.opts.resolution) {
+    if ("resolution" in this.opts && this.opts.resolution) {
       const { width, height } = this.opts.resolution;
       return ["-vf", `scale=${width}:${height}`];
     }
