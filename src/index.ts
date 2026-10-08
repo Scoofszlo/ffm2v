@@ -27,4 +27,6 @@ try {
   } else {
     print(error as string, "error");
   }
+
+  process.exit(1);
 }
