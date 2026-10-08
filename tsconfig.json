@@ -1,7 +1,7 @@
 {
   "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
+    "rootDir": ".",
 
     "allowImportingTsExtensions": true,
     "noEmit": true,
@@ -34,6 +34,6 @@
       "@/*": ["*"]
     }
   },
-  "include": ["./src/**/*"],
+  "include": ["./src/**/*", "./tests/**/*"],
   "exclude": ["./node_modules/**/*", "./dist/**/*", "./scripts/**/*"]
 }
