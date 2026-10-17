@@ -16,6 +16,7 @@ describe("ArgsParser", () => {
         crf: 23,
         resolution: null,
         disableAudio: false,
+        keepRotationMetadata: false,
       },
     });
   });
@@ -45,6 +46,7 @@ describe("ArgsParser", () => {
         crf: "99",
         resolution: "invalid-resolution",
         disableAudio: true,
+        keepRotationMetadata: false,
       },
     });
   });
