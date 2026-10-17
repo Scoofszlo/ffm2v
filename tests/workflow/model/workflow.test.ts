@@ -25,10 +25,29 @@ describe("WorkflowSchema", () => {
           crf: 0,
           resolution: { width: 1920, height: 1080 },
           disableAudio: false,
-          allowAutoRotate: false,
+          keepRotationMetadata: false,
         },
       });
     });
+
+    it.each([
+      { keepRotationMetadata: true, expected: true },
+      { keepRotationMetadata: false, expected: false },
+    ])(
+      "accepts the keepRotationMetadata option $keepRotationMetadata",
+      ({ keepRotationMetadata, expected }) => {
+        const workflow = parseWorkflow({
+          type: "encode",
+          options: { input: "video.mp4", output: null, keepRotationMetadata },
+        });
+
+        if (workflow.type !== "encode") {
+          throw new Error("Expected the encode workflow");
+        }
+
+        expect(workflow.options.keepRotationMetadata).toEqual(expected);
+      },
+    );
 
     it.each([
       { resolution: "-2:1080", expected: { width: -2, height: 1080 } },
@@ -110,7 +129,6 @@ describe("WorkflowSchema", () => {
           videoCodec: "libx265",
           crf: 23,
           disableAudio: false,
-          allowAutoRotate: false,
         },
       });
     });

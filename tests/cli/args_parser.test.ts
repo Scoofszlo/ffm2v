@@ -16,7 +16,7 @@ describe("ArgsParser", () => {
         crf: 23,
         resolution: null,
         disableAudio: false,
-        allowAutoRotate: false,
+        keepRotationMetadata: false,
       },
     });
   });
@@ -36,7 +36,6 @@ describe("ArgsParser", () => {
         "--resolution",
         "invalid-resolution",
         "--disable-audio",
-        "--allow-auto-rotate",
       ]),
     ).toEqual({
       type: "encode",
@@ -47,7 +46,7 @@ describe("ArgsParser", () => {
         crf: "99",
         resolution: "invalid-resolution",
         disableAudio: true,
-        allowAutoRotate: true,
+        keepRotationMetadata: false,
       },
     });
   });
@@ -66,7 +65,6 @@ describe("ArgsParser", () => {
         "--crf",
         "51",
         "--disable-audio",
-        "--allow-auto-rotate",
       ]),
     ).toEqual({
       type: "merge",
@@ -76,7 +74,6 @@ describe("ArgsParser", () => {
         videoCodec: "libx265",
         crf: "51",
         disableAudio: true,
-        allowAutoRotate: true,
       },
     });
   });

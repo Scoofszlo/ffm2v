@@ -38,8 +38,8 @@ class FFmpegEncodingParams {
     return ["-c:a", "copy"];
   }
 
-  get allowAutoRotate() {
-    if (this.opts.allowAutoRotate) {
+  get keepRotationMetadata() {
+    if ("keepRotationMetadata" in this.opts && this.opts.keepRotationMetadata) {
       return ["-noautorotate"];
     }
     return [];

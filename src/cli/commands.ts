@@ -35,12 +35,6 @@ export const commonOptions = [
     "Disable audio in the output video",
     false,
   ),
-  optionFactory(
-    "allowAutoRotate",
-    "--allow-auto-rotate",
-    "Allow automatic rotation based on metadata",
-    false,
-  ),
 ];
 
 export function applyCommonOptions(

@@ -34,10 +34,16 @@ export class ArgsParser {
         .command("encode")
         .description("Encode a video file")
         .option("-i, --input <file>", "Input video file"),
-    ).action((options) => {
-      this.parseCommand = "encode";
-      this.parsedOptions = options;
-    });
+    )
+      .action((options) => {
+        this.parseCommand = "encode";
+        this.parsedOptions = options;
+      })
+      .option(
+        "--keep-rotation-metadata",
+        "Keep the input video's rotation metadata instead of baking rotation into the pixels",
+        false,
+      );
 
     // Define 'merge' command with options and validation
     applyCommonOptions(
