@@ -16,7 +16,7 @@ const commonOptionsSchema = z.object({
     .max(51, { message: "CRF must be be between 0 and 51" })
     .default(23),
   disableAudio: z.boolean().default(false),
-  allowAutoRotate: z.boolean().default(false),
+  keepRotationMetadata: z.boolean().default(false),
 });
 
 const encodeOptionsSchema = commonOptionsSchema

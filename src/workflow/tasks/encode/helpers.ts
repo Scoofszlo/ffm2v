@@ -109,8 +109,8 @@ export function generateFFMpegCommand(
 ): string[] {
   const command: string[] = [];
 
-  if (params.allowAutoRotate) {
-    command.push(...params.allowAutoRotate);
+  if (params.keepRotationMetadata) {
+    command.push(...params.keepRotationMetadata);
   }
   command.push("-i", inputPath);
   command.push(...params.videoCodec);

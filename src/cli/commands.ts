@@ -36,9 +36,9 @@ export const commonOptions = [
     false,
   ),
   optionFactory(
-    "allowAutoRotate",
-    "--allow-auto-rotate",
-    "Allow automatic rotation based on metadata",
+    "keepRotationMetadata",
+    "--keep-rotation-metadata",
+    "Keep the input's rotation metadata instead of baking rotation into the pixels",
     false,
   ),
 ];

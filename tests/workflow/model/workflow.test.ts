@@ -25,7 +25,7 @@ describe("WorkflowSchema", () => {
           crf: 0,
           resolution: { width: 1920, height: 1080 },
           disableAudio: false,
-          allowAutoRotate: false,
+          keepRotationMetadata: false,
         },
       });
     });
@@ -110,7 +110,7 @@ describe("WorkflowSchema", () => {
           videoCodec: "libx265",
           crf: 23,
           disableAudio: false,
-          allowAutoRotate: false,
+          keepRotationMetadata: false,
         },
       });
     });
