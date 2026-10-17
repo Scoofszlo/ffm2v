@@ -50,7 +50,7 @@ You can customize the encoding options using the available flags:
 - `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size.
 - `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
 - `--disable-audio`: Disable audio in the output video.
-- `--allow-auto-rotate`: Automatically rotate the video based on its rotation metadata (default: false). This value has no effect if video has no rotation metadata.
+- `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of baking the rotation into the pixels (default: false). Has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways, and `--resolution` will refer to the stored frame rather than the displayed frame (e.g. `--resolution -2:1080` on a 90°-rotated video produces a 1440x1080 stored frame that displays as 1080x1440).
 
 #### Examples
 
