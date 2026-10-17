@@ -39,7 +39,7 @@ class FFmpegEncodingParams {
   }
 
   get keepRotationMetadata() {
-    if (this.opts.keepRotationMetadata) {
+    if ("keepRotationMetadata" in this.opts && this.opts.keepRotationMetadata) {
       return ["-noautorotate"];
     }
     return [];

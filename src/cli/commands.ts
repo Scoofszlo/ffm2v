@@ -35,12 +35,6 @@ export const commonOptions = [
     "Disable audio in the output video",
     false,
   ),
-  optionFactory(
-    "keepRotationMetadata",
-    "--keep-rotation-metadata",
-    "Keep the input's rotation metadata instead of baking rotation into the pixels",
-    false,
-  ),
 ];
 
 export function applyCommonOptions(
