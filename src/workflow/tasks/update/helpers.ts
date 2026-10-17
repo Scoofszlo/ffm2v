@@ -1,10 +1,12 @@
-import { execSync, spawnSync } from "child_process";
+import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { print } from "@/cli/printer.ts";
 import { REMOTE_FFMPEG_VERSION_URL } from "@/constants.ts";
+import { runCommand } from "@/workflow/helpers.ts";
 import which from "which";
 
+const GIT_VERSION_REGEX = /\d{4}-\d{2}-\d{2}-git-[a-f0-9]+/;
 const FFMPEG_VERSION_REGEX = /ffmpeg version (\d{4}-\d{2}-\d{2}-git-[a-f0-9]+)/;
 
 export function checkDeps(): {
@@ -46,7 +48,11 @@ export function getFFmpegDirPath(executablePath: string): string {
 }
 
 export function getLocalFFmpegVersion(executablePath: string): string {
-  const output = execSync(`"${executablePath}" -version`).toString();
+  const output = runCommand(
+    executablePath,
+    ["-version"],
+    `'${executablePath}'`,
+  );
   const versionMatch = output.match(FFMPEG_VERSION_REGEX);
 
   if (!(versionMatch && versionMatch[1])) {
@@ -57,10 +63,16 @@ export function getLocalFFmpegVersion(executablePath: string): string {
 }
 
 export function getRemoteFFmpegVersion(): string {
-  const output = execSync(`curl -s ${REMOTE_FFMPEG_VERSION_URL}`)
-    .toString()
-    .trim();
-  return output;
+  const output = runCommand("curl", ["-s", REMOTE_FFMPEG_VERSION_URL], "curl");
+  const versionMatch = output.match(GIT_VERSION_REGEX);
+
+  if (!versionMatch) {
+    throw new Error(
+      `Unexpected remote FFmpeg version response: ${output || "<empty>"}`,
+    );
+  }
+
+  return versionMatch[0];
 }
 
 export function isVersionOutdated(
@@ -108,9 +120,16 @@ export function downloadNewVersion(
   downloadUrl: string,
   destinationPath: string,
 ): void {
-  execSync(`curl -L -o "${destinationPath}" "${downloadUrl}"`, {
-    stdio: "pipe",
-  });
+  runCommand("curl", ["-L", "-o", destinationPath, downloadUrl], "curl");
+
+  if (
+    !fs.existsSync(destinationPath) ||
+    fs.statSync(destinationPath).size === 0
+  ) {
+    throw new Error(
+      `Downloaded archive '${destinationPath}' is missing or empty.`,
+    );
+  }
 }
 
 export function extractAndMove(

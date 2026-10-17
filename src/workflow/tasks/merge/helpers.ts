@@ -1,8 +1,11 @@
-import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "@/param/model.ts";
-import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
+import {
+  checkIsVideo,
+  createFileEntry,
+  runFFprobe,
+} from "@/workflow/helpers.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
@@ -112,25 +115,17 @@ export function generateFFMpegCommand(
 }
 
 function getVideoResolution(videoPath: string): [number, number] {
-  const result = spawnSync(
-    "ffprobe",
+  const output = runFFprobe(
     [
-      "-v",
-      "error",
       "-select_streams",
       "v:0",
       "-show_entries",
       "stream=width,height",
       "-of",
       "csv=p=0",
-      videoPath,
     ],
-    { encoding: "utf-8" },
+    videoPath,
   );
-  if (result.status !== 0) {
-    throw new Error(`Failed to get video resolution for '${videoPath}'`);
-  }
-  const output = result.stdout.trim();
   const [width, height] = output.split(",").map(Number);
   if (!width || !height || isNaN(width) || isNaN(height)) {
     throw new Error(`Invalid resolution format for '${videoPath}': ${output}`);
@@ -139,25 +134,17 @@ function getVideoResolution(videoPath: string): [number, number] {
 }
 
 function getVideoFps(videoPath: string): number {
-  const result = spawnSync(
-    "ffprobe",
+  const output = runFFprobe(
     [
-      "-v",
-      "error",
       "-select_streams",
       "v:0",
       "-show_entries",
       "stream=r_frame_rate",
       "-of",
       "csv=p=0",
-      videoPath,
     ],
-    { encoding: "utf-8" },
+    videoPath,
   );
-  if (result.status !== 0) {
-    throw new Error(`Failed to get video fps for '${videoPath}'`);
-  }
-  const output = result.stdout.trim();
   const [numerator, denominator] = output.split("/").map(Number);
   if (!numerator || !denominator || isNaN(numerator) || isNaN(denominator)) {
     throw new Error(`Invalid fps format for '${videoPath}': ${output}`);
