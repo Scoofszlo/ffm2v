@@ -15,6 +15,13 @@ const commonOptionsSchema = z.object({
     .min(0, { message: "CRF must be between 0 and 51" })
     .max(51, { message: "CRF must be be between 0 and 51" })
     .default(23),
+  stabilize: z.coerce
+    .number()
+    .int()
+    .min(1, "Stabilization level must be between 1 and 5")
+    .max(5, "Stabilization level must be between 1 and 5")
+    .nullable()
+    .default(null),
   disableAudio: z.boolean().default(false),
 });
 

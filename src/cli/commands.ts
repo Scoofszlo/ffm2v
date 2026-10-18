@@ -30,6 +30,12 @@ export const commonOptions = [
     null,
   ),
   optionFactory(
+    "stabilize",
+    "--stabilize <strength>",
+    "Stabilize the input video from 1 to 5 (1 = weakest, 5 = strongest)",
+    null,
+  ),
+  optionFactory(
     "disableAudio",
     "--disable-audio",
     "Disable audio in the output video",
