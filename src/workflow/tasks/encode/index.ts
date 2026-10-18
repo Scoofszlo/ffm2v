@@ -8,8 +8,10 @@ import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
 import { FFmpegEncodingParams } from "../../../param/model.ts";
 import type { FileEntry } from "../../model/fileEntry.ts";
+import { generateStabilizationFiltergraph } from "./filtergraph.ts";
 import {
   generateFFMpegCommand,
+  generateStabilizationData,
   getFiles,
   getInputSource,
   getOutputDir,
@@ -20,14 +22,18 @@ function runEncode(workflow: EncodeWorkflow) {
   const opts = workflow.options;
 
   try {
+    // Prepare the encoding parameters and input/output paths
     const params = new FFmpegEncodingParams(opts);
     const { inputSource, outputDir } = getSourceAndOutput(opts);
+    let filtergraph: string | null = "";
 
+    // Process the files (video and non-video) in the input source
     print(`\n${chalk.bold("Collecting files to encode...")}`);
     const files = getFiles(inputSource, (file) => {
       print(`${chalk.green("+")} ${file.fullPath} added to list.`);
     });
 
+    // Start the encoding process for each file, OR move non-video files to the output directory
     print(`\n${chalk.bold("Starting encoding process...")}`);
     for (const file of files) {
       if (!file.isVideo) {
@@ -36,9 +42,25 @@ function runEncode(workflow: EncodeWorkflow) {
         continue;
       }
 
+      // If user supplies a stabilization value, generate stabilization data
+      // for the video before encoding
+      if (opts.stabilize) {
+        print(
+          `${chalk.gray(`Generating stabilization data for ${file.fullPath}`)}`,
+        );
+        generateStabilizationData(file.fullPath, opts.stabilize);
+
+        filtergraph += generateStabilizationFiltergraph(opts.stabilize);
+      }
+
       const outputPath = getOutputPath(file, inputSource, outputDir, true);
 
-      encodeVideo(file, outputPath, params);
+      // If filtergraph is not empty, append a "-vf" flag
+      if (!filtergraph) {
+        filtergraph = null;
+      }
+
+      encodeVideo(file, outputPath, filtergraph, params);
     }
   } catch (error) {
     print(`${error}`, "error");
@@ -55,10 +77,16 @@ function getSourceAndOutput(opts: EncodeWorkflowOpts) {
 function encodeVideo(
   file: FileEntry,
   outputPath: string,
+  filtergraph: string | null,
   params: FFmpegEncodingParams,
 ) {
   print(`\n${chalk.gray(`Encoding '${file.fullPath}' to '${outputPath}'`)}`);
-  const command = generateFFMpegCommand(file.fullPath, outputPath, params);
+  const command = generateFFMpegCommand(
+    file.fullPath,
+    outputPath,
+    params,
+    filtergraph,
+  );
   print(chalk.gray(`Running FFmpeg command: ffmpeg ${command.join(" ")}\n`));
 
   const result = spawnSync("ffmpeg", command, { stdio: "inherit" });

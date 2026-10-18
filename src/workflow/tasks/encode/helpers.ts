@@ -1,7 +1,11 @@
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "@/param/model.ts";
-import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
+import {
+  checkIsVideo,
+  createFileEntry,
+  runCommand,
+} from "@/workflow/helpers.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { InputSource } from "./types.ts";
 
@@ -106,6 +110,7 @@ export function generateFFMpegCommand(
   inputPath: string,
   outputPath: string,
   params: FFmpegEncodingParams,
+  filtergraph: string | null,
 ): string[] {
   const command: string[] = [];
 
@@ -113,6 +118,11 @@ export function generateFFMpegCommand(
     command.push(...params.keepRotationMetadata);
   }
   command.push("-i", inputPath);
+
+  if (filtergraph) {
+    command.push("-vf", filtergraph);
+  }
+
   command.push(...params.videoCodec);
 
   if (params.crf) {
@@ -128,4 +138,35 @@ export function generateFFMpegCommand(
   command.push(outputPath);
 
   return command;
+}
+
+export function generateStabilizationData(inputPath: string, strength: number) {
+  const command = [
+    "-i",
+    inputPath,
+    "-vf",
+    `vidstabdetect=${getVidstabdetectOpts(strength)}:result=transforms.trf`,
+    "-f",
+    "null",
+    "-",
+  ];
+
+  runCommand("ffmpeg", command, "ffmpeg", { stdio: "inherit" });
+}
+
+function getVidstabdetectOpts(strength: number): string {
+  switch (strength) {
+    case 1:
+      return "shakiness=4:accuracy=9";
+    case 2:
+      return "shakiness=6:accuracy=12";
+    case 3:
+      return "shakiness=8:accuracy=15";
+    case 4:
+      return "shakiness=10:accuracy=15";
+    case 5:
+      return "shakiness=10:accuracy=15";
+    default:
+      throw new Error(`Invalid stabilization strength: ${strength}`);
+  }
 }
