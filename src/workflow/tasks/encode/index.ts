@@ -61,6 +61,7 @@ function runEncode(workflow: EncodeWorkflow) {
       }
 
       encodeVideo(file, outputPath, filtergraph, params);
+      cleanup(opts);
     }
   } catch (error) {
     print(`${error}`, "error");
@@ -118,6 +119,22 @@ function moveFile(src: string, dest: string) {
   }
   fs.renameSync(src, dest);
   print(`Moved file from '${src}' to '${dest}'.`, "success");
+}
+
+function cleanup(opts: EncodeWorkflowOpts) {
+  if (opts.stabilize) {
+    const stabilizationFile = "transforms.trf";
+
+    try {
+      // Removes file, but if doesn't exist, does nothing
+      fs.rmSync(stabilizationFile, { force: true });
+    } catch (err) {
+      throw new Error(
+        `Failed to delete temporary file '${stabilizationFile}': ${err}`,
+        { cause: err },
+      );
+    }
+  }
 }
 
 export { runEncode };

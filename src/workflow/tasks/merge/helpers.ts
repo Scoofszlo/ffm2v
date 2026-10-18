@@ -13,7 +13,7 @@ import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 export function getFiles(
   input: string[],
   onSuccess: (file: FileEntry) => void,
-): [FileEntry, FileEntry, ...FileEntry[]] {
+): [FileEntry, ...FileEntry[]] {
   const files: FileEntry[] = [];
 
   if (input.length < 2) {

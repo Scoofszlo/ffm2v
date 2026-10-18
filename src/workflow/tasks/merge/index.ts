@@ -1,5 +1,10 @@
 import { spawnSync } from "child_process";
-import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
+import fs from "fs";
+import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type {
+  MergeWorkflow,
+  MergeWorkflowOpts,
+} from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
 import { FFmpegEncodingParams } from "../../../param/model.ts";
@@ -56,7 +61,9 @@ function runMerge(workflow: MergeWorkflow) {
       params,
       opts,
     );
+
     encodeVideo(command, outputPath);
+    cleanup(videos, opts);
   } catch (error) {
     print(`${error}`, "error");
     process.exit(1);
@@ -77,6 +84,22 @@ function encodeVideo(command: string[], outputPath: string) {
     );
   } else {
     print(`\nSuccessfully merged videos to '${outputPath}'.`, "success");
+  }
+}
+
+function cleanup(videos: FileEntry[], opts: MergeWorkflowOpts) {
+  if (opts.stabilize) {
+    videos.forEach((_, index) => {
+      const stabilizationFile = `transforms-${index}.trf`;
+      try {
+        fs.rmSync(stabilizationFile, { force: true });
+      } catch (err) {
+        throw new Error(
+          `Failed to delete temporary file '${stabilizationFile}': ${err}`,
+          { cause: err },
+        );
+      }
+    });
   }
 }
 
