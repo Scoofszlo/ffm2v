@@ -6,6 +6,7 @@ import { FFmpegEncodingParams } from "../../../param/model.ts";
 import { generateFiltergraph } from "./filtergraph.ts";
 import {
   generateFFMpegCommand,
+  generateStabilizationData,
   getFiles,
   getHighestResolution,
   getInputPaths,
@@ -26,6 +27,15 @@ function runMerge(workflow: MergeWorkflow) {
     const outputPath = getOutputPath(videos[0].fullPath, opts.output);
     const highestResolution = getHighestResolution(videos);
     const maxFps = getMaxFps(videos);
+
+    // If stabilization is enabled, generate stabilization data for each video
+    if (opts.stabilize) {
+      const strength = opts.stabilize;
+
+      videos.forEach((video, index) => {
+        generateStabilizationData(video.fullPath, strength, index);
+      });
+    }
 
     print(`\n${chalk.bold("Generating FFmpeg filtergraph for merging...")}`);
     const filtergraph = generateFiltergraph(
