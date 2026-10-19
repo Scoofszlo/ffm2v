@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
 import type { FFmpegEncodingParams } from "@/param/model.ts";
-import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
+import {
+  checkIsVideo,
+  createFileEntry,
+  runCommand,
+} from "@/workflow/helpers.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import { generateVidstabDetectFilter } from "./filters.ts";
 import type { InputSource } from "./types.ts";
 
 export function getInputSource(source: string): InputSource {
@@ -106,6 +111,7 @@ export function generateFFMpegCommand(
   inputPath: string,
   outputPath: string,
   params: FFmpegEncodingParams,
+  filterchain: string | null,
 ): string[] {
   const command: string[] = [];
 
@@ -113,6 +119,11 @@ export function generateFFMpegCommand(
     command.push(...params.keepRotationMetadata);
   }
   command.push("-i", inputPath);
+
+  if (filterchain) {
+    command.push("-vf", filterchain);
+  }
+
   command.push(...params.videoCodec);
 
   if (params.crf) {
@@ -128,4 +139,18 @@ export function generateFFMpegCommand(
   command.push(outputPath);
 
   return command;
+}
+
+export function generateStabilizationData(inputPath: string, strength: number) {
+  const command = [
+    "-i",
+    inputPath,
+    "-vf",
+    generateVidstabDetectFilter(strength),
+    "-f",
+    "null",
+    "-",
+  ];
+
+  runCommand("ffmpeg", command, "ffmpeg", { stdio: "inherit" });
 }

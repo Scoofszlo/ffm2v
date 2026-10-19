@@ -37,7 +37,7 @@ src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URL
 src/param/model.ts            FFmpegEncodingParams: options -> ffmpeg CLI flag arrays
 src/workflow/helpers.ts       filesystem/ffprobe probes via createFileEntry(); runFFprobe() runner
 src/workflow/model/           WorkflowSchema (zod) + FileEntry class
-src/workflow/tasks/<task>/    index.ts orchestrator, helpers.ts, filtergraph.ts, types.ts
+src/workflow/tasks/<task>/    index.ts orchestrator, helpers.ts, filters.ts, types.ts
 ```
 
 Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**.

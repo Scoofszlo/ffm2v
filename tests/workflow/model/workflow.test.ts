@@ -26,6 +26,7 @@ describe("WorkflowSchema", () => {
           resolution: { width: 1920, height: 1080 },
           disableAudio: false,
           keepRotationMetadata: false,
+          stabilize: null,
         },
       });
     });
@@ -129,6 +130,7 @@ describe("WorkflowSchema", () => {
           videoCodec: "libx265",
           crf: 23,
           disableAudio: false,
+          stabilize: null,
         },
       });
     });

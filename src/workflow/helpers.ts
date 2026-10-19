@@ -3,6 +3,10 @@ import path from "path";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
 import { FileEntry } from "./model/fileEntry.ts";
 
+type SpawnSyncOptions = {
+  stdio?: "pipe" | "ignore" | "inherit";
+};
+
 /**
  * Runs a command synchronously and returns its trimmed stdout, converting spawn
  * failures and non-zero exits into descriptive errors.
@@ -11,8 +15,9 @@ export function runCommand(
   command: string,
   args: string[],
   description: string,
+  options: SpawnSyncOptions = {},
 ): string {
-  const result = spawnSync(command, args, { encoding: "utf-8" });
+  const result = spawnSync(command, args, { encoding: "utf-8", ...options });
 
   if (result.error) {
     throw new Error(`Failed to run ${description}: ${result.error.message}`);
@@ -25,7 +30,10 @@ export function runCommand(
     );
   }
 
-  return result.stdout.trim();
+  // spawnSync may return result.stdout and result.stderr as null even if type
+  // says the opposite so we need to handle that case and
+  // return an empty string if stdout is null.
+  return result.stdout?.trim() || "";
 }
 
 export function createFileEntry(filePath: string) {

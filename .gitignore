@@ -136,3 +136,6 @@ dist
 .pnp.*
 
 scripts
+
+# Ignore stabilization data file
+transforms*.trf
