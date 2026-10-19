@@ -1,24 +1,40 @@
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import type { FileEntry } from "../../model/fileEntry.ts";
 
+export function generateUnsharpFilter(): string {
+  return "unsharp=5:5:0.8:3:3:0.4";
+}
+
 export function generateStabilizationFilter(
   strength: number,
   idx: number,
 ): string {
+  let filter = "vidstabtransform=";
+
   switch (strength) {
     case 1:
-      return `vidstabtransform=smoothing=10:input=transforms-${idx}.trf:maxangle=0.0,unsharp=5:5:0.8:3:3:0.4`;
+      filter += `smoothing=10:input=transforms-${idx}.trf:maxangle=0.0`;
+      break;
     case 2:
-      return `vidstabtransform=smoothing=15:input=transforms-${idx}.trf:maxangle=0.0,unsharp=5:5:0.8:3:3:0.4`;
+      filter += `smoothing=15:input=transforms-${idx}.trf:maxangle=0.0`;
+      break;
     case 3:
-      return `vidstabtransform=smoothing=22:input=transforms-${idx}.trf:maxangle=0.0,unsharp=5:5:0.8:3:3:0.4`;
+      filter += `smoothing=22:input=transforms-${idx}.trf:maxangle=0.0`;
+      break;
     case 4:
-      return `vidstabtransform=smoothing=30:input=transforms-${idx}.trf:maxangle=0.0,unsharp=5:5:0.8:3:3:0.4`;
+      filter += `smoothing=30:input=transforms-${idx}.trf:maxangle=0.0`;
+      break;
     case 5:
-      return `vidstabtransform=smoothing=40:input=transforms-${idx}.trf:maxangle=0.0,unsharp=5:5:0.8:3:3:0.4`;
+      filter += `smoothing=40:input=transforms-${idx}.trf:maxangle=0.0`;
+      break;
     default:
       throw new Error(`Invalid stabilization strength: ${strength}`);
   }
+
+  filter += ",";
+  filter += generateUnsharpFilter();
+
+  return filter;
 }
 
 function getConcatFilterchain(
@@ -73,7 +89,6 @@ function getPerVideoFilterchain(
       filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
     }
   });
-  filtergraph += " "; // Add a space before the concat filtergraph segment
 
   return filtergraph;
 }
@@ -94,6 +109,9 @@ export function generateFiltergraph(
     maxFps,
     opts,
   );
+
+  // Add a space before the concat filterchain segment
+  filtergraph += " ";
 
   // Add the concat filterchain segment
   filtergraph += getConcatFilterchain(videos, opts);

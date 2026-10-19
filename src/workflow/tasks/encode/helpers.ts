@@ -7,6 +7,7 @@ import {
   runCommand,
 } from "@/workflow/helpers.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import { generateVidstabDetectFilter } from "./filters.ts";
 import type { InputSource } from "./types.ts";
 
 export function getInputSource(source: string): InputSource {
@@ -145,28 +146,11 @@ export function generateStabilizationData(inputPath: string, strength: number) {
     "-i",
     inputPath,
     "-vf",
-    `vidstabdetect=${getVidstabdetectOpts(strength)}:result=transforms.trf`,
+    generateVidstabDetectFilter(strength),
     "-f",
     "null",
     "-",
   ];
 
   runCommand("ffmpeg", command, "ffmpeg", { stdio: "inherit" });
-}
-
-function getVidstabdetectOpts(strength: number): string {
-  switch (strength) {
-    case 1:
-      return "shakiness=4:accuracy=9";
-    case 2:
-      return "shakiness=6:accuracy=12";
-    case 3:
-      return "shakiness=8:accuracy=15";
-    case 4:
-      return "shakiness=10:accuracy=15";
-    case 5:
-      return "shakiness=10:accuracy=15";
-    default:
-      throw new Error(`Invalid stabilization strength: ${strength}`);
-  }
 }
