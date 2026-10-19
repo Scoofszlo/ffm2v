@@ -25,7 +25,6 @@ function runEncode(workflow: EncodeWorkflow) {
     // Prepare the encoding parameters and input/output paths
     const params = new FFmpegEncodingParams(opts);
     const { inputSource, outputDir } = getSourceAndOutput(opts);
-    let filterchain: string | null = "";
 
     // Process the files (video and non-video) in the input source
     print(`\n${chalk.bold("Collecting files to encode...")}`);
@@ -36,6 +35,8 @@ function runEncode(workflow: EncodeWorkflow) {
     // Start the encoding process for each file, OR move non-video files to the output directory
     print(`\n${chalk.bold("Starting encoding process...")}`);
     for (const file of files) {
+      let filterchain: string | null = "";
+
       if (!file.isVideo) {
         const outputPath = getOutputPath(file, inputSource, outputDir, false);
         moveFile(file.fullPath, outputPath);
