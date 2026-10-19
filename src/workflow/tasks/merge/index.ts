@@ -35,9 +35,16 @@ function runMerge(workflow: MergeWorkflow) {
 
     // If stabilization is enabled, generate stabilization data for each video
     if (opts.stabilize) {
+      print(
+        `\n${chalk.bold(`Generating stabilization data for ${videos.length} videos...`)}`,
+      );
+
       const strength = opts.stabilize;
 
       videos.forEach((video, index) => {
+        print(
+          `${chalk.gray(`Generating stabilization data for ${video.fullPath}`)}`,
+        );
         generateStabilizationData(video.fullPath, strength, index);
       });
     }

@@ -81,7 +81,7 @@ function encodeVideo(
   filterchain: string | null,
   params: FFmpegEncodingParams,
 ) {
-  print(`\n${chalk.gray(`Encoding '${file.fullPath}' to '${outputPath}'`)}`);
+  print(`\n${chalk.bold(`Encoding '${file.fullPath}' to '${outputPath}'`)}`);
   const command = generateFFMpegCommand(
     file.fullPath,
     outputPath,
