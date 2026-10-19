@@ -17,6 +17,7 @@ describe("ArgsParser", () => {
         resolution: null,
         disableAudio: false,
         keepRotationMetadata: false,
+        stabilize: null,
       },
     });
   });
@@ -47,6 +48,7 @@ describe("ArgsParser", () => {
         resolution: "invalid-resolution",
         disableAudio: true,
         keepRotationMetadata: false,
+        stabilize: null,
       },
     });
   });
@@ -74,6 +76,7 @@ describe("ArgsParser", () => {
         videoCodec: "libx265",
         crf: "51",
         disableAudio: true,
+        stabilize: null,
       },
     });
   });
