@@ -8,7 +8,7 @@ import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
 import { FFmpegEncodingParams } from "../../../param/model.ts";
 import type { FileEntry } from "../../model/fileEntry.ts";
-import { generateStabilizationFiltergraph } from "./filtergraph.ts";
+import { generateStabilizationFilter } from "./filters.ts";
 import {
   generateFFMpegCommand,
   generateStabilizationData,
@@ -25,7 +25,7 @@ function runEncode(workflow: EncodeWorkflow) {
     // Prepare the encoding parameters and input/output paths
     const params = new FFmpegEncodingParams(opts);
     const { inputSource, outputDir } = getSourceAndOutput(opts);
-    let filtergraph: string | null = "";
+    let filterchain: string | null = "";
 
     // Process the files (video and non-video) in the input source
     print(`\n${chalk.bold("Collecting files to encode...")}`);
@@ -50,17 +50,17 @@ function runEncode(workflow: EncodeWorkflow) {
         );
         generateStabilizationData(file.fullPath, opts.stabilize);
 
-        filtergraph += generateStabilizationFiltergraph(opts.stabilize);
+        filterchain += generateStabilizationFilter(opts.stabilize);
       }
 
       const outputPath = getOutputPath(file, inputSource, outputDir, true);
 
-      // If filtergraph is not empty, append a "-vf" flag
-      if (!filtergraph) {
-        filtergraph = null;
+      // If filterchain is not empty, append a "-vf" flag
+      if (!filterchain) {
+        filterchain = null;
       }
 
-      encodeVideo(file, outputPath, filtergraph, params);
+      encodeVideo(file, outputPath, filterchain, params);
       cleanup(opts);
     }
   } catch (error) {
@@ -78,7 +78,7 @@ function getSourceAndOutput(opts: EncodeWorkflowOpts) {
 function encodeVideo(
   file: FileEntry,
   outputPath: string,
-  filtergraph: string | null,
+  filterchain: string | null,
   params: FFmpegEncodingParams,
 ) {
   print(`\n${chalk.gray(`Encoding '${file.fullPath}' to '${outputPath}'`)}`);
@@ -86,7 +86,7 @@ function encodeVideo(
     file.fullPath,
     outputPath,
     params,
-    filtergraph,
+    filterchain,
   );
   print(chalk.gray(`Running FFmpeg command: ffmpeg ${command.join(" ")}\n`));
 

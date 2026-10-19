@@ -8,7 +8,7 @@ import type {
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
 import { FFmpegEncodingParams } from "../../../param/model.ts";
-import { generateFiltergraph } from "./filtergraph.ts";
+import { generateFiltergraph } from "./filters.ts";
 import {
   generateFFMpegCommand,
   generateStabilizationData,

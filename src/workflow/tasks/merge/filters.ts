@@ -1,7 +1,7 @@
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import type { FileEntry } from "../../model/fileEntry.ts";
 
-export function generateStabilizationFiltergraph(
+export function generateStabilizationFilter(
   strength: number,
   idx: number,
 ): string {
@@ -21,27 +21,30 @@ export function generateStabilizationFiltergraph(
   }
 }
 
-function getConcatFilter(videos: FileEntry[], opts: MergeWorkflowOpts): string {
-  let filtergraph = "";
+function getConcatFilterchain(
+  videos: FileEntry[],
+  opts: MergeWorkflowOpts,
+): string {
+  let filterchain = "";
 
   videos.forEach((video, index) => {
-    filtergraph += `[v${index}]`;
+    filterchain += `[v${index}]`;
 
     if (video.hasAudio && opts.disableAudio === false) {
-      filtergraph += `[a${index}]`;
+      filterchain += `[a${index}]`;
     }
   });
 
   if (opts.disableAudio === false) {
-    filtergraph += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
+    filterchain += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
   } else {
-    filtergraph += ` concat=n=${videos.length}:v=1:a=0 [outv]`;
+    filterchain += ` concat=n=${videos.length}:v=1:a=0 [outv]`;
   }
 
-  return filtergraph;
+  return filterchain;
 }
 
-function getPerVideoFilter(
+function getPerVideoFilterchain(
   videos: FileEntry[],
   highestResolution: [number, number],
   maxFps: number,
@@ -56,7 +59,7 @@ function getPerVideoFilter(
     // Apply stabilization filter if enabled
     if (opts.stabilize) {
       const strength = opts.stabilize;
-      filtergraph += `${generateStabilizationFiltergraph(strength, index)},`;
+      filtergraph += `${generateStabilizationFilter(strength, index)},`;
     }
 
     // Apply scaling and frame rate adjustments
@@ -84,11 +87,16 @@ export function generateFiltergraph(
 ): string {
   let filtergraph = "";
 
-  // Get the per-video filtergraph segments for scaling and audio processing
-  filtergraph += getPerVideoFilter(videos, highestResolution, maxFps, opts);
+  // Get the per-video filterchain segments for scaling and audio processing
+  filtergraph += getPerVideoFilterchain(
+    videos,
+    highestResolution,
+    maxFps,
+    opts,
+  );
 
-  // Add the concat filtergraph segment
-  filtergraph += getConcatFilter(videos, opts);
+  // Add the concat filterchain segment
+  filtergraph += getConcatFilterchain(videos, opts);
 
   onSuccess(filtergraph);
   return filtergraph;

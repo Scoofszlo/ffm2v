@@ -110,7 +110,7 @@ export function generateFFMpegCommand(
   inputPath: string,
   outputPath: string,
   params: FFmpegEncodingParams,
-  filtergraph: string | null,
+  filterchain: string | null,
 ): string[] {
   const command: string[] = [];
 
@@ -119,8 +119,8 @@ export function generateFFMpegCommand(
   }
   command.push("-i", inputPath);
 
-  if (filtergraph) {
-    command.push("-vf", filtergraph);
+  if (filterchain) {
+    command.push("-vf", filterchain);
   }
 
   command.push(...params.videoCodec);
