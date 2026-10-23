@@ -16,7 +16,7 @@ This is really just a personal project and is not meant to be a replacement of f
 ### Steps
 
 1. Install Node.js.
-2. Install `ffmpeg` and make sure it is added to your system's PATH.
+2. Install `ffmpeg` and make sure it is added to your system's PATH, or pass its location with `--ffmpeg-path` option.
 3. Install `ffm2v` globally using npm:
 
    ```bash
@@ -51,6 +51,7 @@ You can customize the encoding options using the available flags:
 - `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
 - `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to the current working directory and deletes it when each video finishes.
 - `--disable-audio`: Disable audio in the output video.
+- `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
 - `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of baking the rotation into the pixels (default: false). Has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways, and `--resolution` will refer to the stored frame rather than the displayed frame (e.g. `--resolution -2:1080` on a 90°-rotated video produces a 1440x1080 stored frame that displays as 1080x1440).
 
 #### Examples
@@ -80,7 +81,7 @@ where `<file...>` is a space-separated list of video files to merge. The output 
 > [!IMPORTANT]  
 > This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased.
 
-The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in the current working directory. These files are deleted after the merge finishes.
+The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in the current working directory. These files are deleted after the merge finishes. The `--ffmpeg-path <path>` option is also supported, as in `encode`.
 
 ## Updating ffmpeg
 
