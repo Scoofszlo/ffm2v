@@ -21,11 +21,13 @@ try {
   if (error instanceof ZodError) {
     // Print the first issue instead of all issues to avoid overwhelming the
     // user with too much errors
-    const firstIssue = error.issues[0]?.message ?? "Unknown issue detected";
+    const firstIssue = error.issues[0]?.message ?? "Unknown issue caught";
 
     print(firstIssue, "error");
+  } else if (error instanceof Error) {
+    print(`${error.message}`, "error");
   } else {
-    print(error as string, "error");
+    print(`${error}`, "error");
   }
 
   process.exit(1);
