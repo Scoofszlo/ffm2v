@@ -1,5 +1,6 @@
 import { spawnSync } from "child_process";
 import path from "path";
+import which from "which";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
 import { FileEntry } from "./model/fileEntry.ts";
 
@@ -109,4 +110,23 @@ export function getVideoDuration(filePath: string): number {
     throw new Error(`Invalid duration format for '${filePath}': ${output}`);
   }
   return duration;
+}
+
+/**
+ * Returns the path to the ffmpeg executable. If a custom path is provided, it
+ * will be resolved and returned. If no custom path is provided, "ffmpeg" will
+ * be returned, which assumes that ffmpeg is in the system's PATH.
+ */
+export function getFFmpegExecutable(customPath: string | null): string {
+  if (customPath) {
+    try {
+      const resolvedPath = which.sync(customPath);
+      return resolvedPath;
+    } catch (error) {
+      const errorMsg = `Failed to resolve custom FFmpeg path '${customPath}'.`;
+      throw new Error(errorMsg, { cause: error });
+    }
+  }
+
+  return "ffmpeg";
 }

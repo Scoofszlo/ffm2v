@@ -1,5 +1,6 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
+import { getFFmpegExecutable } from "@/workflow/helpers.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type {
   MergeWorkflow,
@@ -19,9 +20,49 @@ import {
   getOutputPath,
 } from "./helpers.ts";
 
-function runMerge(workflow: MergeWorkflow) {
+function encodeVideo(
+  outputPath: string,
+  ffmpegPath: string,
+  command: string[],
+) {
+  print(`\n${chalk.bold("Merging videos to")} ${outputPath}`);
+  print(
+    chalk.gray(`Running FFmpeg command: ${ffmpegPath} ${command.join(" ")}\n`),
+  );
+
+  const result = spawnSync(ffmpegPath, command, { stdio: "inherit" });
+  if (result.error) {
+    print(`\nError merging videos: ${result.error.message}`, "error");
+  } else if (result.status !== 0) {
+    print(
+      `\nFFmpeg exited with code ${result.status} while merging videos.`,
+      "error",
+    );
+  } else {
+    print(`\nSuccessfully merged videos to '${outputPath}'.`, "success");
+  }
+}
+
+function cleanup(videos: FileEntry[], opts: MergeWorkflowOpts) {
+  if (opts.stabilize) {
+    videos.forEach((_, index) => {
+      const stabilizationFile = `transforms-${index}.trf`;
+      try {
+        fs.rmSync(stabilizationFile, { force: true });
+      } catch (err) {
+        throw new Error(
+          `Failed to delete temporary file '${stabilizationFile}': ${err}`,
+          { cause: err },
+        );
+      }
+    });
+  }
+}
+
+export function runMerge(workflow: MergeWorkflow) {
   try {
     const opts = workflow.options;
+    const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
     const params = new FFmpegEncodingParams(opts);
 
     print(`\n${chalk.bold("Validating video files for merging...")}`);
@@ -69,45 +110,10 @@ function runMerge(workflow: MergeWorkflow) {
       opts,
     );
 
-    encodeVideo(command, outputPath);
+    encodeVideo(outputPath, ffmpegPath, command);
     cleanup(videos, opts);
   } catch (error) {
     print(`${error}`, "error");
     process.exit(1);
   }
 }
-
-function encodeVideo(command: string[], outputPath: string) {
-  print(`\n${chalk.bold("Merging videos to")} ${outputPath}`);
-  print(chalk.gray(`Running FFmpeg command: ffmpeg ${command.join(" ")}\n`));
-
-  const result = spawnSync("ffmpeg", command, { stdio: "inherit" });
-  if (result.error) {
-    print(`\nError merging videos: ${result.error.message}`, "error");
-  } else if (result.status !== 0) {
-    print(
-      `\nFFmpeg exited with code ${result.status} while merging videos.`,
-      "error",
-    );
-  } else {
-    print(`\nSuccessfully merged videos to '${outputPath}'.`, "success");
-  }
-}
-
-function cleanup(videos: FileEntry[], opts: MergeWorkflowOpts) {
-  if (opts.stabilize) {
-    videos.forEach((_, index) => {
-      const stabilizationFile = `transforms-${index}.trf`;
-      try {
-        fs.rmSync(stabilizationFile, { force: true });
-      } catch (err) {
-        throw new Error(
-          `Failed to delete temporary file '${stabilizationFile}': ${err}`,
-          { cause: err },
-        );
-      }
-    });
-  }
-}
-
-export { runMerge };

@@ -23,6 +23,7 @@ const commonOptionsSchema = z.object({
     .nullable()
     .default(null),
   disableAudio: z.boolean().default(false),
+  ffmpegPath: z.string().nullable().default(null),
 });
 
 const encodeOptionsSchema = commonOptionsSchema
