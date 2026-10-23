@@ -18,6 +18,7 @@ describe("ArgsParser", () => {
         disableAudio: false,
         keepRotationMetadata: false,
         stabilize: null,
+        ffmpegPath: null,
       },
     });
   });
@@ -49,6 +50,7 @@ describe("ArgsParser", () => {
         disableAudio: true,
         keepRotationMetadata: false,
         stabilize: null,
+        ffmpegPath: null,
       },
     });
   });
@@ -77,6 +79,7 @@ describe("ArgsParser", () => {
         crf: "51",
         disableAudio: true,
         stabilize: null,
+        ffmpegPath: null,
       },
     });
   });

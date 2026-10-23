@@ -27,6 +27,7 @@ describe("WorkflowSchema", () => {
           disableAudio: false,
           keepRotationMetadata: false,
           stabilize: null,
+          ffmpegPath: null,
         },
       });
     });
@@ -131,6 +132,7 @@ describe("WorkflowSchema", () => {
           crf: 23,
           disableAudio: false,
           stabilize: null,
+          ffmpegPath: null,
         },
       });
     });
