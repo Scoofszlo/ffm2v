@@ -7,7 +7,7 @@ import type {
 } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
-import { FFmpegEncodingParams } from "../../../param/model.ts";
+import { FFmpegEncodingParams } from "../../model/encodingParams.ts";
 import { generateStabilizationFilter } from "./filters.ts";
 import {
   generateFFMpegCommand,

@@ -1,12 +1,12 @@
 import fs from "fs";
 import path from "path";
-import type { FFmpegEncodingParams } from "@/param/model.ts";
 import {
   checkIsVideo,
   createFileEntry,
   runCommand,
   runFFprobe,
 } from "@/workflow/helpers.ts";
+import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
