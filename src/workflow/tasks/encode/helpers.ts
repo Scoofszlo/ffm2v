@@ -141,7 +141,11 @@ export function generateFFMpegCommand(
   return command;
 }
 
-export function generateStabilizationData(inputPath: string, strength: number) {
+export function generateStabilizationData(
+  ffmpegPath: string,
+  inputPath: string,
+  strength: number,
+) {
   const command = [
     "-i",
     inputPath,
@@ -152,5 +156,5 @@ export function generateStabilizationData(inputPath: string, strength: number) {
     "-",
   ];
 
-  runCommand("ffmpeg", command, "ffmpeg", { stdio: "inherit" });
+  runCommand(ffmpegPath, command, "ffmpeg", { stdio: "inherit" });
 }

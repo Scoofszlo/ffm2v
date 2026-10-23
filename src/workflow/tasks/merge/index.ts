@@ -85,7 +85,7 @@ export function runMerge(workflow: MergeWorkflow) {
       print(
         `${chalk.gray(`Generating stabilization data for ${video.fullPath}`)}`,
       );
-      generateStabilizationData(video.fullPath, strength, index);
+      generateStabilizationData(ffmpegPath, video.fullPath, strength, index);
     });
   }
 

@@ -111,7 +111,7 @@ export function runEncode(workflow: EncodeWorkflow) {
       print(
         `${chalk.gray(`Generating stabilization data for ${file.fullPath}`)}`,
       );
-      generateStabilizationData(file.fullPath, opts.stabilize);
+      generateStabilizationData(ffmpegPath, file.fullPath, opts.stabilize);
 
       filterchain += generateStabilizationFilter(opts.stabilize);
     }

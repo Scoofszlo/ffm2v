@@ -154,6 +154,7 @@ function getVideoFps(videoPath: string): number {
 }
 
 export function generateStabilizationData(
+  ffmpegPath: string,
   inputPath: string,
   strength: number,
   idx: number,
@@ -168,7 +169,7 @@ export function generateStabilizationData(
     "-",
   ];
 
-  runCommand("ffmpeg", command, "ffmpeg", { stdio: "inherit" });
+  runCommand(ffmpegPath, command, "ffmpeg", { stdio: "inherit" });
 }
 
 function getVidstabdetectOpts(strength: number): string {
