@@ -41,6 +41,12 @@ export const commonOptions = [
     "Disable audio in the output video",
     false,
   ),
+  optionFactory(
+    "ffmpegPath",
+    "--ffmpeg-path <path>",
+    "Custom path to the ffmpeg executable",
+    null,
+  ),
 ];
 
 export function applyCommonOptions(
