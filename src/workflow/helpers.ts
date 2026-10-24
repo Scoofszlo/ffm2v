@@ -1,4 +1,5 @@
 import { spawnSync } from "child_process";
+import fs from "fs";
 import path from "path";
 import which from "which";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
@@ -145,4 +146,30 @@ export function escapeFilterPath(p: string): string {
     .resolve(p) // Resolve the path to an absolute path
     .replace(/\\/g, "/") // Replace backslashes with forward slashes for FFmpeg compatibility
     .replace(/[:']/g, (c) => `\\\\${c}`); // Escape colons and single quotes by prefixing them with a double backslash
+}
+
+export function moveFile({
+  src,
+  dest,
+  onSuccess,
+  onExists,
+  onFailure,
+}: {
+  src: string;
+  dest: string;
+  onSuccess?: () => void;
+  onExists?: () => void;
+  onFailure?: (error: unknown) => void;
+}) {
+  try {
+    if (fs.existsSync(dest)) {
+      onExists?.();
+      return;
+    }
+
+    fs.renameSync(src, dest);
+    onSuccess?.();
+  } catch (error) {
+    onFailure?.(error);
+  }
 }

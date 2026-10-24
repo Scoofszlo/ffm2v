@@ -1,7 +1,7 @@
 import { spawnSync } from "child_process";
-import fs from "fs";
 import {
   escapeFilterPath,
+  moveFile,
   resolveFFmpegExecutable,
 } from "@/workflow/helpers.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
@@ -48,18 +48,6 @@ function encodeVideo(
   }
 }
 
-function moveFile(src: string, dest: string) {
-  if (fs.existsSync(dest)) {
-    print(
-      `File '${dest}' already exists. Skipping move for '${src}'.`,
-      "warning",
-    );
-    return;
-  }
-  fs.renameSync(src, dest);
-  print(`Moved file from '${src}' to '${dest}'.`, "success");
-}
-
 export function runEncode(workflow: EncodeWorkflow) {
   // Prepare the encoding parameters and input/output paths
   const opts = workflow.options;
@@ -81,7 +69,22 @@ export function runEncode(workflow: EncodeWorkflow) {
 
     if (!file.isVideo) {
       const outputPath = resolveOutputPath(file, inputSource, outputDir, false);
-      moveFile(file.fullPath, outputPath);
+      moveFile({
+        src: file.fullPath,
+        dest: outputPath,
+        onSuccess: () => {
+          print(
+            `Moved file from '${file.fullPath}' to '${outputPath}'.`,
+            "success",
+          );
+        },
+        onExists: () => {
+          print(
+            `File '${outputPath}' already exists. Skipping move for '${file.fullPath}'.`,
+            "warning",
+          );
+        },
+      });
       continue;
     }
 
