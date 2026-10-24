@@ -1,10 +1,7 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
 import { getFFmpegExecutable } from "@/workflow/helpers.ts";
-import type {
-  EncodeWorkflow,
-  EncodeWorkflowOpts,
-} from "@/workflow/model/workflow.ts";
+import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
 import { FFmpegEncodingParams } from "../../model/encodingParams.ts";
@@ -17,22 +14,6 @@ import {
   resolveOutputDir,
   resolveOutputPath,
 } from "./helpers.ts";
-
-function cleanup(opts: EncodeWorkflowOpts) {
-  if (opts.stabilize) {
-    const stabilizationFile = "transforms.trf";
-
-    try {
-      // Removes file, but if doesn't exist, does nothing
-      fs.rmSync(stabilizationFile, { force: true });
-    } catch (err) {
-      throw new Error(
-        `Failed to delete temporary file '${stabilizationFile}': ${err}`,
-        { cause: err },
-      );
-    }
-  }
-}
 
 function encodeVideo(
   filePath: string,
@@ -126,6 +107,5 @@ export function runEncode(workflow: EncodeWorkflow) {
     );
 
     encodeVideo(file.fullPath, outputPath, ffmpegPath, command);
-    cleanup(opts);
   }
 }

@@ -1,6 +1,4 @@
 import { spawnSync } from "child_process";
-import fs from "fs";
-import os from "os";
 import path from "path";
 import which from "which";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
@@ -130,17 +128,6 @@ export function getFFmpegExecutable(customPath: string | null): string {
   }
 
   return "ffmpeg";
-}
-
-/**
- * Creates a temporary directory in the system's default temp location and
- * returns its path. The directory will have a unique name starting with
- * "ffm2v-".
- */
-export function createTmpDir() {
-  const prefix = "ffm2v-";
-  const finalPath = path.join(os.tmpdir(), prefix);
-  return fs.mkdtempSync(finalPath);
 }
 
 /**

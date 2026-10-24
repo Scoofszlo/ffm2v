@@ -67,11 +67,6 @@ const encodeOptionsSchema = commonOptionsSchema
     }
   });
 
-const EncodeSchema = z.object({
-  type: z.literal("encode"),
-  options: encodeOptionsSchema,
-});
-
 const mergeOptionsSchema = commonOptionsSchema.extend({
   input: z
     .array(
@@ -82,17 +77,29 @@ const mergeOptionsSchema = commonOptionsSchema.extend({
     .min(1),
 });
 
-const MergeSchema = z.object({
-  type: z.literal("merge"),
-  options: mergeOptionsSchema,
-});
-
 const updateOptionsSchema = z.object({
   disableArchive: z.boolean().default(false),
   checkOnly: z.boolean().default(false),
 });
 
+const BaseWorkflowSchema = z.object({
+  tmpDir: z.string().min(1, "Temporary directory must be specified"),
+});
+
+const EncodeSchema = z.object({
+  ...BaseWorkflowSchema.shape,
+  type: z.literal("encode"),
+  options: encodeOptionsSchema,
+});
+
+const MergeSchema = z.object({
+  ...BaseWorkflowSchema.shape,
+  type: z.literal("merge"),
+  options: mergeOptionsSchema,
+});
+
 const UpdateSchema = z.object({
+  ...BaseWorkflowSchema.shape,
   type: z.literal("update"),
   options: updateOptionsSchema,
 });

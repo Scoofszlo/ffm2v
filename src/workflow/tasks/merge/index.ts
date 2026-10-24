@@ -1,6 +1,5 @@
 import { spawnSync } from "child_process";
-import fs from "fs";
-import { createTmpDir, getFFmpegExecutable } from "@/workflow/helpers.ts";
+import { getFFmpegExecutable } from "@/workflow/helpers.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
@@ -15,11 +14,6 @@ import {
   getMaxFps,
   resolveOutputPath,
 } from "./helpers.ts";
-
-function cleanup(tmpDir: string) {
-  // Cleanup temporary directory after processing
-  fs.rmSync(tmpDir, { recursive: true, force: true });
-}
 
 function encodeVideo(
   outputPath: string,
@@ -46,9 +40,9 @@ function encodeVideo(
 
 export function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
-  const tmpDir = createTmpDir();
-  const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
   const params = new FFmpegEncodingParams(opts);
+  const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
+  const tmpDir = workflow.tmpDir;
 
   print(`\n${chalk.bold("Validating video files for merging...")}`);
   const videos = getFiles(opts.input, (file) => {
@@ -102,5 +96,4 @@ export function runMerge(workflow: MergeWorkflow) {
   );
 
   encodeVideo(outputPath, ffmpegPath, command);
-  cleanup(tmpDir);
 }
