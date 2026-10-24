@@ -1,9 +1,5 @@
 import { spawnSync } from "child_process";
-import {
-  escapeFilterPath,
-  moveFile,
-  resolveFFmpegExecutable,
-} from "@/workflow/helpers.ts";
+import { moveFile, resolveFFmpegExecutable } from "@/workflow/helpers.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
@@ -85,6 +81,7 @@ export function runEncode(workflow: EncodeWorkflow) {
           );
         },
       });
+      // Move on to the next file in the loop since this one is not a video
       continue;
     }
 
@@ -103,10 +100,7 @@ export function runEncode(workflow: EncodeWorkflow) {
       );
       file.setTransformFilePath(trfFilePath);
 
-      filterchain += generateStabilizationFilter(
-        escapeFilterPath(trfFilePath),
-        opts.stabilize,
-      );
+      filterchain += generateStabilizationFilter(trfFilePath, opts.stabilize);
     }
 
     const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
