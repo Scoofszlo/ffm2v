@@ -65,13 +65,17 @@ export function runMerge(workflow: MergeWorkflow) {
       print(
         `${chalk.gray(`Generating stabilization data for ${video.fullPath}`)}`,
       );
-      generateStabilizationData(
+      const trfFilePath = generateStabilizationData(
         ffmpegPath,
         tmpDir,
         video.fullPath,
         strength,
         index,
       );
+
+      // Set the transformation file path in the video object for later use
+      // in the filtergraph
+      video.setTransformFilePath(trfFilePath);
     });
   }
 

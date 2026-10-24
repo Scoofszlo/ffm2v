@@ -1,6 +1,6 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
-import { getFFmpegExecutable } from "@/workflow/helpers.ts";
+import { escapeFilterPath, getFFmpegExecutable } from "@/workflow/helpers.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
@@ -62,6 +62,7 @@ export function runEncode(workflow: EncodeWorkflow) {
   const opts = workflow.options;
   const params = new FFmpegEncodingParams(opts);
   const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
+  const tmpDir = workflow.tmpDir;
   const inputSource = resolveInputSource(opts.input);
   const outputDir = resolveOutputDir(inputSource, opts.output);
 
@@ -87,9 +88,19 @@ export function runEncode(workflow: EncodeWorkflow) {
       print(
         `${chalk.gray(`Generating stabilization data for ${file.fullPath}`)}`,
       );
-      generateStabilizationData(ffmpegPath, file.fullPath, opts.stabilize);
 
-      filterchain += generateStabilizationFilter(opts.stabilize);
+      const trfFilePath = generateStabilizationData(
+        ffmpegPath,
+        tmpDir,
+        file.fullPath,
+        opts.stabilize,
+      );
+      file.setTransformFilePath(trfFilePath);
+
+      filterchain += generateStabilizationFilter(
+        escapeFilterPath(trfFilePath),
+        opts.stabilize,
+      );
     }
 
     const outputPath = resolveOutputPath(file, inputSource, outputDir, true);

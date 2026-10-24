@@ -3,6 +3,7 @@ import path from "path";
 import {
   checkIsVideo,
   createFileEntry,
+  escapeFilterPath,
   runCommand,
 } from "@/workflow/helpers.ts";
 import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
@@ -143,18 +144,24 @@ export function generateFFMpegCommand(
 
 export function generateStabilizationData(
   ffmpegPath: string,
+  tmpDir: string,
   inputPath: string,
   strength: number,
 ) {
+  const trfFilePath = path.join(tmpDir, `transforms.trf`);
+  const escapedTrfFilePath = escapeFilterPath(trfFilePath);
+
   const command = [
     "-i",
     inputPath,
     "-vf",
-    generateVidstabDetectFilter(strength),
+    generateVidstabDetectFilter(strength, escapedTrfFilePath),
     "-f",
     "null",
     "-",
   ];
 
   runCommand(ffmpegPath, command, { stdio: "inherit" });
+
+  return trfFilePath;
 }
