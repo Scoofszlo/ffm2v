@@ -173,7 +173,7 @@ export function generateStabilizationData(
     "-",
   ];
 
-  runCommand(ffmpegPath, command, "ffmpeg", { stdio: "inherit" });
+  runCommand(ffmpegPath, command, { stdio: "inherit" });
 }
 
 function getVidstabdetectOpts(strength: number): string {

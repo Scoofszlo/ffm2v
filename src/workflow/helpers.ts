@@ -17,19 +17,18 @@ type SpawnSyncOptions = {
 export function runCommand(
   command: string,
   args: string[],
-  description: string,
   options: SpawnSyncOptions = {},
 ): string {
   const result = spawnSync(command, args, { encoding: "utf-8", ...options });
 
   if (result.error) {
-    throw new Error(`Failed to run ${description}: ${result.error.message}`);
+    throw new Error(`Failed to run ${command}: ${result.error.message}`);
   }
 
   if (result.status !== 0) {
     const stderr = result.stderr.trim();
     throw new Error(
-      `${description} exited with code ${result.status}${stderr ? `: ${stderr}` : "."}`,
+      `${command} exited with code ${result.status}${stderr ? `: ${stderr}` : "."}`,
     );
   }
 
