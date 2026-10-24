@@ -1,11 +1,7 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
-import { getFFmpegExecutable } from "@/workflow/helpers.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
-import type {
-  MergeWorkflow,
-  MergeWorkflowOpts,
-} from "@/workflow/model/workflow.ts";
+import { createTmpDir, getFFmpegExecutable } from "@/workflow/helpers.ts";
+import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
 import { FFmpegEncodingParams } from "../../model/encodingParams.ts";
@@ -20,20 +16,9 @@ import {
   getOutputPath,
 } from "./helpers.ts";
 
-function cleanup(videos: FileEntry[], opts: MergeWorkflowOpts) {
-  if (opts.stabilize) {
-    videos.forEach((_, index) => {
-      const stabilizationFile = `transforms-${index}.trf`;
-      try {
-        fs.rmSync(stabilizationFile, { force: true });
-      } catch (err) {
-        throw new Error(
-          `Failed to delete temporary file '${stabilizationFile}': ${err}`,
-          { cause: err },
-        );
-      }
-    });
-  }
+function cleanup(tmpDir: string) {
+  // Cleanup temporary directory after processing
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 }
 
 function encodeVideo(
@@ -61,6 +46,7 @@ function encodeVideo(
 
 export function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
+  const tmpDir = createTmpDir();
   const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
   const params = new FFmpegEncodingParams(opts);
 
@@ -85,7 +71,13 @@ export function runMerge(workflow: MergeWorkflow) {
       print(
         `${chalk.gray(`Generating stabilization data for ${video.fullPath}`)}`,
       );
-      generateStabilizationData(ffmpegPath, video.fullPath, strength, index);
+      generateStabilizationData(
+        ffmpegPath,
+        tmpDir,
+        video.fullPath,
+        strength,
+        index,
+      );
     });
   }
 
@@ -110,5 +102,5 @@ export function runMerge(workflow: MergeWorkflow) {
   );
 
   encodeVideo(outputPath, ffmpegPath, command);
-  cleanup(videos, opts);
+  cleanup(tmpDir);
 }

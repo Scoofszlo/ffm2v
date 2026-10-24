@@ -3,6 +3,7 @@ import path from "path";
 import {
   checkIsVideo,
   createFileEntry,
+  escapeFilterPath,
   runCommand,
   runFFprobe,
 } from "@/workflow/helpers.ts";
@@ -155,15 +156,18 @@ function getVideoFps(videoPath: string): number {
 
 export function generateStabilizationData(
   ffmpegPath: string,
+  tmpDir: string,
   inputPath: string,
   strength: number,
   idx: number,
 ) {
+  const trfFile = escapeFilterPath(path.join(tmpDir, `transforms-${idx}.trf`));
+
   const command = [
     "-i",
     inputPath,
     "-vf",
-    `vidstabdetect=${getVidstabdetectOpts(strength)}:result=transforms-${idx}.trf`,
+    `vidstabdetect=${getVidstabdetectOpts(strength)}:result=${trfFile}`,
     "-f",
     "null",
     "-",

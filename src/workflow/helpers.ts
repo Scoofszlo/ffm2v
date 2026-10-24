@@ -1,4 +1,6 @@
 import { spawnSync } from "child_process";
+import fs from "fs";
+import os from "os";
 import path from "path";
 import which from "which";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
@@ -129,4 +131,32 @@ export function getFFmpegExecutable(customPath: string | null): string {
   }
 
   return "ffmpeg";
+}
+
+/**
+ * Creates a temporary directory in the system's default temp location and
+ * returns its path. The directory will have a unique name starting with
+ * "ffm2v-".
+ */
+export function createTmpDir() {
+  const prefix = "ffm2v-";
+  const finalPath = path.join(os.tmpdir(), prefix);
+  return fs.mkdtempSync(finalPath);
+}
+
+/**
+ * Escapes a path for use in FFmpeg filter options.
+ *
+ * Step 1: Resolve the path to an absolute path using `path.resolve()`.
+ * Step 2: Replace backslashes (`\`) with forward slashes (`/`) for FFmpeg compatibility.
+ * Step 3: Escape colons (`:`) and single quotes (`'`) by prefixing them with a double backslash (`\\`).
+ *
+ * @param p The path to escape.
+ * @returns The escaped path.
+ */
+export function escapeFilterPath(p: string): string {
+  return path
+    .resolve(p) // Resolve the path to an absolute path
+    .replace(/\\/g, "/") // Replace backslashes with forward slashes for FFmpeg compatibility
+    .replace(/[:']/g, (c) => `\\\\${c}`); // Escape colons and single quotes by prefixing them with a double backslash
 }
