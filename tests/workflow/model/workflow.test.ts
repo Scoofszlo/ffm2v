@@ -1,9 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { WorkflowSchema } from "../../../src/workflow/model/workflow.ts";
 
-const parseWorkflow = (workflow: unknown) => WorkflowSchema.parse(workflow);
+// tmpDir is created at runtime by the CLI entry, so tests pass a fixed string
+// instead of touching the filesystem.
+const TEST_TMP_DIR = "ffm2v-test-tmp";
+
+const parseWorkflow = (workflow: Record<string, unknown>) =>
+  WorkflowSchema.parse({ tmpDir: TEST_TMP_DIR, ...workflow });
 
 describe("WorkflowSchema", () => {
+  describe("tmpDir", () => {
+    it("rejects an empty tmpDir", () => {
+      expect(() =>
+        WorkflowSchema.parse({
+          tmpDir: "",
+          type: "update",
+          options: {},
+        }),
+      ).toThrow("Temporary directory must be specified");
+    });
+  });
+
   describe("encode", () => {
     it("applies defaults and normalizes valid option values", () => {
       expect(
@@ -17,6 +34,7 @@ describe("WorkflowSchema", () => {
           },
         }),
       ).toEqual({
+        tmpDir: TEST_TMP_DIR,
         type: "encode",
         options: {
           input: "video.mp4",
@@ -124,6 +142,7 @@ describe("WorkflowSchema", () => {
           options: { input: ["first.mp4", "second.mp4"], output: null },
         }),
       ).toEqual({
+        tmpDir: TEST_TMP_DIR,
         type: "merge",
         options: {
           input: ["first.mp4", "second.mp4"],
@@ -141,6 +160,7 @@ describe("WorkflowSchema", () => {
   describe("update", () => {
     it("applies defaults for update options", () => {
       expect(parseWorkflow({ type: "update", options: {} })).toEqual({
+        tmpDir: TEST_TMP_DIR,
         type: "update",
         options: { disableArchive: false, checkOnly: false },
       });
@@ -153,6 +173,7 @@ describe("WorkflowSchema", () => {
           options: { disableArchive: true, checkOnly: true },
         }),
       ).toEqual({
+        tmpDir: TEST_TMP_DIR,
         type: "update",
         options: { disableArchive: true, checkOnly: true },
       });

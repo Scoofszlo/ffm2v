@@ -1,16 +1,17 @@
 import fs from "fs";
 import path from "path";
-import type { FFmpegEncodingParams } from "@/param/model.ts";
 import {
   checkIsVideo,
   createFileEntry,
+  escapeFilterPath,
   runCommand,
 } from "@/workflow/helpers.ts";
+import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import { generateVidstabDetectFilter } from "./filters.ts";
 import type { InputSource } from "./types.ts";
 
-export function getInputSource(source: string): InputSource {
+export function resolveInputSource(source: string): InputSource {
   // Check if the source is a directory or a file
   if (!fs.existsSync(source)) {
     throw new Error(`Input source '${source}' does not exist.`);
@@ -29,7 +30,7 @@ export function getInputSource(source: string): InputSource {
   return { path: source, dirName: path.dirname(source), type: "file" };
 }
 
-export function getOutputDir(
+export function resolveOutputDir(
   source: InputSource,
   output: string | null,
 ): string {
@@ -77,7 +78,7 @@ export function getFiles(
   return files;
 }
 
-export function getOutputPath(
+export function resolveOutputPath(
   video: FileEntry,
   inputSource: InputSource,
   outputDir: string,
@@ -91,18 +92,18 @@ export function getOutputPath(
     outputFilename = video.fileName;
   }
 
-  const SourceDirRelativePathToOutputPath = path.relative(
+  const sourceDirRelativePathToOutputPath = path.relative(
     inputSource.dirName,
     video.sourceDir,
   );
 
-  fs.mkdirSync(path.join(outputDir, SourceDirRelativePathToOutputPath), {
+  fs.mkdirSync(path.join(outputDir, sourceDirRelativePathToOutputPath), {
     recursive: true,
   });
 
   return path.join(
     outputDir,
-    SourceDirRelativePathToOutputPath,
+    sourceDirRelativePathToOutputPath,
     outputFilename,
   );
 }
@@ -141,16 +142,26 @@ export function generateFFMpegCommand(
   return command;
 }
 
-export function generateStabilizationData(inputPath: string, strength: number) {
+export function generateStabilizationData(
+  ffmpegPath: string,
+  tmpDir: string,
+  inputPath: string,
+  strength: number,
+) {
+  const trfFilePath = path.join(tmpDir, `transforms.trf`);
+  const escapedTrfFilePath = escapeFilterPath(trfFilePath);
+
   const command = [
     "-i",
     inputPath,
     "-vf",
-    generateVidstabDetectFilter(strength),
+    generateVidstabDetectFilter(strength, escapedTrfFilePath),
     "-f",
     "null",
     "-",
   ];
 
-  runCommand("ffmpeg", command, "ffmpeg", { stdio: "inherit" });
+  runCommand(ffmpegPath, command, { stdio: "inherit" });
+
+  return trfFilePath;
 }

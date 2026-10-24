@@ -1,3 +1,4 @@
+import { escapeFilterPath } from "@/workflow/helpers.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import type { FileEntry } from "../../model/fileEntry.ts";
 
@@ -6,33 +7,65 @@ export function generateUnsharpFilter(): string {
 }
 
 export function generateStabilizationFilter(
+  trfFilePath: string,
   strength: number,
-  idx: number,
 ): string {
   let filter = "vidstabtransform=";
+  const escapedTrfFilePath = escapeFilterPath(trfFilePath);
 
   switch (strength) {
     case 1:
-      filter += `smoothing=10:input=transforms-${idx}.trf:maxangle=0.0`;
+      filter += "smoothing=10";
       break;
     case 2:
-      filter += `smoothing=15:input=transforms-${idx}.trf:maxangle=0.0`;
+      filter += "smoothing=15";
       break;
     case 3:
-      filter += `smoothing=22:input=transforms-${idx}.trf:maxangle=0.0`;
+      filter += "smoothing=22";
       break;
     case 4:
-      filter += `smoothing=30:input=transforms-${idx}.trf:maxangle=0.0`;
+      filter += "smoothing=30";
       break;
     case 5:
-      filter += `smoothing=40:input=transforms-${idx}.trf:maxangle=0.0`;
+      filter += "smoothing=40";
       break;
     default:
       throw new Error(`Invalid stabilization strength: ${strength}`);
   }
 
-  filter += ",";
+  filter += `:input=${escapedTrfFilePath}:maxangle=0.0,`;
   filter += generateUnsharpFilter();
+
+  return filter;
+}
+
+export function generateVidstabDetectFilter(
+  strength: number,
+  trfFilePath: string,
+): string {
+  let filter = "vidstabdetect=";
+
+  switch (strength) {
+    case 1:
+      filter += "shakiness=4:accuracy=9";
+      break;
+    case 2:
+      filter += "shakiness=6:accuracy=12";
+      break;
+    case 3:
+      filter += "shakiness=8:accuracy=15";
+      break;
+    case 4:
+      filter += "shakiness=10:accuracy=15";
+      break;
+    case 5:
+      filter += "shakiness=10:accuracy=15";
+      break;
+    default:
+      throw new Error(`Invalid stabilization strength: ${strength}`);
+  }
+
+  filter += `:result=${trfFilePath}`;
 
   return filter;
 }
@@ -72,10 +105,17 @@ function getPerVideoFilterchain(
     // Start the filtergraph segment for this video
     filtergraph += `[${index}:v]`;
 
-    // Apply stabilization filter if enabled
+    // Apply stabilization filter if enabled, and throw an error if the
+    // transformation file path is missing for the video
     if (opts.stabilize) {
+      if (!video.transFormFilePath) {
+        throw new Error(
+          `Transformation file path is missing for video: ${video.fullPath}`,
+        );
+      }
+
       const strength = opts.stabilize;
-      filtergraph += `${generateStabilizationFilter(strength, index)},`;
+      filtergraph += `${generateStabilizationFilter(video.transFormFilePath, strength)},`;
     }
 
     // Apply scaling and frame rate adjustments

@@ -1,4 +1,5 @@
 import { spawnSync } from "child_process";
+import fs from "fs";
 import path from "path";
 import which from "which";
 import { VIDEO_EXTENSIONS } from "../constants.ts";
@@ -15,19 +16,18 @@ type SpawnSyncOptions = {
 export function runCommand(
   command: string,
   args: string[],
-  description: string,
   options: SpawnSyncOptions = {},
 ): string {
   const result = spawnSync(command, args, { encoding: "utf-8", ...options });
 
   if (result.error) {
-    throw new Error(`Failed to run ${description}: ${result.error.message}`);
+    throw new Error(`Failed to run ${command}: ${result.error.message}`);
   }
 
   if (result.status !== 0) {
     const stderr = result.stderr.trim();
     throw new Error(
-      `${description} exited with code ${result.status}${stderr ? `: ${stderr}` : "."}`,
+      `${command} exited with code ${result.status}${stderr ? `: ${stderr}` : "."}`,
     );
   }
 
@@ -117,7 +117,7 @@ export function getVideoDuration(filePath: string): number {
  * will be resolved and returned. If no custom path is provided, "ffmpeg" will
  * be returned, which assumes that ffmpeg is in the system's PATH.
  */
-export function getFFmpegExecutable(customPath: string | null): string {
+export function resolveFFmpegExecutable(customPath: string | null): string {
   if (customPath) {
     try {
       const resolvedPath = which.sync(customPath);
@@ -129,4 +129,47 @@ export function getFFmpegExecutable(customPath: string | null): string {
   }
 
   return "ffmpeg";
+}
+
+/**
+ * Escapes a path for use in FFmpeg filter options.
+ *
+ * Step 1: Resolve the path to an absolute path using `path.resolve()`.
+ * Step 2: Replace backslashes (`\`) with forward slashes (`/`) for FFmpeg compatibility.
+ * Step 3: Escape colons (`:`) and single quotes (`'`) by prefixing them with a double backslash (`\\`).
+ *
+ * @param p The path to escape.
+ * @returns The escaped path.
+ */
+export function escapeFilterPath(p: string): string {
+  return path
+    .resolve(p) // Resolve the path to an absolute path
+    .replace(/\\/g, "/") // Replace backslashes with forward slashes for FFmpeg compatibility
+    .replace(/[:']/g, (c) => `\\\\${c}`); // Escape colons and single quotes by prefixing them with a double backslash
+}
+
+export function moveFile({
+  src,
+  dest,
+  onSuccess,
+  onExists,
+  onFailure,
+}: {
+  src: string;
+  dest: string;
+  onSuccess?: () => void;
+  onExists?: () => void;
+  onFailure?: (error: unknown) => void;
+}) {
+  try {
+    if (fs.existsSync(dest)) {
+      onExists?.();
+      return;
+    }
+
+    fs.renameSync(src, dest);
+    onSuccess?.();
+  } catch (error) {
+    onFailure?.(error);
+  }
 }

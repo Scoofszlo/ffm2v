@@ -1,28 +1,18 @@
 import { spawnSync } from "child_process";
-import fs from "fs";
-import { getFFmpegExecutable } from "@/workflow/helpers.ts";
-import type {
-  EncodeWorkflow,
-  EncodeWorkflowOpts,
-} from "@/workflow/model/workflow.ts";
+import { moveFile, resolveFFmpegExecutable } from "@/workflow/helpers.ts";
+import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
-import { FFmpegEncodingParams } from "../../../param/model.ts";
+import { FFmpegEncodingParams } from "../../model/encodingParams.ts";
 import { generateStabilizationFilter } from "./filters.ts";
 import {
   generateFFMpegCommand,
   generateStabilizationData,
   getFiles,
-  getInputSource,
-  getOutputDir,
-  getOutputPath,
+  resolveInputSource,
+  resolveOutputDir,
+  resolveOutputPath,
 } from "./helpers.ts";
-
-function getSourceAndOutput(opts: EncodeWorkflowOpts) {
-  const inputSource = getInputSource(opts.input);
-  const outputDir = getOutputDir(inputSource, opts.output);
-  return { inputSource, outputDir };
-}
 
 function encodeVideo(
   filePath: string,
@@ -54,88 +44,79 @@ function encodeVideo(
   }
 }
 
-function moveFile(src: string, dest: string) {
-  if (fs.existsSync(dest)) {
-    print(
-      `File '${dest}' already exists. Skipping move for '${src}'.`,
-      "warning",
-    );
-    return;
-  }
-  fs.renameSync(src, dest);
-  print(`Moved file from '${src}' to '${dest}'.`, "success");
-}
-
-function cleanup(opts: EncodeWorkflowOpts) {
-  if (opts.stabilize) {
-    const stabilizationFile = "transforms.trf";
-
-    try {
-      // Removes file, but if doesn't exist, does nothing
-      fs.rmSync(stabilizationFile, { force: true });
-    } catch (err) {
-      throw new Error(
-        `Failed to delete temporary file '${stabilizationFile}': ${err}`,
-        { cause: err },
-      );
-    }
-  }
-}
-
 export function runEncode(workflow: EncodeWorkflow) {
-  try {
-    // Prepare the encoding parameters and input/output paths
-    const opts = workflow.options;
-    const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
-    const params = new FFmpegEncodingParams(opts);
-    const { inputSource, outputDir } = getSourceAndOutput(opts);
+  // Prepare the encoding parameters and input/output paths
+  const opts = workflow.options;
+  const params = new FFmpegEncodingParams(opts);
+  const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
+  const tmpDir = workflow.tmpDir;
+  const inputSource = resolveInputSource(opts.input);
+  const outputDir = resolveOutputDir(inputSource, opts.output);
 
-    // Process the files (video and non-video) in the input source
-    print(`\n${chalk.bold("Collecting files to encode...")}`);
-    const files = getFiles(inputSource, (file) => {
-      print(`${chalk.green("+")} ${file.fullPath} added to list.`);
-    });
+  // Process the files (video and non-video) in the input source
+  print(`\n${chalk.bold("Collecting files to encode...")}`);
+  const files = getFiles(inputSource, (file) => {
+    print(`${chalk.green("+")} ${file.fullPath} added to list.`);
+  });
 
-    // Start the encoding process for each file, OR move non-video files to the output directory
-    for (const file of files) {
-      let filterchain: string | null = "";
+  // Start the encoding process for each file, OR move non-video files to the output directory
+  for (const file of files) {
+    let filterchain: string | null = "";
 
-      if (!file.isVideo) {
-        const outputPath = getOutputPath(file, inputSource, outputDir, false);
-        moveFile(file.fullPath, outputPath);
-        continue;
-      }
+    if (!file.isVideo) {
+      const outputPath = resolveOutputPath(file, inputSource, outputDir, false);
+      moveFile({
+        src: file.fullPath,
+        dest: outputPath,
+        onSuccess: () => {
+          print(
+            `Moved file from '${file.fullPath}' to '${outputPath}'.`,
+            "success",
+          );
+        },
+        onExists: () => {
+          print(
+            `File '${outputPath}' already exists. Skipping move for '${file.fullPath}'.`,
+            "warning",
+          );
+        },
+      });
+      // Move on to the next file in the loop since this one is not a video
+      continue;
+    }
 
-      // If user supplies a stabilization value, generate stabilization data
-      // for the video before encoding
-      if (opts.stabilize) {
-        print(
-          `${chalk.gray(`Generating stabilization data for ${file.fullPath}`)}`,
-        );
-        generateStabilizationData(file.fullPath, opts.stabilize);
-
-        filterchain += generateStabilizationFilter(opts.stabilize);
-      }
-
-      const outputPath = getOutputPath(file, inputSource, outputDir, true);
-
-      // If filterchain is not empty, append a "-vf" flag
-      if (!filterchain) {
-        filterchain = null;
-      }
-
-      const command = generateFFMpegCommand(
-        file.fullPath,
-        outputPath,
-        params,
-        filterchain,
+    // If user supplies a stabilization value, generate stabilization data
+    // for the video before encoding
+    if (opts.stabilize) {
+      print(
+        `${chalk.gray(`Generating stabilization data for ${file.fullPath}`)}`,
       );
 
-      encodeVideo(file.fullPath, outputPath, ffmpegPath, command);
-      cleanup(opts);
+      const trfFilePath = generateStabilizationData(
+        ffmpegPath,
+        tmpDir,
+        file.fullPath,
+        opts.stabilize,
+      );
+      file.setTransformFilePath(trfFilePath);
+
+      filterchain += generateStabilizationFilter(trfFilePath, opts.stabilize);
     }
-  } catch (error) {
-    print(`${error}`, "error");
-    process.exit(1);
+
+    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
+
+    // If filterchain is not empty, append a "-vf" flag
+    if (!filterchain) {
+      filterchain = null;
+    }
+
+    const command = generateFFMpegCommand(
+      file.fullPath,
+      outputPath,
+      params,
+      filterchain,
+    );
+
+    encodeVideo(file.fullPath, outputPath, ffmpegPath, command);
   }
 }
