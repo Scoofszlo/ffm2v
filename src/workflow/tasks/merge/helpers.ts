@@ -48,14 +48,26 @@ export function resolveOutputPath(
   inputPath: string,
   outputPath: string | null,
 ): string {
+  const baseName = path.basename(inputPath, path.extname(inputPath));
+
+  // Check if output path is supplied
   if (outputPath) {
     if (!fs.existsSync(outputPath)) {
       throw new Error(`Output path '${outputPath}' does not exist.`);
     }
-    return outputPath;
+
+    // If the output path is a directory, create a default output file name.
+    // Otherwise, throw an error
+    if (fs.statSync(outputPath).isDirectory()) {
+      return path.join(outputPath, `${baseName}-merged.mp4`);
+    } else {
+      throw new Error(`Output path '${outputPath}' is not a directory.`);
+    }
   }
+
+  // If no output path is supplied, create a default output file name in the
+  // same directory as the first input video.
   const dir = path.dirname(inputPath);
-  const baseName = path.basename(inputPath, path.extname(inputPath));
   return path.join(dir, `${baseName}-merged.mp4`);
 }
 
