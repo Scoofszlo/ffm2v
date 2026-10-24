@@ -1,5 +1,5 @@
 import { spawnSync } from "child_process";
-import { getFFmpegExecutable } from "@/workflow/helpers.ts";
+import { resolveFFmpegExecutable } from "@/workflow/helpers.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
@@ -41,7 +41,7 @@ function encodeVideo(
 export function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
   const params = new FFmpegEncodingParams(opts);
-  const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
+  const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
   const tmpDir = workflow.tmpDir;
 
   print(`\n${chalk.bold("Validating video files for merging...")}`);

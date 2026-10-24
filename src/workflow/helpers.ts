@@ -116,7 +116,7 @@ export function getVideoDuration(filePath: string): number {
  * will be resolved and returned. If no custom path is provided, "ffmpeg" will
  * be returned, which assumes that ffmpeg is in the system's PATH.
  */
-export function getFFmpegExecutable(customPath: string | null): string {
+export function resolveFFmpegExecutable(customPath: string | null): string {
   if (customPath) {
     try {
       const resolvedPath = which.sync(customPath);

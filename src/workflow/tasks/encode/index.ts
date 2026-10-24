@@ -1,6 +1,9 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
-import { escapeFilterPath, getFFmpegExecutable } from "@/workflow/helpers.ts";
+import {
+  escapeFilterPath,
+  resolveFFmpegExecutable,
+} from "@/workflow/helpers.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { print } from "../../../cli/printer.ts";
@@ -61,7 +64,7 @@ export function runEncode(workflow: EncodeWorkflow) {
   // Prepare the encoding parameters and input/output paths
   const opts = workflow.options;
   const params = new FFmpegEncodingParams(opts);
-  const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
+  const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
   const tmpDir = workflow.tmpDir;
   const inputSource = resolveInputSource(opts.input);
   const outputDir = resolveOutputDir(inputSource, opts.output);
