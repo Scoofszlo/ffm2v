@@ -43,7 +43,7 @@ export function getInputPaths(videos: FileEntry[]): string[] {
   return videos.map((video) => ["-i", video.fullPath]).flat();
 }
 
-export function getOutputPath(
+export function resolveOutputPath(
   inputPath: string,
   outputPath: string | null,
 ): string {

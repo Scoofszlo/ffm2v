@@ -13,9 +13,9 @@ import {
   generateFFMpegCommand,
   generateStabilizationData,
   getFiles,
-  getInputSource,
-  getOutputDir,
-  getOutputPath,
+  resolveInputSource,
+  resolveOutputDir,
+  resolveOutputPath,
 } from "./helpers.ts";
 
 function cleanup(opts: EncodeWorkflowOpts) {
@@ -76,18 +76,13 @@ function moveFile(src: string, dest: string) {
   print(`Moved file from '${src}' to '${dest}'.`, "success");
 }
 
-function getSourceAndOutput(opts: EncodeWorkflowOpts) {
-  const inputSource = getInputSource(opts.input);
-  const outputDir = getOutputDir(inputSource, opts.output);
-  return { inputSource, outputDir };
-}
-
 export function runEncode(workflow: EncodeWorkflow) {
   // Prepare the encoding parameters and input/output paths
   const opts = workflow.options;
-  const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
   const params = new FFmpegEncodingParams(opts);
-  const { inputSource, outputDir } = getSourceAndOutput(opts);
+  const ffmpegPath = getFFmpegExecutable(opts.ffmpegPath);
+  const inputSource = resolveInputSource(opts.input);
+  const outputDir = resolveOutputDir(inputSource, opts.output);
 
   // Process the files (video and non-video) in the input source
   print(`\n${chalk.bold("Collecting files to encode...")}`);
@@ -100,7 +95,7 @@ export function runEncode(workflow: EncodeWorkflow) {
     let filterchain: string | null = "";
 
     if (!file.isVideo) {
-      const outputPath = getOutputPath(file, inputSource, outputDir, false);
+      const outputPath = resolveOutputPath(file, inputSource, outputDir, false);
       moveFile(file.fullPath, outputPath);
       continue;
     }
@@ -116,7 +111,7 @@ export function runEncode(workflow: EncodeWorkflow) {
       filterchain += generateStabilizationFilter(opts.stabilize);
     }
 
-    const outputPath = getOutputPath(file, inputSource, outputDir, true);
+    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
 
     // If filterchain is not empty, append a "-vf" flag
     if (!filterchain) {

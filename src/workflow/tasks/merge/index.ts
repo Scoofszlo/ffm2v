@@ -13,7 +13,7 @@ import {
   getHighestResolution,
   getInputPaths,
   getMaxFps,
-  getOutputPath,
+  resolveOutputPath,
 } from "./helpers.ts";
 
 function cleanup(tmpDir: string) {
@@ -55,7 +55,7 @@ export function runMerge(workflow: MergeWorkflow) {
     print(`${chalk.green("+")} ${file.fullPath} added to merge list.`);
   });
   const inputPaths = getInputPaths(videos);
-  const outputPath = getOutputPath(videos[0].fullPath, opts.output);
+  const outputPath = resolveOutputPath(videos[0].fullPath, opts.output);
   const highestResolution = getHighestResolution(videos);
   const maxFps = getMaxFps(videos);
 
