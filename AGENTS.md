@@ -64,6 +64,16 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   (`export { runEncode };`). Classes for stateful things, functions elsewhere.
 - Keep `noPropertyAccessFromIndexSignature` in mind when reading parsed JSON
   (`data["streams"]`, not `data.streams`).
+- **Documentation comments.** Functions in `src/` have TSDoc (`/** ... */`) with a
+  summary, plus `@param`, `@returns`, and `@throws` where applicable.
+  - Wrap TSDoc lines at Prettier's `printWidth` (80 unless `.prettierrc` sets
+    otherwise). Count the indentation and the leading ` * ` toward the limit.
+    Prettier does not wrap comment text, and ESLint will not flag long lines.
+  - When you change a function's parameters, return value, side effects, or thrown
+    errors, update its TSDoc in the same change. Check that `@param` names match and
+    that `@throws` still describes the actual failure conditions.
+  - When you rename or remove a function, search for `{@link Name}` references and
+    comments that mention it.
 
 ## Validation and errors
 
