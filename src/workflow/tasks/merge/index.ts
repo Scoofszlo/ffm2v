@@ -1,17 +1,16 @@
 import { spawnSync } from "child_process";
+import { print } from "@/cli/printer.ts";
+import { getHighestResolution, getMaxFps } from "@/probe/index.ts";
 import { resolveFFmpegExecutable } from "@/workflow/helpers.ts";
+import { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
-import { print } from "../../../cli/printer.ts";
-import { FFmpegEncodingParams } from "../../model/encodingParams.ts";
 import { generateFiltergraph } from "./filters.ts";
 import {
   generateFFMpegCommand,
   generateStabilizationData,
   getFiles,
-  getHighestResolution,
   getInputPaths,
-  getMaxFps,
   resolveOutputPath,
 } from "./helpers.ts";
 

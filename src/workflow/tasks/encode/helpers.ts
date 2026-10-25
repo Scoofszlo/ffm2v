@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
 import {
   checkIsVideo,
   createFileEntry,
@@ -8,7 +9,6 @@ import {
 } from "@/workflow/helpers.ts";
 import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
-import { generateVidstabDetectFilter } from "./filters.ts";
 import type { InputSource } from "./types.ts";
 
 /**

@@ -1,9 +1,9 @@
 import os from "os";
 import path from "path";
+import { print, spinnerPrint } from "@/cli/printer.ts";
+import { FFMPEG_LATEST_DOWNLOAD_URL } from "@/constants.ts";
 import type { UpdateWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
-import { print, spinnerPrint } from "../../../cli/printer.ts";
-import { FFMPEG_LATEST_DOWNLOAD_URL } from "../../../constants.ts";
 import {
   archiveOldVersion,
   checkDeps,

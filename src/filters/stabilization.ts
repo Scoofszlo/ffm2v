@@ -1,13 +1,8 @@
 import { escapeFilterPath } from "@/workflow/helpers.ts";
-
-/**
- * Generates the FFmpeg `unsharp` filter string used to sharpen video after
- * stabilization.
- * @returns The `unsharp` filter definition.
- */
-export function generateUnsharpFilter(): string {
-  return "unsharp=5:5:0.8:3:3:0.4";
-}
+import {
+  generateUnsharpFilter,
+  VIDEO_STABILIZATION_UNSHARP_PRESET,
+} from "./unsharp.ts";
 
 /**
  * Generates the FFmpeg `vidstabtransform` filter chain that applies
@@ -48,7 +43,7 @@ export function generateStabilizationFilter(
   }
 
   filter += `:input=${escapedTrfFilePath}:maxangle=0.0,`;
-  filter += generateUnsharpFilter();
+  filter += generateUnsharpFilter(VIDEO_STABILIZATION_UNSHARP_PRESET);
 
   return filter;
 }

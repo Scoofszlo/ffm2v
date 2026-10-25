@@ -1,16 +1,15 @@
 import fs from "fs";
 import path from "path";
+import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
 import {
   checkIsVideo,
   createFileEntry,
   escapeFilterPath,
   runCommand,
-  runFFprobe,
 } from "@/workflow/helpers.ts";
 import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
-import { generateVidstabDetectFilter } from "./filters.ts";
 
 /**
  * Validates each input path and creates a file entry for it. Each path must
@@ -99,141 +98,6 @@ export function resolveOutputPath(
 }
 
 /**
- * Finds the largest resolution (by pixel area) among the videos. All videos are
- * scaled to this size when merging.
- * @param videos - The videos to inspect.
- * @returns The `[width, height]` of the video with the largest area.
- */
-export function getHighestResolution(videos: FileEntry[]): [number, number] {
-  let highestResolutionArea = 0;
-  let highestResolution: [number, number] = [0, 0];
-
-  for (const video of videos) {
-    const resolution = getVideoResolution(video.fullPath);
-    const area = resolution[0] * resolution[1];
-    if (area > highestResolutionArea) {
-      highestResolutionArea = area;
-      highestResolution = resolution;
-    }
-  }
-  return highestResolution;
-}
-
-/**
- * Finds the highest frame rate among the videos. All videos are set to this
- * frame rate when merging.
- * @param videos - The videos to inspect.
- * @returns The highest frame rate found.
- */
-export function getMaxFps(videos: FileEntry[]): number {
-  let maxFps = 0;
-  for (const video of videos) {
-    const fps = getVideoFps(video.fullPath);
-    if (fps > maxFps) {
-      maxFps = fps;
-    }
-  }
-  return maxFps;
-}
-
-/**
- * Assembles the FFmpeg argument array for merging videos. It includes the
- * inputs, filtergraph, output mapping, frame rate, codec settings, and audio
- * handling. Audio is re-encoded as MP3 at 320k unless disabled.
- * @param input - The FFmpeg input arguments from {@link getInputPaths}.
- * @param outputPath - The path to write the merged video to.
- * @param filtergraph - The filtergraph from {@link generateFiltergraph}.
- * @param maxFps - The output frame rate.
- * @param params - The encoding parameters derived from the user options.
- * @param opts - The merge options, used to determine whether audio is enabled.
- * @returns The FFmpeg arguments, excluding the executable name.
- */
-export function generateFFMpegCommand(
-  input: string[],
-  outputPath: string,
-  filtergraph: string,
-  maxFps: number,
-  params: FFmpegEncodingParams,
-  opts: MergeWorkflowOpts,
-): string[] {
-  const command: string[] = [];
-
-  command.push(...input);
-  command.push("-filter_complex", filtergraph);
-  command.push("-map", "[outv]");
-
-  if (opts.disableAudio === false) {
-    command.push("-map", "[outa]");
-  }
-
-  command.push("-r", `${maxFps}`);
-  command.push(...params.videoCodec);
-  command.push(...params.crf);
-  command.push("-x265-params", "no-info=1");
-  if (params.disableAudio[0] === "-an") {
-    command.push(...params.disableAudio);
-  } else {
-    command.push("-c:a", "libmp3lame");
-    command.push("-b:a", "320k");
-  }
-  command.push(outputPath);
-  return command;
-}
-
-/**
- * Reads the width and height of a video's first video stream using ffprobe.
- * @param videoPath - The path to the video.
- * @returns The `[width, height]` of the video.
- * @throws Will throw an error if ffprobe returns a value that is not a valid
- * resolution.
- */
-function getVideoResolution(videoPath: string): [number, number] {
-  const output = runFFprobe(
-    [
-      "-select_streams",
-      "v:0",
-      "-show_entries",
-      "stream=width,height",
-      "-of",
-      "csv=p=0",
-    ],
-    videoPath,
-  );
-  const [width, height] = output.split(",").map(Number);
-  if (!width || !height || isNaN(width) || isNaN(height)) {
-    throw new Error(`Invalid resolution format for '${videoPath}': ${output}`);
-  }
-  return [width, height];
-}
-
-/**
- * Reads the frame rate of a video's first video stream using ffprobe. The rate
- * is parsed from its `numerator/denominator` form.
- * @param videoPath - The path to the video.
- * @returns The frame rate in frames per second.
- * @throws Will throw an error if ffprobe returns a value that is not a valid
- * frame rate.
- */
-function getVideoFps(videoPath: string): number {
-  const output = runFFprobe(
-    [
-      "-select_streams",
-      "v:0",
-      "-show_entries",
-      "stream=r_frame_rate",
-      "-of",
-      "csv=p=0",
-    ],
-    videoPath,
-  );
-  const [numerator, denominator] = output.split("/").map(Number);
-  if (!numerator || !denominator || isNaN(numerator) || isNaN(denominator)) {
-    throw new Error(`Invalid fps format for '${videoPath}': ${output}`);
-  }
-  return numerator / denominator;
-}
-
-/**
  * Runs the FFmpeg `vidstabdetect` pass on a video to produce a transform file
  * used for stabilization. The file name includes the index so that each video
  * gets its own file.
@@ -269,4 +133,48 @@ export function generateStabilizationData(
   runCommand(ffmpegPath, command, { stdio: "inherit" });
 
   return trfFilePath;
+}
+
+/**
+ * Assembles the FFmpeg argument array for merging videos. It includes the
+ * inputs, filtergraph, output mapping, frame rate, codec settings, and audio
+ * handling. Audio is re-encoded as MP3 at 320k unless disabled.
+ * @param input - The FFmpeg input arguments from {@link getInputPaths}.
+ * @param outputPath - The path to write the merged video to.
+ * @param filtergraph - The filtergraph from `generateFiltergraph`.
+ * @param maxFps - The output frame rate.
+ * @param params - The encoding parameters derived from the user options.
+ * @param opts - The merge options, used to determine whether audio is enabled.
+ * @returns The FFmpeg arguments, excluding the executable name.
+ */
+export function generateFFMpegCommand(
+  input: string[],
+  outputPath: string,
+  filtergraph: string,
+  maxFps: number,
+  params: FFmpegEncodingParams,
+  opts: MergeWorkflowOpts,
+): string[] {
+  const command: string[] = [];
+
+  command.push(...input);
+  command.push("-filter_complex", filtergraph);
+  command.push("-map", "[outv]");
+
+  if (opts.disableAudio === false) {
+    command.push("-map", "[outa]");
+  }
+
+  command.push("-r", `${maxFps}`);
+  command.push(...params.videoCodec);
+  command.push(...params.crf);
+  command.push("-x265-params", "no-info=1");
+  if (params.disableAudio[0] === "-an") {
+    command.push(...params.disableAudio);
+  } else {
+    command.push("-c:a", "libmp3lame");
+    command.push("-b:a", "320k");
+  }
+  command.push(outputPath);
+  return command;
 }

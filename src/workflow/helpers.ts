@@ -1,8 +1,8 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import { VIDEO_EXTENSIONS } from "@/constants.ts";
 import which from "which";
-import { VIDEO_EXTENSIONS } from "../constants.ts";
 import { FileEntry } from "./model/fileEntry.ts";
 
 type SpawnSyncOptions = {
