@@ -12,6 +12,16 @@ import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import { generateVidstabDetectFilter } from "./filters.ts";
 
+/**
+ * Validates each input path and creates a file entry for it. Each path must
+ * exist, be a file, and be a video.
+ * @param input - The list of input file paths.
+ * @param onSuccess - Callback invoked with each file entry as it is validated.
+ * @returns The file entries as a tuple guaranteed to contain at least two
+ * items.
+ * @throws Will throw an error if fewer than two inputs are given, or if any
+ * input does not exist, is not a file, or is not a video.
+ */
 export function getFiles(
   input: string[],
   onSuccess: (file: FileEntry) => void,
@@ -40,10 +50,27 @@ export function getFiles(
   return files as [FileEntry, FileEntry, ...FileEntry[]];
 }
 
+/**
+ * Converts the video list into FFmpeg input arguments, pairing each video with
+ * an `-i` flag.
+ * @param videos - The videos being merged, in input order.
+ * @returns A flat array such as `['-i', 'a.mp4', '-i', 'b.mp4']`.
+ */
 export function getInputPaths(videos: FileEntry[]): string[] {
   return videos.map((video) => ["-i", video.fullPath]).flat();
 }
 
+/**
+ * Resolves the merged output file path. If an output directory is given, the
+ * file is placed there. Otherwise, it goes in the first input's directory. The
+ * name is `<first input name>-merged.mp4`.
+ * @param inputPath - The path to the first input video, used to derive the file
+ * name.
+ * @param outputPath - The optional output directory provided by the user.
+ * @returns The full path for the merged output file.
+ * @throws Will throw an error if the output path does not exist or is not a
+ * directory.
+ */
 export function resolveOutputPath(
   inputPath: string,
   outputPath: string | null,
@@ -71,6 +98,12 @@ export function resolveOutputPath(
   return path.join(dir, `${baseName}-merged.mp4`);
 }
 
+/**
+ * Finds the largest resolution (by pixel area) among the videos. All videos are
+ * scaled to this size when merging.
+ * @param videos - The videos to inspect.
+ * @returns The `[width, height]` of the video with the largest area.
+ */
 export function getHighestResolution(videos: FileEntry[]): [number, number] {
   let highestResolutionArea = 0;
   let highestResolution: [number, number] = [0, 0];
@@ -86,6 +119,12 @@ export function getHighestResolution(videos: FileEntry[]): [number, number] {
   return highestResolution;
 }
 
+/**
+ * Finds the highest frame rate among the videos. All videos are set to this
+ * frame rate when merging.
+ * @param videos - The videos to inspect.
+ * @returns The highest frame rate found.
+ */
 export function getMaxFps(videos: FileEntry[]): number {
   let maxFps = 0;
   for (const video of videos) {
@@ -97,6 +136,18 @@ export function getMaxFps(videos: FileEntry[]): number {
   return maxFps;
 }
 
+/**
+ * Assembles the FFmpeg argument array for merging videos. It includes the
+ * inputs, filtergraph, output mapping, frame rate, codec settings, and audio
+ * handling. Audio is re-encoded as MP3 at 320k unless disabled.
+ * @param input - The FFmpeg input arguments from {@link getInputPaths}.
+ * @param outputPath - The path to write the merged video to.
+ * @param filtergraph - The filtergraph from {@link generateFiltergraph}.
+ * @param maxFps - The output frame rate.
+ * @param params - The encoding parameters derived from the user options.
+ * @param opts - The merge options, used to determine whether audio is enabled.
+ * @returns The FFmpeg arguments, excluding the executable name.
+ */
 export function generateFFMpegCommand(
   input: string[],
   outputPath: string,
@@ -129,6 +180,13 @@ export function generateFFMpegCommand(
   return command;
 }
 
+/**
+ * Reads the width and height of a video's first video stream using ffprobe.
+ * @param videoPath - The path to the video.
+ * @returns The `[width, height]` of the video.
+ * @throws Will throw an error if ffprobe returns a value that is not a valid
+ * resolution.
+ */
 function getVideoResolution(videoPath: string): [number, number] {
   const output = runFFprobe(
     [
@@ -148,6 +206,14 @@ function getVideoResolution(videoPath: string): [number, number] {
   return [width, height];
 }
 
+/**
+ * Reads the frame rate of a video's first video stream using ffprobe. The rate
+ * is parsed from its `numerator/denominator` form.
+ * @param videoPath - The path to the video.
+ * @returns The frame rate in frames per second.
+ * @throws Will throw an error if ffprobe returns a value that is not a valid
+ * frame rate.
+ */
 function getVideoFps(videoPath: string): number {
   const output = runFFprobe(
     [
@@ -167,6 +233,19 @@ function getVideoFps(videoPath: string): number {
   return numerator / denominator;
 }
 
+/**
+ * Runs the FFmpeg `vidstabdetect` pass on a video to produce a transform file
+ * used for stabilization. The file name includes the index so that each video
+ * gets its own file.
+ * @param ffmpegPath - The path to the FFmpeg executable.
+ * @param tmpDir - The directory where the transform file is written.
+ * @param inputPath - The path to the video to analyze.
+ * @param strength - The stabilization strength, from 1 (weakest) to 5
+ * (strongest).
+ * @param idx - The video's position in the merge list, used to name the
+ * transform file.
+ * @returns The path to the generated transform (`.trf`) file.
+ */
 export function generateStabilizationData(
   ffmpegPath: string,
   tmpDir: string,

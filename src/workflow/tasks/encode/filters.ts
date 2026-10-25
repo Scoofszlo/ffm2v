@@ -1,9 +1,25 @@
 import { escapeFilterPath } from "@/workflow/helpers.ts";
 
+/**
+ * Generates the FFmpeg `unsharp` filter string used to sharpen video after
+ * stabilization.
+ * @returns The `unsharp` filter definition.
+ */
 export function generateUnsharpFilter(): string {
   return "unsharp=5:5:0.8:3:3:0.4";
 }
 
+/**
+ * Generates the FFmpeg `vidstabtransform` filter chain that applies
+ * stabilization using a previously generated transform file, followed by the
+ * unsharp filter.
+ * @param trfFilePath - The path to the transform (`.trf`) file produced by the
+ * detect pass.
+ * @param strength - The stabilization strength, from 1 (weakest) to 5
+ * (strongest).
+ * @returns The combined stabilization and unsharp filter chain.
+ * @throws Will throw an error if the strength is not between 1 and 5.
+ */
 export function generateStabilizationFilter(
   trfFilePath: string,
   strength: number,
@@ -37,6 +53,16 @@ export function generateStabilizationFilter(
   return filter;
 }
 
+/**
+ * Generates the FFmpeg `vidstabdetect` filter string that analyzes camera
+ * motion and writes a transform file.
+ * @param strength - The stabilization strength, from 1 (weakest) to 5
+ * (strongest).
+ * @param trfFilePath - The path where the transform (`.trf`) file will be
+ * written.
+ * @returns The `vidstabdetect` filter definition.
+ * @throws Will throw an error if the strength is not between 1 and 5.
+ */
 export function generateVidstabDetectFilter(
   strength: number,
   trfFilePath: string,

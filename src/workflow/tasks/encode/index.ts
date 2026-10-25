@@ -14,6 +14,15 @@ import {
   resolveOutputPath,
 } from "./helpers.ts";
 
+/**
+ * Runs FFmpeg to encode a single video and reports the result. Output is
+streamed to the terminal.
+ * @param filePath - The path to the input video, used for messages.
+ * @param outputPath - The path the encoded video is written to, used for
+ * messages.
+ * @param ffmpegPath - The path to the FFmpeg executable.
+ * @param command - The FFmpeg arguments, excluding the executable name.
+ */
 function encodeVideo(
   filePath: string,
   outputPath: string,
@@ -44,8 +53,15 @@ function encodeVideo(
   }
 }
 
+/**
+ * Runs the encode workflow. Collects files from the input source, moves
+ * non-video files to the output directory, and encodes each video.
+ * Videos with stabilization enabled get a detection pass first.
+ * @param workflow - The validated encode workflow containing the
+ * options and temp directory.
+ */
 export function runEncode(workflow: EncodeWorkflow) {
-  // Prepare the encoding parameters and input/output paths
+  // Prepare core parameters for the encoding process
   const opts = workflow.options;
   const params = new FFmpegEncodingParams(opts);
   const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
@@ -105,7 +121,8 @@ export function runEncode(workflow: EncodeWorkflow) {
 
     const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
 
-    // If filterchain is not empty, append a "-vf" flag
+    // If filterchain is empty, set it to null to avoid passing an empty string
+    // to the FFmpeg command
     if (!filterchain) {
       filterchain = null;
     }

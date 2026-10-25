@@ -15,6 +15,14 @@ import {
   resolveOutputPath,
 } from "./helpers.ts";
 
+/**
+ * Runs FFmpeg to merge the videos and reports the result. Output is streamed to
+ * the terminal.
+ * @param outputPath - The path the merged video is written to, used for
+ * messages.
+ * @param ffmpegPath - The path to the FFmpeg executable.
+ * @param command - The FFmpeg arguments, excluding the executable name.
+ */
 function encodeVideo(
   outputPath: string,
   ffmpegPath: string,
@@ -38,6 +46,13 @@ function encodeVideo(
   }
 }
 
+/**
+ * Runs the merge workflow. Validates the inputs, optionally generates
+ * stabilization data for each video, builds the filtergraph, and merges the
+ * videos into a single file.
+ * @param workflow - The validated merge workflow containing the options and
+ * temp directory.
+ */
 export function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
   const params = new FFmpegEncodingParams(opts);
@@ -90,6 +105,7 @@ export function runMerge(workflow: MergeWorkflow) {
       print(chalk.gray(filtergraph));
     },
   );
+
   const command = generateFFMpegCommand(
     inputPaths,
     outputPath,
