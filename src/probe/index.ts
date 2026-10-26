@@ -5,7 +5,7 @@ import {
   parseResolution,
   pickHighestResolution,
   pickMaxFps,
-} from "./helpers.ts";
+} from "./parsers.ts";
 
 /**
  * Reads the width and height of a video's first video stream using ffprobe.

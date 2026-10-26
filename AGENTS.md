@@ -34,9 +34,9 @@ src/cli/args_parser.ts        ArgsParser class: commander program + command defi
 src/cli/commands.ts           shared option definitions + applyCommonOptions()
 src/cli/printer.ts            print() (success/error/warning) and spinnerPrint()
 src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URLs
-src/helpers.ts                createTmpDir(): unique "ffm2v-" dir under the OS temp path
+src/util.ts                   createTmpDir(): unique "ffm2v-" dir under the OS temp path
 src/filters/                  pure filter-string builders: stabilization.ts, unsharp.ts
-src/probe/                    ffprobe reads (index.ts) + pure parsers/math (helpers.ts)
+src/probe/                    ffprobe reads (index.ts) + pure parsers/math (parsers.ts)
 src/workflow/helpers.ts       process + fs layer: runCommand(), runFFprobe(),
                               createMediaFile(), checkIsVideo/checkHasAudio/
                               getVideoDuration(), resolveFFmpegExecutable(),
@@ -159,7 +159,7 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   codec abstraction, cross-platform updater support, or new commands unless asked.
 - Keep FFmpeg work on the CLI boundary. Pure helpers are cheap to test and belong
   next to their concern: filter-string builders in `src/filters/`, probe
-  parsers/ratio math in `src/probe/helpers.ts`, and process/fs utilities in
+  parsers/ratio math in `src/probe/parsers.ts`, and process/fs utilities in
   `src/workflow/helpers.ts`. Anything that reads a media file belongs behind
   `createMediaFile()`/task code.
 - No monorepo tooling, task runners, or caching layers are set up — don't
