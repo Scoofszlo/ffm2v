@@ -6,11 +6,7 @@ import type {
 class FFmpegEncodingParams {
   opts: EncodeWorkflowOpts | MergeWorkflowOpts;
 
-  constructor(params?: EncodeWorkflowOpts | MergeWorkflowOpts) {
-    if (!params) {
-      console.error("error: No parameters provided for FFmpeg encoding.");
-      process.exit(1);
-    }
+  constructor(params: EncodeWorkflowOpts | MergeWorkflowOpts) {
     this.opts = params;
   }
 

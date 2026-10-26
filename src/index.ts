@@ -1,14 +1,18 @@
+import fs from "fs";
 import { ZodError } from "zod";
 import { argsParser } from "./cli/args_parser.ts";
 import { print } from "./cli/printer.ts";
+import { createTmpDir } from "./helpers.ts";
 import { WorkflowSchema } from "./workflow/model/workflow.ts";
 import { runEncode } from "./workflow/tasks/encode/index.ts";
 import { runMerge } from "./workflow/tasks/merge/index.ts";
 import { runUpdate } from "./workflow/tasks/update/index.ts";
 
+const tmpDir = createTmpDir();
+
 try {
   const parsedArgs = argsParser.parseArgs();
-  const workflow = WorkflowSchema.parse(parsedArgs);
+  const workflow = WorkflowSchema.parse({ ...parsedArgs, tmpDir });
 
   if (workflow.type === "update") {
     runUpdate(workflow);
@@ -21,12 +25,16 @@ try {
   if (error instanceof ZodError) {
     // Print the first issue instead of all issues to avoid overwhelming the
     // user with too much errors
-    const firstIssue = error.issues[0]?.message ?? "Unknown issue detected";
+    const firstIssue = error.issues[0]?.message ?? "Unknown issue caught";
 
     print(firstIssue, "error");
+  } else if (error instanceof Error) {
+    print(`${error.message}`, "error");
   } else {
-    print(error as string, "error");
+    print(`${error}`, "error");
   }
 
   process.exit(1);
+} finally {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 }

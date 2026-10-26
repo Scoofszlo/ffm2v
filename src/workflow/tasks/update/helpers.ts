@@ -48,11 +48,7 @@ export function getFFmpegDirPath(executablePath: string): string {
 }
 
 export function getLocalFFmpegVersion(executablePath: string): string {
-  const output = runCommand(
-    executablePath,
-    ["-version"],
-    `'${executablePath}'`,
-  );
+  const output = runCommand(executablePath, ["-version"]);
   const versionMatch = output.match(FFMPEG_VERSION_REGEX);
 
   if (!(versionMatch && versionMatch[1])) {
@@ -63,7 +59,7 @@ export function getLocalFFmpegVersion(executablePath: string): string {
 }
 
 export function getRemoteFFmpegVersion(): string {
-  const output = runCommand("curl", ["-s", REMOTE_FFMPEG_VERSION_URL], "curl");
+  const output = runCommand("curl", ["-s", REMOTE_FFMPEG_VERSION_URL]);
   const versionMatch = output.match(GIT_VERSION_REGEX);
 
   if (!versionMatch) {
@@ -120,7 +116,7 @@ export function downloadNewVersion(
   downloadUrl: string,
   destinationPath: string,
 ): void {
-  runCommand("curl", ["-L", "-o", destinationPath, downloadUrl], "curl");
+  runCommand("curl", ["-L", "-o", destinationPath, downloadUrl]);
 
   if (
     !fs.existsSync(destinationPath) ||

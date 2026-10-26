@@ -29,18 +29,29 @@ Use npm (a `package-lock.json` exists; do not switch package managers).
 ## Architecture
 
 ```
-src/index.ts                  entry: parse args -> validate -> dispatch to one task
+src/index.ts                  entry: create tmp dir -> parse args -> validate -> dispatch to one task
 src/cli/args_parser.ts        ArgsParser class: commander program + command definitions
 src/cli/commands.ts           shared option definitions + applyCommonOptions()
 src/cli/printer.ts            print() (success/error/warning) and spinnerPrint()
 src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URLs
-src/param/model.ts            FFmpegEncodingParams: options -> ffmpeg CLI flag arrays
-src/workflow/helpers.ts       filesystem/ffprobe probes via createFileEntry(); runFFprobe() runner
-src/workflow/model/           WorkflowSchema (zod) + FileEntry class
-src/workflow/tasks/<task>/    index.ts orchestrator, helpers.ts, filters.ts, types.ts
+src/helpers.ts                createTmpDir(): unique "ffm2v-" dir under the OS temp path
+src/filters/                  pure filter-string builders: stabilization.ts, unsharp.ts
+src/probe/                    ffprobe reads (index.ts) + pure parsers/math (helpers.ts)
+src/workflow/helpers.ts       process + fs layer: runCommand(), runFFprobe(),
+                              createFileEntry(), checkIsVideo/checkHasAudio/
+                              getVideoDuration(), resolveFFmpegExecutable(),
+                              escapeFilterPath(), moveFile()
+src/workflow/model/           WorkflowSchema (zod), FileEntry, FFmpegEncodingParams
+                              (encodingParams.ts: options -> ffmpeg CLI flag arrays)
+src/workflow/tasks/<task>/    index.ts orchestrator + helpers.ts; merge/ also has
+                              filters.ts (encode/ has types.ts)
 ```
 
 Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**.
+
+- `index.ts` creates the temp dir before parsing, passes it into
+  `WorkflowSchema.parse()` (`tmpDir` is a required schema field), and removes it in
+  a `finally` block. Tasks receive it as `workflow.tmpDir` for stabilization files.
 
 - `args_parser.ts` does **no** validation. It returns raw commander options plus a
   command name, which `index.ts` feeds into `WorkflowSchema.parse()`.
@@ -64,6 +75,16 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   (`export { runEncode };`). Classes for stateful things, functions elsewhere.
 - Keep `noPropertyAccessFromIndexSignature` in mind when reading parsed JSON
   (`data["streams"]`, not `data.streams`).
+- **Documentation comments.** Functions in `src/` have TSDoc (`/** ... */`) with a
+  summary, plus `@param`, `@returns`, and `@throws` where applicable.
+  - Wrap TSDoc lines at Prettier's `printWidth` (80 unless `.prettierrc` sets
+    otherwise). Count the indentation and the leading ` * ` toward the limit.
+    Prettier does not wrap comment text, and ESLint will not flag long lines.
+  - When you change a function's parameters, return value, side effects, or thrown
+    errors, update its TSDoc in the same change. Check that `@param` names match and
+    that `@throws` still describes the actual failure conditions.
+  - When you rename or remove a function, search for `{@link Name}` references and
+    comments that mention it.
 
 ## Validation and errors
 
@@ -80,8 +101,8 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 - All user-facing output goes through `print()` from `src/cli/printer.ts` with a
   `"success" | "error" | "warning"` type; use `chalk` for styling and
   `spinnerPrint()` for long blocking operations. Do not use bare `console.log`
-  in new code (existing `console.error` calls in `param/model.ts` and
-  `tasks/update/index.ts` predate this convention).
+  in new code (the existing `console.error` call in `tasks/update/index.ts`
+  predates this convention).
 
 ## External processes
 
@@ -89,11 +110,12 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   interpolated shell strings, so file paths with spaces or quotes stay safe.
   Requirement: `ffmpeg`, `ffprobe`; `update-ffmpeg` additionally needs `7z` and
   `curl` on PATH (`which` is used to probe).
-- Use the existing runners rather than writing new spawn blocks: `runFFprobe()` in
-  `src/workflow/helpers.ts` for any ffprobe call, and the module-local
-  `runCommand()` in `tasks/update/helpers.ts` for ffmpeg/curl. Both check
-  `result.error` (missing binary → `ENOENT`) **before** `result.status !== 0`, so
-  users get a real message instead of `stderr: undefined`.
+- Use the existing runners rather than writing new spawn blocks: `runCommand()`
+  for ffmpeg/curl calls and `runFFprobe()` for any ffprobe call, both exported
+  from `src/workflow/helpers.ts`. Both check `result.error` (missing binary →
+  `ENOENT`) **before** `result.status !== 0`, so users get a real message instead
+  of `stderr: undefined`. The one existing exception is `extractAndMove()` in
+  `tasks/update/helpers.ts`, which spawns `7z` directly.
 - Prefer `spawnSync` over `execSync`: no shell parsing, no quoting bugs, and
   `execSync` throws on non-zero exit without exposing `result.error`.
 - Never assume FFmpeg/probe availability in tests — see below.
@@ -133,8 +155,10 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 - This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
   codec abstraction, cross-platform updater support, or new commands unless asked.
-- Keep FFmpeg work on the CLI boundary. Pure helpers (string/array/ratio math)
-  are cheap to test and belong in `helpers.ts`; anything that reads a media file
-  belongs behind `createFileEntry()`/task code.
+- Keep FFmpeg work on the CLI boundary. Pure helpers are cheap to test and belong
+  next to their concern: filter-string builders in `src/filters/`, probe
+  parsers/ratio math in `src/probe/helpers.ts`, and process/fs utilities in
+  `src/workflow/helpers.ts`. Anything that reads a media file belongs behind
+  `createFileEntry()`/task code.
 - No monorepo tooling, task runners, or caching layers are set up — don't
   introduce one (Turborepo, nx, wireit, etc.) as a side effect of a task.

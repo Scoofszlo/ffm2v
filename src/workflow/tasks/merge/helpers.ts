@@ -1,15 +1,26 @@
 import fs from "fs";
 import path from "path";
-import type { FFmpegEncodingParams } from "@/param/model.ts";
+import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
 import {
   checkIsVideo,
   createFileEntry,
+  escapeFilterPath,
   runCommand,
-  runFFprobe,
 } from "@/workflow/helpers.ts";
+import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
+/**
+ * Validates each input path and creates a file entry for it. Each path must
+ * exist, be a file, and be a video.
+ * @param input - The list of input file paths.
+ * @param onSuccess - Callback invoked with each file entry as it is validated.
+ * @returns The file entries as a tuple guaranteed to contain at least two
+ * items.
+ * @throws Will throw an error if fewer than two inputs are given, or if any
+ * input does not exist, is not a file, or is not a video.
+ */
 export function getFiles(
   input: string[],
   onSuccess: (file: FileEntry) => void,
@@ -38,51 +49,104 @@ export function getFiles(
   return files as [FileEntry, FileEntry, ...FileEntry[]];
 }
 
+/**
+ * Converts the video list into FFmpeg input arguments, pairing each video with
+ * an `-i` flag.
+ * @param videos - The videos being merged, in input order.
+ * @returns A flat array such as `['-i', 'a.mp4', '-i', 'b.mp4']`.
+ */
 export function getInputPaths(videos: FileEntry[]): string[] {
   return videos.map((video) => ["-i", video.fullPath]).flat();
 }
 
-export function getOutputPath(
+/**
+ * Resolves the merged output file path. If an output directory is given, the
+ * file is placed there. Otherwise, it goes in the first input's directory. The
+ * name is `<first input name>-merged.mp4`.
+ * @param inputPath - The path to the first input video, used to derive the file
+ * name.
+ * @param outputPath - The optional output directory provided by the user.
+ * @returns The full path for the merged output file.
+ * @throws Will throw an error if the output path does not exist or is not a
+ * directory.
+ */
+export function resolveOutputPath(
   inputPath: string,
   outputPath: string | null,
 ): string {
+  const baseName = path.basename(inputPath, path.extname(inputPath));
+
+  // Check if output path is supplied
   if (outputPath) {
     if (!fs.existsSync(outputPath)) {
       throw new Error(`Output path '${outputPath}' does not exist.`);
     }
-    return outputPath;
+
+    // If the output path is a directory, create a default output file name.
+    // Otherwise, throw an error
+    if (fs.statSync(outputPath).isDirectory()) {
+      return path.join(outputPath, `${baseName}-merged.mp4`);
+    } else {
+      throw new Error(`Output path '${outputPath}' is not a directory.`);
+    }
   }
+
+  // If no output path is supplied, create a default output file name in the
+  // same directory as the first input video.
   const dir = path.dirname(inputPath);
-  const baseName = path.basename(inputPath, path.extname(inputPath));
   return path.join(dir, `${baseName}-merged.mp4`);
 }
 
-export function getHighestResolution(videos: FileEntry[]): [number, number] {
-  let highestResolutionArea = 0;
-  let highestResolution: [number, number] = [0, 0];
+/**
+ * Runs the FFmpeg `vidstabdetect` pass on a video to produce a transform file
+ * used for stabilization. The file name includes the index so that each video
+ * gets its own file.
+ * @param ffmpegPath - The path to the FFmpeg executable.
+ * @param tmpDir - The directory where the transform file is written.
+ * @param inputPath - The path to the video to analyze.
+ * @param strength - The stabilization strength, from 1 (weakest) to 5
+ * (strongest).
+ * @param idx - The video's position in the merge list, used to name the
+ * transform file.
+ * @returns The path to the generated transform (`.trf`) file.
+ */
+export function generateStabilizationData(
+  ffmpegPath: string,
+  tmpDir: string,
+  inputPath: string,
+  strength: number,
+  idx: number,
+) {
+  const trfFilePath = path.join(tmpDir, `transforms-${idx}.trf`);
+  const escapedTrfFilePath = escapeFilterPath(trfFilePath);
 
-  for (const video of videos) {
-    const resolution = getVideoResolution(video.fullPath);
-    const area = resolution[0] * resolution[1];
-    if (area > highestResolutionArea) {
-      highestResolutionArea = area;
-      highestResolution = resolution;
-    }
-  }
-  return highestResolution;
+  const command = [
+    "-i",
+    inputPath,
+    "-vf",
+    generateVidstabDetectFilter(strength, escapedTrfFilePath),
+    "-f",
+    "null",
+    "-",
+  ];
+
+  runCommand(ffmpegPath, command, { stdio: "inherit" });
+
+  return trfFilePath;
 }
 
-export function getMaxFps(videos: FileEntry[]): number {
-  let maxFps = 0;
-  for (const video of videos) {
-    const fps = getVideoFps(video.fullPath);
-    if (fps > maxFps) {
-      maxFps = fps;
-    }
-  }
-  return maxFps;
-}
-
+/**
+ * Assembles the FFmpeg argument array for merging videos. It includes the
+ * inputs, filtergraph, output mapping, frame rate, codec settings, and audio
+ * handling. Audio is re-encoded as MP3 at 320k unless disabled.
+ * @param input - The FFmpeg input arguments from {@link getInputPaths}.
+ * @param outputPath - The path to write the merged video to.
+ * @param filtergraph - The filtergraph from `generateFiltergraph`.
+ * @param maxFps - The output frame rate.
+ * @param params - The encoding parameters derived from the user options.
+ * @param opts - The merge options, used to determine whether audio is enabled.
+ * @returns The FFmpeg arguments, excluding the executable name.
+ */
 export function generateFFMpegCommand(
   input: string[],
   outputPath: string,
@@ -113,77 +177,4 @@ export function generateFFMpegCommand(
   }
   command.push(outputPath);
   return command;
-}
-
-function getVideoResolution(videoPath: string): [number, number] {
-  const output = runFFprobe(
-    [
-      "-select_streams",
-      "v:0",
-      "-show_entries",
-      "stream=width,height",
-      "-of",
-      "csv=p=0",
-    ],
-    videoPath,
-  );
-  const [width, height] = output.split(",").map(Number);
-  if (!width || !height || isNaN(width) || isNaN(height)) {
-    throw new Error(`Invalid resolution format for '${videoPath}': ${output}`);
-  }
-  return [width, height];
-}
-
-function getVideoFps(videoPath: string): number {
-  const output = runFFprobe(
-    [
-      "-select_streams",
-      "v:0",
-      "-show_entries",
-      "stream=r_frame_rate",
-      "-of",
-      "csv=p=0",
-    ],
-    videoPath,
-  );
-  const [numerator, denominator] = output.split("/").map(Number);
-  if (!numerator || !denominator || isNaN(numerator) || isNaN(denominator)) {
-    throw new Error(`Invalid fps format for '${videoPath}': ${output}`);
-  }
-  return numerator / denominator;
-}
-
-export function generateStabilizationData(
-  inputPath: string,
-  strength: number,
-  idx: number,
-) {
-  const command = [
-    "-i",
-    inputPath,
-    "-vf",
-    `vidstabdetect=${getVidstabdetectOpts(strength)}:result=transforms-${idx}.trf`,
-    "-f",
-    "null",
-    "-",
-  ];
-
-  runCommand("ffmpeg", command, "ffmpeg", { stdio: "inherit" });
-}
-
-function getVidstabdetectOpts(strength: number): string {
-  switch (strength) {
-    case 1:
-      return "shakiness=4:accuracy=9";
-    case 2:
-      return "shakiness=6:accuracy=12";
-    case 3:
-      return "shakiness=8:accuracy=15";
-    case 4:
-      return "shakiness=10:accuracy=15";
-    case 5:
-      return "shakiness=10:accuracy=15";
-    default:
-      throw new Error(`Invalid stabilization strength: ${strength}`);
-  }
 }

@@ -1,9 +1,9 @@
 import os from "os";
 import path from "path";
+import { print, spinnerPrint } from "@/cli/printer.ts";
+import { FFMPEG_LATEST_DOWNLOAD_URL } from "@/constants.ts";
 import type { UpdateWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
-import { print, spinnerPrint } from "../../../cli/printer.ts";
-import { FFMPEG_LATEST_DOWNLOAD_URL } from "../../../constants.ts";
 import {
   archiveOldVersion,
   checkDeps,
@@ -22,27 +22,22 @@ function runUpdate(workflow: UpdateWorkflow) {
   const opts = workflow.options;
 
   if (process.platform !== "win32") {
-    print(
+    throw new Error(
       "The update feature is currently only supported on Windows.",
-      "error",
     );
-    process.exit(1);
   }
 
   const result = checkDeps();
   if (result.status === "missing") {
     if (!result.deps.ffmpeg) {
-      print(
+      throw new Error(
         "FFmpeg is not installed or not found in PATH. Please install FFmpeg to use the update feature.",
-        "error",
       );
     } else if (!result.deps.sevenZip) {
-      print(
+      throw new Error(
         "7-Zip is not installed or not found in PATH. Please install 7-Zip to use the update feature.",
-        "error",
       );
     }
-    process.exit(1);
   }
 
   const { ffmpegExecutablePath, ffmpegDirPath } = getFFmpegPaths();
@@ -56,9 +51,9 @@ function runUpdate(workflow: UpdateWorkflow) {
 
         return { localVersion, remoteVersion };
       } catch (error) {
-        const errorMsg = `Error checking FFmpeg version: ${error}`;
-        print(errorMsg, "error");
-        process.exit(1);
+        throw new Error(`Error checking FFmpeg version: ${error}`, {
+          cause: error,
+        });
       }
     },
   );
@@ -73,8 +68,7 @@ function runUpdate(workflow: UpdateWorkflow) {
       print(`Upgradable from '${localVersion}' to '${remoteVersion}'`);
     }
   } catch (error) {
-    print(`Error comparing versions: ${error}`, "error");
-    process.exit(1);
+    throw new Error(`Error comparing versions: ${error}`, { cause: error });
   }
 
   if (opts.checkOnly) return;
@@ -86,9 +80,12 @@ function runUpdate(workflow: UpdateWorkflow) {
       try {
         deleteOldVersion(ffmpegDirPath);
       } catch (error) {
-        const errorMsg = `Failed to delete existing FFmpeg installation: ${error}`;
-        print(errorMsg, "error");
-        process.exit(1);
+        throw new Error(
+          `Failed to delete existing FFmpeg installation: ${error}`,
+          {
+            cause: error,
+          },
+        );
       }
       print("Existing FFmpeg installation deleted.");
     });
@@ -97,9 +94,10 @@ function runUpdate(workflow: UpdateWorkflow) {
       try {
         archiveOldVersion(ffmpegDirPath, localVersion);
       } catch (error) {
-        const errorMsg = `Failed to archive existing FFmpeg installation: ${error}`;
-        print(errorMsg, "error");
-        process.exit(1);
+        throw new Error(
+          `Failed to archive existing FFmpeg installation: ${error}`,
+          { cause: error },
+        );
       }
       print("Existing FFmpeg installation archived.");
     });
@@ -116,9 +114,9 @@ function runUpdate(workflow: UpdateWorkflow) {
         archivePath,
       );
     } catch (error) {
-      const errorMsg = `Failed to download new FFmpeg version: ${error}`;
-      print(errorMsg, "error");
-      process.exit(1);
+      throw new Error(`Failed to download new FFmpeg version: ${error}`, {
+        cause: error,
+      });
     }
   });
 
@@ -126,9 +124,9 @@ function runUpdate(workflow: UpdateWorkflow) {
     try {
       extractAndMove(archivePath, extractionPath, ffmpegDirPath);
     } catch (error) {
-      const errorMsg = `Failed to set up the new FFmpeg version: ${error}`;
-      print(errorMsg, "error");
-      process.exit(1);
+      throw new Error(`Failed to set up the new FFmpeg version: ${error}`, {
+        cause: error,
+      });
     } finally {
       cleanup([archivePath, extractionPath]);
     }

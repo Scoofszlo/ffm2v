@@ -1,42 +1,16 @@
+import { generateStabilizationFilter } from "@/filters/stabilization.ts";
+import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
-import type { FileEntry } from "../../model/fileEntry.ts";
 
-export function generateUnsharpFilter(): string {
-  return "unsharp=5:5:0.8:3:3:0.4";
-}
-
-export function generateStabilizationFilter(
-  strength: number,
-  idx: number,
-): string {
-  let filter = "vidstabtransform=";
-
-  switch (strength) {
-    case 1:
-      filter += `smoothing=10:input=transforms-${idx}.trf:maxangle=0.0`;
-      break;
-    case 2:
-      filter += `smoothing=15:input=transforms-${idx}.trf:maxangle=0.0`;
-      break;
-    case 3:
-      filter += `smoothing=22:input=transforms-${idx}.trf:maxangle=0.0`;
-      break;
-    case 4:
-      filter += `smoothing=30:input=transforms-${idx}.trf:maxangle=0.0`;
-      break;
-    case 5:
-      filter += `smoothing=40:input=transforms-${idx}.trf:maxangle=0.0`;
-      break;
-    default:
-      throw new Error(`Invalid stabilization strength: ${strength}`);
-  }
-
-  filter += ",";
-  filter += generateUnsharpFilter();
-
-  return filter;
-}
-
+/**
+ * Builds the `concat` segment of the filtergraph that joins all per-video
+ * streams. Audio is included only when audio is enabled and the video has an
+ * audio stream.
+ * @param videos - The videos being merged, in input order.
+ * @param opts - The merge options, used to determine whether audio is enabled.
+ * @returns The concat filter segment, ending in the `[outv]` and optionally
+ * `[outa]` labels.
+ */
 function getConcatFilterchain(
   videos: FileEntry[],
   opts: MergeWorkflowOpts,
@@ -60,6 +34,18 @@ function getConcatFilterchain(
   return filterchain;
 }
 
+/**
+ * Builds the per-video filtergraph segments. Each video is optionally
+ * stabilized, then scaled to the target resolution with a fixed frame rate.
+ * Audio is resampled to 48 kHz stereo FLTP when present and enabled.
+ * @param videos - The videos being merged, in input order.
+ * @param highestResolution - The target `[width, height]` for all videos.
+ * @param maxFps - The target frame rate for all videos.
+ * @param opts - The merge options controlling stabilization and audio.
+ * @returns The concatenated per-video filtergraph segments.
+ * @throws Will throw an error if stabilization is enabled and a video has no
+ * transform file path.
+ */
 function getPerVideoFilterchain(
   videos: FileEntry[],
   highestResolution: [number, number],
@@ -72,10 +58,17 @@ function getPerVideoFilterchain(
     // Start the filtergraph segment for this video
     filtergraph += `[${index}:v]`;
 
-    // Apply stabilization filter if enabled
+    // Apply stabilization filter if enabled, and throw an error if the
+    // transformation file path is missing for the video
     if (opts.stabilize) {
+      if (!video.transFormFilePath) {
+        throw new Error(
+          `Transformation file path is missing for video: ${video.fullPath}`,
+        );
+      }
+
       const strength = opts.stabilize;
-      filtergraph += `${generateStabilizationFilter(strength, index)},`;
+      filtergraph += `${generateStabilizationFilter(video.transFormFilePath, strength)},`;
     }
 
     // Apply scaling and frame rate adjustments
@@ -93,6 +86,18 @@ function getPerVideoFilterchain(
   return filtergraph;
 }
 
+/**
+ * Generates the full FFmpeg filtergraph for merging videos, combining the
+ * per-video segments with the concat segment.
+ * @param videos - The videos being merged, in input order.
+ * @param highestResolution - The target `[width, height]` for all videos.
+ * @param maxFps - The target frame rate for all videos.
+ * @param opts - The merge options controlling stabilization and audio.
+ * @param onSuccess - Callback invoked with the generated filtergraph.
+ * @returns The complete filtergraph string.
+ * @throws Will throw an error if stabilization is enabled and a video has no
+ * transform file path.
+ */
 export function generateFiltergraph(
   videos: FileEntry[],
   highestResolution: [number, number],
