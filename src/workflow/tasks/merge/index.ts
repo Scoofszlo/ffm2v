@@ -7,7 +7,7 @@ import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import { generateFiltergraph } from "./filters.ts";
 import {
-  generateFFMpegCommand,
+  generateFFmpegCommand,
   generateStabilizationData,
   getFiles,
   getInputPaths,
@@ -22,7 +22,7 @@ import {
  * @param ffmpegPath - The path to the FFmpeg executable.
  * @param command - The FFmpeg arguments, excluding the executable name.
  */
-function encodeVideo(
+function mergeVideos(
   outputPath: string,
   ffmpegPath: string,
   command: string[],
@@ -105,7 +105,7 @@ export function runMerge(workflow: MergeWorkflow) {
     },
   );
 
-  const command = generateFFMpegCommand(
+  const command = generateFFmpegCommand(
     inputPaths,
     outputPath,
     filtergraph,
@@ -114,5 +114,5 @@ export function runMerge(workflow: MergeWorkflow) {
     opts,
   );
 
-  encodeVideo(outputPath, ffmpegPath, command);
+  mergeVideos(outputPath, ffmpegPath, command);
 }

@@ -6,7 +6,7 @@ import { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import {
-  generateFFMpegCommand,
+  generateFFmpegCommand,
   generateStabilizationData,
   getFiles,
   resolveInputSource,
@@ -127,7 +127,7 @@ export function runEncode(workflow: EncodeWorkflow) {
       filterchain = null;
     }
 
-    const command = generateFFMpegCommand(
+    const command = generateFFmpegCommand(
       file.fullPath,
       outputPath,
       params,

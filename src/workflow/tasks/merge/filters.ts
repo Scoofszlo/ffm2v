@@ -61,14 +61,14 @@ function getPerVideoFilterchain(
     // Apply stabilization filter if enabled, and throw an error if the
     // transformation file path is missing for the video
     if (opts.stabilize) {
-      if (!video.transFormFilePath) {
+      if (!video.transformFilePath) {
         throw new Error(
           `Transformation file path is missing for video: ${video.fullPath}`,
         );
       }
 
       const strength = opts.stabilize;
-      filtergraph += `${generateStabilizationFilter(video.transFormFilePath, strength)},`;
+      filtergraph += `${generateStabilizationFilter(video.transformFilePath, strength)},`;
     }
 
     // Apply scaling and frame rate adjustments

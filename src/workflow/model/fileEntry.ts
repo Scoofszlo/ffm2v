@@ -9,7 +9,7 @@ class FileEntry {
   isVideo: boolean;
   hasAudio: boolean;
   duration: number | null = null;
-  transFormFilePath: string | null = null;
+  transformFilePath: string | null = null;
 
   constructor(
     sourceDir: string,
@@ -40,8 +40,8 @@ class FileEntry {
     return path.extname(this.fileName);
   }
 
-  setTransformFilePath(transFormFilePath: string) {
-    this.transFormFilePath = transFormFilePath;
+  setTransformFilePath(transformFilePath: string) {
+    this.transformFilePath = transformFilePath;
   }
 }
 

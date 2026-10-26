@@ -158,7 +158,7 @@ export function resolveOutputPath(
  * flag.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
-export function generateFFMpegCommand(
+export function generateFFmpegCommand(
   inputPath: string,
   outputPath: string,
   params: FFmpegEncodingParams,

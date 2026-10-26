@@ -147,7 +147,7 @@ export function generateStabilizationData(
  * @param opts - The merge options, used to determine whether audio is enabled.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
-export function generateFFMpegCommand(
+export function generateFFmpegCommand(
   input: string[],
   outputPath: string,
   filtergraph: string,
