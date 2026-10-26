@@ -41,6 +41,8 @@ src/workflow/helpers.ts       process + fs layer: runCommand(), runFFprobe(),
                               createFileEntry(), checkIsVideo/checkHasAudio/
                               getVideoDuration(), resolveFFmpegExecutable(),
                               escapeFilterPath(), moveFile()
+src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
+                              generateStabilizationData()
 src/workflow/model/           WorkflowSchema (zod), FileEntry, FFmpegEncodingParams
                               (encodingParams.ts: options -> ffmpeg CLI flag arrays)
 src/workflow/tasks/<task>/    index.ts orchestrator + helpers.ts; merge/ also has

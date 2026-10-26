@@ -4,10 +4,10 @@ import { generateStabilizationFilter } from "@/filters/stabilization.ts";
 import { moveFile, resolveFFmpegExecutable } from "@/workflow/helpers.ts";
 import { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
+import { generateStabilizationData } from "@/workflow/stabilization.ts";
 import chalk from "chalk";
 import {
   generateFFmpegCommand,
-  generateStabilizationData,
   getFiles,
   resolveInputSource,
   resolveOutputDir,

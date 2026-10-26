@@ -4,11 +4,11 @@ import { getHighestResolution, getMaxFps } from "@/probe/index.ts";
 import { resolveFFmpegExecutable } from "@/workflow/helpers.ts";
 import { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
+import { generateStabilizationData } from "@/workflow/stabilization.ts";
 import chalk from "chalk";
 import { generateFiltergraph } from "./filters.ts";
 import {
   generateFFmpegCommand,
-  generateStabilizationData,
   getFiles,
   getInputPaths,
   resolveOutputPath,
@@ -84,7 +84,7 @@ export function runMerge(workflow: MergeWorkflow) {
         tmpDir,
         video.fullPath,
         strength,
-        index,
+        `transforms-${index}.trf`,
       );
 
       // Set the transformation file path in the video object for later use

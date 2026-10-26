@@ -1,12 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
-import {
-  checkIsVideo,
-  createFileEntry,
-  escapeFilterPath,
-  runCommand,
-} from "@/workflow/helpers.ts";
+import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
 import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
@@ -95,44 +89,6 @@ export function resolveOutputPath(
   // same directory as the first input video.
   const dir = path.dirname(inputPath);
   return path.join(dir, `${baseName}-merged.mp4`);
-}
-
-/**
- * Runs the FFmpeg `vidstabdetect` pass on a video to produce a transform file
- * used for stabilization. The file name includes the index so that each video
- * gets its own file.
- * @param ffmpegPath - The path to the FFmpeg executable.
- * @param tmpDir - The directory where the transform file is written.
- * @param inputPath - The path to the video to analyze.
- * @param strength - The stabilization strength, from 1 (weakest) to 5
- * (strongest).
- * @param idx - The video's position in the merge list, used to name the
- * transform file.
- * @returns The path to the generated transform (`.trf`) file.
- */
-export function generateStabilizationData(
-  ffmpegPath: string,
-  tmpDir: string,
-  inputPath: string,
-  strength: number,
-  idx: number,
-) {
-  const trfFilePath = path.join(tmpDir, `transforms-${idx}.trf`);
-  const escapedTrfFilePath = escapeFilterPath(trfFilePath);
-
-  const command = [
-    "-i",
-    inputPath,
-    "-vf",
-    generateVidstabDetectFilter(strength, escapedTrfFilePath),
-    "-f",
-    "null",
-    "-",
-  ];
-
-  runCommand(ffmpegPath, command, { stdio: "inherit" });
-
-  return trfFilePath;
 }
 
 /**
