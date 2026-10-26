@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
-import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
+import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
@@ -99,7 +99,7 @@ export function resolveOutputPath(
  * @param outputPath - The path to write the merged video to.
  * @param filtergraph - The filtergraph from `generateFiltergraph`.
  * @param maxFps - The output frame rate.
- * @param params - The encoding parameters derived from the user options.
+ * @param args - The encoding arguments derived from the user options.
  * @param opts - The merge options, used to determine whether audio is enabled.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
@@ -108,7 +108,7 @@ export function generateFFmpegCommand(
   outputPath: string,
   filtergraph: string,
   maxFps: number,
-  params: FFmpegEncodingParams,
+  args: FFmpegArgs,
   opts: MergeWorkflowOpts,
 ): string[] {
   const command: string[] = [];
@@ -122,11 +122,11 @@ export function generateFFmpegCommand(
   }
 
   command.push("-r", `${maxFps}`);
-  command.push(...params.videoCodec);
-  command.push(...params.crf);
+  command.push(...args.videoCodec);
+  command.push(...args.crf);
   command.push("-x265-params", "no-info=1");
-  if (params.disableAudio[0] === "-an") {
-    command.push(...params.disableAudio);
+  if (opts.disableAudio) {
+    command.push("-an");
   } else {
     command.push("-c:a", "libmp3lame");
     command.push("-b:a", "320k");

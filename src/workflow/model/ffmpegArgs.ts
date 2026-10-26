@@ -3,11 +3,16 @@ import type {
   MergeWorkflowOpts,
 } from "@/workflow/model/workflow.ts";
 
-class FFmpegEncodingParams {
+/**
+ * Derives the FFmpeg CLI flag fragments shared by the encode and merge tasks
+ * from the validated user options. Each getter returns the flags to append to
+ * the FFmpeg argument array.
+ */
+class FFmpegArgs {
   opts: EncodeWorkflowOpts | MergeWorkflowOpts;
 
-  constructor(params: EncodeWorkflowOpts | MergeWorkflowOpts) {
-    this.opts = params;
+  constructor(options: EncodeWorkflowOpts | MergeWorkflowOpts) {
+    this.opts = options;
   }
 
   get videoCodec() {
@@ -18,15 +23,10 @@ class FFmpegEncodingParams {
     return ["-crf", this.opts.crf.toString()];
   }
 
-  get resolution() {
-    if ("resolution" in this.opts && this.opts.resolution) {
-      const { width, height } = this.opts.resolution;
-      return ["-vf", `scale=${width}:${height}`];
-    }
-    return [];
-  }
-
-  get disableAudio() {
+  /**
+   * Audio flags: `-an` when audio is disabled, otherwise a stream copy.
+   */
+  get audioArgs() {
     if (this.opts.disableAudio) {
       return ["-an"];
     }
@@ -42,4 +42,4 @@ class FFmpegEncodingParams {
   }
 }
 
-export { FFmpegEncodingParams };
+export { FFmpegArgs };

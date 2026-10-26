@@ -2,7 +2,7 @@ import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
 import { getHighestResolution, getMaxFps } from "@/probe/index.ts";
 import { resolveFFmpegExecutable } from "@/workflow/helpers.ts";
-import { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
+import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
 import chalk from "chalk";
@@ -54,7 +54,7 @@ function mergeVideos(
  */
 export function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
-  const params = new FFmpegEncodingParams(opts);
+  const encodingArgs = new FFmpegArgs(opts);
   const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
   const tmpDir = workflow.tmpDir;
 
@@ -110,7 +110,7 @@ export function runMerge(workflow: MergeWorkflow) {
     outputPath,
     filtergraph,
     maxFps,
-    params,
+    encodingArgs,
     opts,
   );
 

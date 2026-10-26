@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { generateScaleFilter } from "@/filters/scale.ts";
 import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
-import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
+import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
 import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import type { InputSource } from "./types.ts";
@@ -147,7 +147,7 @@ export function resolveOutputPath(
  * resolution, audio options, and output path.
  * @param inputPath - The path to the input video.
  * @param outputPath - The path to write the encoded video to.
- * @param params - The encoding parameters derived from the user options.
+ * @param args - The encoding arguments derived from the user options.
  * @param filterchain - The filter chain to apply, or `null` to skip the `-vf`
  * flag.
  * @returns The FFmpeg arguments, excluding the executable name.
@@ -155,15 +155,15 @@ export function resolveOutputPath(
 export function generateFFmpegCommand(
   inputPath: string,
   outputPath: string,
-  params: FFmpegEncodingParams,
+  args: FFmpegArgs,
   opts: EncodeWorkflowOpts,
   filterchain: string | null,
 ): string[] {
   const command: string[] = [];
   const filterchainArr: string[] = [];
 
-  if (params.keepRotationMetadata) {
-    command.push(...params.keepRotationMetadata);
+  if (args.keepRotationMetadata) {
+    command.push(...args.keepRotationMetadata);
   }
   command.push("-i", inputPath);
 
@@ -193,15 +193,12 @@ export function generateFFmpegCommand(
 
   command.push(...filterchainArr);
 
-  command.push(...params.videoCodec);
+  command.push(...args.videoCodec);
 
-  if (params.crf) {
-    command.push(...params.crf);
-  }
+  command.push(...args.crf);
 
-  if (params.disableAudio) {
-    command.push(...params.disableAudio);
-  }
+  command.push(...args.audioArgs);
+
   command.push(outputPath);
 
   return command;

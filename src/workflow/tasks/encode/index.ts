@@ -2,7 +2,7 @@ import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
 import { generateStabilizationFilter } from "@/filters/stabilization.ts";
 import { moveFile, resolveFFmpegExecutable } from "@/workflow/helpers.ts";
-import { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
+import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
 import chalk from "chalk";
@@ -63,7 +63,7 @@ function encodeVideo(
 export function runEncode(workflow: EncodeWorkflow) {
   // Prepare core parameters for the encoding process
   const opts = workflow.options;
-  const params = new FFmpegEncodingParams(opts);
+  const encodingArgs = new FFmpegArgs(opts);
   const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
   const tmpDir = workflow.tmpDir;
   const inputSource = resolveInputSource(opts.input);
@@ -130,7 +130,7 @@ export function runEncode(workflow: EncodeWorkflow) {
     const command = generateFFmpegCommand(
       file.fullPath,
       outputPath,
-      params,
+      encodingArgs,
       opts,
       filterchain,
     );
