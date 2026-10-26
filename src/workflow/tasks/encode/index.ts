@@ -131,6 +131,7 @@ export function runEncode(workflow: EncodeWorkflow) {
       file.fullPath,
       outputPath,
       params,
+      opts,
       filterchain,
     );
 

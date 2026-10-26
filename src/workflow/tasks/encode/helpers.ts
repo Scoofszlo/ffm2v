@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { generateScaleFilter } from "@/filters/scale.ts";
 import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
 import {
   checkIsVideo,
@@ -9,6 +10,7 @@ import {
 } from "@/workflow/helpers.ts";
 import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
 import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import type { InputSource } from "./types.ts";
 
 /**
@@ -160,18 +162,42 @@ export function generateFFMpegCommand(
   inputPath: string,
   outputPath: string,
   params: FFmpegEncodingParams,
+  opts: EncodeWorkflowOpts,
   filterchain: string | null,
 ): string[] {
   const command: string[] = [];
+  const filterchainArr: string[] = [];
 
   if (params.keepRotationMetadata) {
     command.push(...params.keepRotationMetadata);
   }
   command.push("-i", inputPath);
 
+  // If a filterchain is provided, add it to the command
   if (filterchain) {
-    command.push("-vf", filterchain);
+    filterchainArr.push("-vf", filterchain);
   }
+
+  // If user specified a output resolution, create a scale filter and append
+  // it to the filterchain at the end so that it is applied after all
+  // other filters.
+  if (opts.resolution) {
+    const scaleFilter = generateScaleFilter(
+      opts.resolution.width,
+      opts.resolution.height,
+    );
+
+    // If filterchainArr is empty, append "-vf" then the filter
+    if (filterchainArr.length === 0) {
+      filterchainArr.push("-vf", scaleFilter);
+    } else {
+      // If filterchainArr already has "-vf", append the resolution to the
+      // existing filterchain, which is at the second index of the array.
+      filterchainArr[1] += `,${scaleFilter}`;
+    }
+  }
+
+  command.push(...filterchainArr);
 
   command.push(...params.videoCodec);
 
@@ -179,9 +205,6 @@ export function generateFFMpegCommand(
     command.push(...params.crf);
   }
 
-  if (params.resolution) {
-    command.push(...params.resolution);
-  }
   if (params.disableAudio) {
     command.push(...params.disableAudio);
   }
