@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { generateScaleFilter } from "@/filters/scale.ts";
-import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
+import { checkIsVideo, createMediaFile } from "@/workflow/helpers.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import type { InputSource } from "./types.ts";
 
@@ -72,9 +72,9 @@ export function resolveOutputDir(
  */
 export function getFiles(
   inputSource: InputSource,
-  onSuccess: (file: FileEntry) => void,
-): FileEntry[] {
-  const files: FileEntry[] = [];
+  onSuccess: (file: MediaFile) => void,
+): MediaFile[] {
+  const files: MediaFile[] = [];
 
   const collect = (dirPath: string) => {
     for (const fetchedPath of fs.readdirSync(dirPath)) {
@@ -83,7 +83,7 @@ export function getFiles(
       if (stat.isDirectory()) {
         collect(constructedPath);
       } else {
-        const file = createFileEntry(constructedPath);
+        const file = createMediaFile(constructedPath);
         files.push(file);
         onSuccess(file);
       }
@@ -91,7 +91,7 @@ export function getFiles(
   };
 
   if (inputSource.type === "file") {
-    const file = createFileEntry(inputSource.path);
+    const file = createMediaFile(inputSource.path);
     files.push(file);
     onSuccess(file);
   } else if (inputSource.type === "dir") {
@@ -112,7 +112,7 @@ export function getFiles(
  * @returns The full path where the output file should be written.
  */
 export function resolveOutputPath(
-  video: FileEntry,
+  video: MediaFile,
   inputSource: InputSource,
   outputDir: string,
   isVideo: boolean,
@@ -120,7 +120,7 @@ export function resolveOutputPath(
   let outputFilename: string;
 
   if (isVideo) {
-    outputFilename = `${video.fileNameWithoutExt}-encoded${path.extname(video.fileName)}`;
+    outputFilename = `${video.baseName}-encoded${video.extension}`;
   } else {
     outputFilename = video.fileName;
   }

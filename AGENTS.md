@@ -38,12 +38,12 @@ src/helpers.ts                createTmpDir(): unique "ffm2v-" dir under the OS t
 src/filters/                  pure filter-string builders: stabilization.ts, unsharp.ts
 src/probe/                    ffprobe reads (index.ts) + pure parsers/math (helpers.ts)
 src/workflow/helpers.ts       process + fs layer: runCommand(), runFFprobe(),
-                              createFileEntry(), checkIsVideo/checkHasAudio/
+                              createMediaFile(), checkIsVideo/checkHasAudio/
                               getVideoDuration(), resolveFFmpegExecutable(),
                               escapeFilterPath(), moveFile()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
-src/workflow/model/           WorkflowSchema (zod), FileEntry, FFmpegArgs
+src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs
                               (ffmpegArgs.ts: options -> ffmpeg CLI flag arrays)
 src/workflow/tasks/<task>/    index.ts orchestrator + helpers.ts; merge/ also has
                               filters.ts (encode/ has types.ts)
@@ -161,6 +161,6 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   next to their concern: filter-string builders in `src/filters/`, probe
   parsers/ratio math in `src/probe/helpers.ts`, and process/fs utilities in
   `src/workflow/helpers.ts`. Anything that reads a media file belongs behind
-  `createFileEntry()`/task code.
+  `createMediaFile()`/task code.
 - No monorepo tooling, task runners, or caching layers are set up — don't
   introduce one (Turborepo, nx, wireit, etc.) as a side effect of a task.

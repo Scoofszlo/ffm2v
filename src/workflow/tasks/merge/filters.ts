@@ -1,5 +1,5 @@
 import { generateStabilizationFilter } from "@/filters/stabilization.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
 /**
@@ -12,7 +12,7 @@ import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
  * `[outa]` labels.
  */
 function getConcatFilterchain(
-  videos: FileEntry[],
+  videos: MediaFile[],
   opts: MergeWorkflowOpts,
 ): string {
   let filterchain = "";
@@ -47,7 +47,7 @@ function getConcatFilterchain(
  * transform file path.
  */
 function getPerVideoFilterchain(
-  videos: FileEntry[],
+  videos: MediaFile[],
   highestResolution: [number, number],
   maxFps: number,
   opts: MergeWorkflowOpts,
@@ -99,7 +99,7 @@ function getPerVideoFilterchain(
  * transform file path.
  */
 export function generateFiltergraph(
-  videos: FileEntry[],
+  videos: MediaFile[],
   highestResolution: [number, number],
   maxFps: number,
   opts: MergeWorkflowOpts,

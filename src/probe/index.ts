@@ -1,5 +1,5 @@
 import { runFFprobe } from "@/workflow/helpers.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import {
   parseFps,
   parseResolution,
@@ -55,7 +55,7 @@ export function getVideoFps(videoPath: string): number {
  * @returns The `[width, height]` of the video with the largest area.
  * @throws Will throw an error if ffprobe fails for any video.
  */
-export function getHighestResolution(videos: FileEntry[]): [number, number] {
+export function getHighestResolution(videos: MediaFile[]): [number, number] {
   return pickHighestResolution(
     videos.map((video) => getVideoResolution(video.fullPath)),
   );
@@ -67,6 +67,6 @@ export function getHighestResolution(videos: FileEntry[]): [number, number] {
  * @returns The highest frame rate found.
  * @throws Will throw an error if ffprobe fails for any video.
  */
-export function getMaxFps(videos: FileEntry[]): number {
+export function getMaxFps(videos: MediaFile[]): number {
   return pickMaxFps(videos.map((video) => getVideoFps(video.fullPath)));
 }

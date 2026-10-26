@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { checkIsVideo, createFileEntry } from "@/workflow/helpers.ts";
+import { checkIsVideo, createMediaFile } from "@/workflow/helpers.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
 /**
@@ -17,9 +17,9 @@ import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
  */
 export function getFiles(
   input: string[],
-  onSuccess: (file: FileEntry) => void,
-): [FileEntry, ...FileEntry[]] {
-  const files: FileEntry[] = [];
+  onSuccess: (file: MediaFile) => void,
+): [MediaFile, ...MediaFile[]] {
+  const files: MediaFile[] = [];
 
   if (input.length < 2) {
     throw new Error("At least two video files must be provided for merging.");
@@ -36,11 +36,11 @@ export function getFiles(
       throw new Error(`Input file '${filePath}' is not a valid video file.`);
     }
 
-    const file = createFileEntry(filePath);
+    const file = createMediaFile(filePath);
     onSuccess(file);
     files.push(file);
   }
-  return files as [FileEntry, FileEntry, ...FileEntry[]];
+  return files as [MediaFile, MediaFile, ...MediaFile[]];
 }
 
 /**
@@ -49,7 +49,7 @@ export function getFiles(
  * @param videos - The videos being merged, in input order.
  * @returns A flat array such as `['-i', 'a.mp4', '-i', 'b.mp4']`.
  */
-export function getInputPaths(videos: FileEntry[]): string[] {
+export function getInputPaths(videos: MediaFile[]): string[] {
   return videos.map((video) => ["-i", video.fullPath]).flat();
 }
 

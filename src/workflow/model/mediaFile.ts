@@ -1,10 +1,15 @@
 import path from "path";
 
-class FileEntry {
+/**
+ * Describes a single file collected from an input source, plus the media
+ * metadata read from it by ffprobe. Non-video files are represented too, with
+ * `isVideo` false and no duration.
+ */
+class MediaFile {
   sourceDir: string;
   fileName: string;
   fullPath: string;
-  fileNameWithoutExt: string;
+  baseName: string;
   extension: string;
   isVideo: boolean;
   hasAudio: boolean;
@@ -21,7 +26,7 @@ class FileEntry {
     this.sourceDir = sourceDir;
     this.fileName = fileName;
     this.fullPath = this.getFullPath();
-    this.fileNameWithoutExt = this.getFileNameWithoutExt();
+    this.baseName = this.getBaseName();
     this.extension = this.getExtension();
     this.isVideo = isVideo;
     this.hasAudio = hasAudio;
@@ -32,7 +37,7 @@ class FileEntry {
     return path.join(this.sourceDir, this.fileName);
   }
 
-  private getFileNameWithoutExt(): string {
+  private getBaseName(): string {
     return path.parse(this.fileName).name;
   }
 
@@ -45,4 +50,4 @@ class FileEntry {
   }
 }
 
-export { FileEntry };
+export { MediaFile };

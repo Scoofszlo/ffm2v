@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { VIDEO_EXTENSIONS } from "@/constants.ts";
 import which from "which";
-import { FileEntry } from "./model/fileEntry.ts";
+import { MediaFile } from "./model/mediaFile.ts";
 
 type SpawnSyncOptions = {
   stdio?: "pipe" | "ignore" | "inherit";
@@ -37,7 +37,7 @@ export function runCommand(
   return result.stdout?.trim() || "";
 }
 
-export function createFileEntry(filePath: string) {
+export function createMediaFile(filePath: string) {
   const sourceDir = path.dirname(filePath);
   const fileName = path.basename(filePath);
   const isVideo = checkIsVideo(fileName);
@@ -50,7 +50,7 @@ export function createFileEntry(filePath: string) {
     duration = null;
     hasAudio = false;
   }
-  const file = new FileEntry(sourceDir, fileName, isVideo, hasAudio, duration);
+  const file = new MediaFile(sourceDir, fileName, isVideo, hasAudio, duration);
 
   return file;
 }
