@@ -35,6 +35,7 @@ src/cli/commands.ts           shared option definitions + applyCommonOptions()
 src/cli/printer.ts            print() (success/error/warning) and spinnerPrint()
 src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URLs
 src/util.ts                   createTmpDir(): unique "ffm2v-" dir under the OS temp path
+src/types.ts                  General types belong here: Resolution, etc.
 src/filters/                  pure filter-string builders: scale.ts, unsharp.ts,
                               stabilization.ts, plus escapeFilterPath() in
                               util.ts

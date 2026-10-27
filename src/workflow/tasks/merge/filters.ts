@@ -1,4 +1,5 @@
 import { generateStabilizationFilter } from "@/filters/stabilization.ts";
+import type { Resolution } from "@/types.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
@@ -48,7 +49,7 @@ function getConcatFilterchain(
  */
 function getPerVideoFilterchain(
   videos: MediaFile[],
-  highestResolution: [number, number],
+  highestResolution: Resolution,
   maxFps: number,
   opts: MergeWorkflowOpts,
 ): string {
@@ -100,7 +101,7 @@ function getPerVideoFilterchain(
  */
 export function generateFiltergraph(
   videos: MediaFile[],
-  highestResolution: [number, number],
+  highestResolution: Resolution,
   maxFps: number,
   opts: MergeWorkflowOpts,
   onSuccess: (filtergraph: string) => void,
