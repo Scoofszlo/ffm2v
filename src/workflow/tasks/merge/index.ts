@@ -1,7 +1,7 @@
 import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
 import { getHighestResolution, getMaxFps } from "@/probe/index.ts";
-import { resolveFFmpegExecutable } from "@/workflow/helpers.ts";
+import { resolveFFmpegExecutable } from "@/workflow/util.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
@@ -12,7 +12,7 @@ import {
   getFiles,
   getInputPaths,
   resolveOutputPath,
-} from "./helpers.ts";
+} from "./util.ts";
 
 /**
  * Runs FFmpeg to merge the videos and reports the result. Output is streamed to

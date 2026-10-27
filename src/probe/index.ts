@@ -1,4 +1,4 @@
-import { runFFprobe } from "@/workflow/helpers.ts";
+import { runFFprobe } from "@/workflow/util.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import {
   parseFps,

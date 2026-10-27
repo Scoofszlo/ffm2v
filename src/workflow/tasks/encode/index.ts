@@ -1,7 +1,7 @@
 import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
 import { generateStabilizationFilter } from "@/filters/stabilization.ts";
-import { moveFile, resolveFFmpegExecutable } from "@/workflow/helpers.ts";
+import { moveFile, resolveFFmpegExecutable } from "@/workflow/util.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
@@ -12,7 +12,7 @@ import {
   resolveInputSource,
   resolveOutputDir,
   resolveOutputPath,
-} from "./helpers.ts";
+} from "./util.ts";
 
 /**
  * Runs FFmpeg to encode a single video and reports the result. Output is

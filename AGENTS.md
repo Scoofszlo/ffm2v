@@ -39,7 +39,7 @@ src/filters/                  pure filter-string builders: scale.ts, unsharp.ts,
                               stabilization.ts, plus escapeFilterPath() in
                               util.ts
 src/probe/                    ffprobe reads (index.ts) + pure parsers/math (parsers.ts)
-src/workflow/helpers.ts       process + fs layer: runCommand(), runFFprobe(),
+src/workflow/util.ts          process + fs layer: runCommand(), runFFprobe(),
                               createMediaFile(), checkIsVideo/checkHasAudio/
                               getVideoDuration(), resolveFFmpegExecutable(),
                               moveFile()
@@ -47,7 +47,7 @@ src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
 src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs
                               (ffmpegArgs.ts: options -> ffmpeg CLI flag arrays)
-src/workflow/tasks/<task>/    index.ts orchestrator + helpers.ts; merge/ also has
+src/workflow/tasks/<task>/    index.ts orchestrator + util.ts; merge/ also has
                               filters.ts (encode/ has types.ts)
 ```
 
@@ -60,8 +60,8 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 - `args_parser.ts` does **no** validation. It returns raw commander options plus a
   command name, which `index.ts` feeds into `WorkflowSchema.parse()`.
 - Each task is entered through `run<Task>(workflow)` in `tasks/<task>/index.ts` and
-  is the only place allowed to orchestrate (`print` progress, call helpers, invoke
-  ffmpeg). Reusable logic belongs in that task's `helpers.ts`.
+  is the only place allowed to orchestrate (`print` progress, call utils, invoke
+  ffmpeg). Reusable logic belongs in that task's `util.ts`.
 
 ## Conventions
 
@@ -116,10 +116,10 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   `curl` on PATH (`which` is used to probe).
 - Use the existing runners rather than writing new spawn blocks: `runCommand()`
   for ffmpeg/curl calls and `runFFprobe()` for any ffprobe call, both exported
-  from `src/workflow/helpers.ts`. Both check `result.error` (missing binary →
+  from `src/workflow/util.ts`. Both check `result.error` (missing binary →
   `ENOENT`) **before** `result.status !== 0`, so users get a real message instead
   of `stderr: undefined`. The one existing exception is `extractAndMove()` in
-  `tasks/update/helpers.ts`, which spawns `7z` directly.
+  `tasks/update/util.ts`, which spawns `7z` directly.
 - Prefer `spawnSync` over `execSync`: no shell parsing, no quoting bugs, and
   `execSync` throws on non-zero exit without exposing `result.error`.
 - Never assume FFmpeg/probe availability in tests — see below.
@@ -159,10 +159,10 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 - This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
   codec abstraction, cross-platform updater support, or new commands unless asked.
-- Keep FFmpeg work on the CLI boundary. Pure helpers are cheap to test and belong
+- Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to test and belong
   next to their concern: filter-string builders in `src/filters/`, probe
   parsers/ratio math in `src/probe/parsers.ts`, and process/fs utilities in
-  `src/workflow/helpers.ts`. Anything that reads a media file belongs behind
+  `src/workflow/util.ts`. Anything that reads a media file belongs behind
   `createMediaFile()`/task code.
 - No monorepo tooling, task runners, or caching layers are set up — don't
   introduce one (Turborepo, nx, wireit, etc.) as a side effect of a task.

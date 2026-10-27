@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { checkIsVideo, createMediaFile } from "@/workflow/helpers.ts";
+import { checkIsVideo, createMediaFile } from "@/workflow/util.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";

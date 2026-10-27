@@ -16,7 +16,7 @@ import {
   getLocalFFmpegVersion,
   getRemoteFFmpegVersion,
   isVersionOutdated,
-} from "./helpers.ts";
+} from "./util.ts";
 
 function runUpdate(workflow: UpdateWorkflow) {
   const opts = workflow.options;
