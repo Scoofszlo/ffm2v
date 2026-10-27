@@ -1,6 +1,7 @@
 import path from "path";
 import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
-import { escapeFilterPath, runCommand } from "@/workflow/helpers.ts";
+import { escapeFilterPath } from "@/filters/util.ts";
+import { runCommand } from "@/workflow/helpers.ts";
 
 /**
  * Runs the FFmpeg `vidstabdetect` pass on a video to produce a transform file

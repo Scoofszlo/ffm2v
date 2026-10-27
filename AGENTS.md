@@ -35,12 +35,14 @@ src/cli/commands.ts           shared option definitions + applyCommonOptions()
 src/cli/printer.ts            print() (success/error/warning) and spinnerPrint()
 src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URLs
 src/util.ts                   createTmpDir(): unique "ffm2v-" dir under the OS temp path
-src/filters/                  pure filter-string builders: stabilization.ts, unsharp.ts
+src/filters/                  pure filter-string builders: scale.ts, unsharp.ts,
+                              stabilization.ts, plus escapeFilterPath() in
+                              util.ts
 src/probe/                    ffprobe reads (index.ts) + pure parsers/math (parsers.ts)
 src/workflow/helpers.ts       process + fs layer: runCommand(), runFFprobe(),
                               createMediaFile(), checkIsVideo/checkHasAudio/
                               getVideoDuration(), resolveFFmpegExecutable(),
-                              escapeFilterPath(), moveFile()
+                              moveFile()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
 src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs

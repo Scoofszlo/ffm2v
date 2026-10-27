@@ -1,8 +1,8 @@
-import { escapeFilterPath } from "@/workflow/helpers.ts";
 import {
   generateUnsharpFilter,
   VIDEO_STABILIZATION_UNSHARP_PRESET,
 } from "./unsharp.ts";
+import { escapeFilterPath } from "./util.ts";
 
 /**
  * Generates the FFmpeg `vidstabtransform` filter chain that applies
