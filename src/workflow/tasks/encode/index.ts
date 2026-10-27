@@ -1,10 +1,10 @@
 import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
 import { generateStabilizationFilter } from "@/filters/stabilization.ts";
-import { moveFile, resolveFFmpegExecutable } from "@/workflow/util.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
+import { moveFile, resolveFFmpegExecutable } from "@/workflow/util.ts";
 import chalk from "chalk";
 import {
   generateFFmpegCommand,

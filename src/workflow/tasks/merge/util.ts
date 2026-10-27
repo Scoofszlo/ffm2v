@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
-import { hasVideoExtension, createMediaFile } from "@/workflow/util.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
+import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 
 /**
  * Validates each input path and creates a file entry for it. Each path must
