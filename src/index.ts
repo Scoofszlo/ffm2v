@@ -1,6 +1,6 @@
 import fs from "fs";
 import { ZodError } from "zod";
-import { argsParser } from "./cli/args_parser.ts";
+import { argsParser } from "./cli/argsParser.ts";
 import { print } from "./cli/printer.ts";
 import { createTmpDir } from "./util.ts";
 import { WorkflowSchema } from "./workflow/model/workflow.ts";
