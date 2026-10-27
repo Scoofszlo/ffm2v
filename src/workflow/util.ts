@@ -37,6 +37,14 @@ export function runCommand(
   return result.stdout?.trim() || "";
 }
 
+/**
+ * Creates a `MediaFile` for the given path. For videos, duration and audio
+ * presence are read with ffprobe; other files are marked as non-video with no
+ * duration.
+ * @param filePath - The path to the file.
+ * @returns The populated media file.
+ * @throws Will throw an error if ffprobe fails while reading video metadata.
+ */
 export function createMediaFile(filePath: string) {
   const sourceDir = path.dirname(filePath);
   const fileName = path.basename(filePath);
@@ -55,6 +63,11 @@ export function createMediaFile(filePath: string) {
   return file;
 }
 
+/**
+ * Checks whether a path has a supported video file extension.
+ * @param filePath - The path to check.
+ * @returns `true` if the extension is in `VIDEO_EXTENSIONS`, ignoring case.
+ */
 export function hasVideoExtension(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
@@ -86,6 +99,12 @@ export function runFFprobe(args: string[], filePath: string): string {
   return result.stdout.trim();
 }
 
+/**
+ * Checks whether a video contains at least one audio stream using ffprobe.
+ * @param filePath - The path to the video.
+ * @returns `true` if at least one audio stream is present.
+ * @throws Will throw an error if ffprobe fails.
+ */
 export function checkHasAudio(filePath: string): boolean {
   const output = runFFprobe(
     ["-show_streams", "-select_streams", "a", "-print_format", "json"],
@@ -95,6 +114,12 @@ export function checkHasAudio(filePath: string): boolean {
   return data.streams.length > 0;
 }
 
+/**
+ * Reads a video's duration in seconds using ffprobe.
+ * @param filePath - The path to the video.
+ * @returns The duration in seconds.
+ * @throws Will throw an error if ffprobe fails or returns an invalid duration.
+ */
 export function getVideoDuration(filePath: string): number {
   const output = runFFprobe(
     [
@@ -131,6 +156,17 @@ export function resolveFFmpegExecutable(customPath: string | null): string {
   return "ffmpeg";
 }
 
+/**
+ * Moves a file, invoking exactly one callback based on the outcome: the
+ * destination already exists, the move succeeds, or the move fails.
+ * @param options - The move options.
+ * @param options.src - The path to move from.
+ * @param options.dest - The path to move to.
+ * @param options.onSuccess - Called after a successful move.
+ * @param options.onExists - Called when `dest` already exists, in which case
+ * the file is not moved.
+ * @param options.onFailure - Called with the error if the move throws.
+ */
 export function moveFile({
   src,
   dest,
