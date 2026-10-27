@@ -40,7 +40,7 @@ src/filters/                  pure filter-string builders: scale.ts, unsharp.ts,
                               util.ts
 src/probe/                    ffprobe reads (index.ts) + pure parsers/math (parsers.ts)
 src/workflow/util.ts          process + fs layer: runCommand(), runFFprobe(),
-                              createMediaFile(), checkIsVideo/checkHasAudio/
+                              createMediaFile(), hasVideoExtension/checkHasAudio/
                               getVideoDuration(), resolveFFmpegExecutable(),
                               moveFile()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:

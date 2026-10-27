@@ -75,11 +75,11 @@ export function isVersionOutdated(
   localVersion: string,
   remoteVersion: string,
 ): boolean {
-  const localVers = localVersion.slice(0, 10);
-  const remoteVers = remoteVersion.slice(0, 10);
+  const localDatePart = localVersion.slice(0, 10);
+  const remoteDatePart = remoteVersion.slice(0, 10);
 
-  const localDate = new Date(localVers);
-  const remoteDate = new Date(remoteVers);
+  const localDate = new Date(localDatePart);
+  const remoteDate = new Date(remoteDatePart);
 
   return localDate < remoteDate;
 }

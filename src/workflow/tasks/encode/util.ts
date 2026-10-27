@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { generateScaleFilter } from "@/filters/scale.ts";
-import { checkIsVideo, createMediaFile } from "@/workflow/util.ts";
+import { hasVideoExtension, createMediaFile } from "@/workflow/util.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";
@@ -27,7 +27,7 @@ export function resolveInputSource(source: string): InputSource {
     return { path: source, dirName: source, type: "dir" };
   }
 
-  if (!checkIsVideo(source)) {
+  if (!hasVideoExtension(source)) {
     throw new Error(`File '${source}' is not a video file.`);
   }
 

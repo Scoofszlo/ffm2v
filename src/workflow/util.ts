@@ -40,7 +40,7 @@ export function runCommand(
 export function createMediaFile(filePath: string) {
   const sourceDir = path.dirname(filePath);
   const fileName = path.basename(filePath);
-  const isVideo = checkIsVideo(fileName);
+  const isVideo = hasVideoExtension(fileName);
   let hasAudio: boolean;
   let duration: number | null;
   if (isVideo) {
@@ -55,7 +55,7 @@ export function createMediaFile(filePath: string) {
   return file;
 }
 
-export function checkIsVideo(filePath: string): boolean {
+export function hasVideoExtension(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 

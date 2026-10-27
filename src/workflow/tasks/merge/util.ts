@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { checkIsVideo, createMediaFile } from "@/workflow/util.ts";
+import { hasVideoExtension, createMediaFile } from "@/workflow/util.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
@@ -32,7 +32,7 @@ export function getFiles(
       throw new Error(`Input path '${filePath}' is not a file.`);
     }
 
-    if (!checkIsVideo(filePath)) {
+    if (!hasVideoExtension(filePath)) {
       throw new Error(`Input file '${filePath}' is not a valid video file.`);
     }
 
