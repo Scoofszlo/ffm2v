@@ -67,8 +67,8 @@ export function resolveOutputDir(
  * that file is returned. For a directory, it recursively walks all
  * subdirectories.
  * @param inputSource - The input source to collect files from.
- * @param onSuccess - Callback invoked with each file entry as it is added.
- * @returns The list of collected file entries.
+ * @param onSuccess - Callback invoked with each media file as it is added.
+ * @returns The list of collected media files.
  */
 export function getFiles(
   inputSource: InputSource,
@@ -104,7 +104,7 @@ export function getFiles(
  * Builds the output path for a file, preserving its subdirectory structure
  * relative to the input source. Video files get an `-encoded` suffix. The
  * necessary output directories are created if they do not exist.
- * @param video - The file entry being processed.
+ * @param video - The media file being processed.
  * @param inputSource - The input source the file was collected from.
  * @param outputDir - The resolved output directory.
  * @param isVideo - Whether the file is a video, which controls the `-encoded`
@@ -143,11 +143,13 @@ export function resolveOutputPath(
 
 /**
  * Assembles the FFmpeg argument array for encoding a single video, in the
- * order: rotation metadata, input, optional filter chain, video codec, CRF,
- * resolution, audio options, and output path.
+ * order: rotation metadata, input, optional filter chain (including any
+ * resolution scale), video codec, CRF, audio options, and output path.
  * @param inputPath - The path to the input video.
  * @param outputPath - The path to write the encoded video to.
  * @param args - The encoding arguments derived from the user options.
+ * @param opts - The encode options, whose resolution is appended as a scale
+ * filter.
  * @param filterchain - The filter chain to apply, or `null` to skip the `-vf`
  * flag.
  * @returns The FFmpeg arguments, excluding the executable name.

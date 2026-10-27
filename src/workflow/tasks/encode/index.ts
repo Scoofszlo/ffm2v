@@ -16,7 +16,7 @@ import {
 
 /**
  * Runs FFmpeg to encode a single video and reports the result. Output is
-streamed to the terminal.
+ * streamed to the terminal.
  * @param filePath - The path to the input video, used for messages.
  * @param outputPath - The path the encoded video is written to, used for
  * messages.

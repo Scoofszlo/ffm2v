@@ -4,9 +4,10 @@ import type {
 } from "@/workflow/model/workflow.ts";
 
 /**
- * Derives the FFmpeg CLI flag fragments shared by the encode and merge tasks
- * from the validated user options. Each getter returns the flags to append to
- * the FFmpeg argument array.
+ * Derives FFmpeg CLI flag fragments from the validated user options. Each
+ * getter returns the flags to append to the FFmpeg argument array. The
+ * `videoCodec` and `crf` getters are shared by the encode and merge tasks,
+ * while the audio and rotation getters are task-specific.
  */
 class FFmpegArgs {
   opts: EncodeWorkflowOpts | MergeWorkflowOpts;

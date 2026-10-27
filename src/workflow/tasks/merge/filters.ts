@@ -5,8 +5,8 @@ import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
 /**
  * Builds the `concat` segment of the filtergraph that joins all per-video
- * streams. Audio is included only when audio is enabled and the video has an
- * audio stream.
+ * streams. Audio labels are added only when audio is enabled and the video
+ * has an audio stream; the concat filter itself keeps audio when enabled.
  * @param videos - The videos being merged, in input order.
  * @param opts - The merge options, used to determine whether audio is enabled.
  * @returns The concat filter segment, ending in the `[outv]` and optionally

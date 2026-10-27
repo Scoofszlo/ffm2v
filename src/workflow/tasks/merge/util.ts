@@ -6,11 +6,11 @@ import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 
 /**
- * Validates each input path and creates a file entry for it. Each path must
+ * Validates each input path and creates a media file for it. Each path must
  * exist, be a file, and be a video.
  * @param input - The list of input file paths.
- * @param onSuccess - Callback invoked with each file entry as it is validated.
- * @returns The file entries as a tuple guaranteed to contain at least two
+ * @param onSuccess - Callback invoked with each media file as it is validated.
+ * @returns The media files as a tuple guaranteed to contain at least two
  * items.
  * @throws Will throw an error if fewer than two inputs are given, or if any
  * input does not exist, is not a file, or is not a video.
