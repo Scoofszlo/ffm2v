@@ -101,8 +101,10 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   (e.g. `"CRF must be between 0 and 51"`).
 - `index.ts` deliberately prints only `error.issues[0].message` to avoid dumping a
   wall of zod issues. Preserve that behavior.
-- Tasks wrap their body in `try/catch`, report via `print(err, "error")`, then
-  `process.exit(1)`.
+- Tasks throw on failure; `src/index.ts` catches the error, reports it via
+  `print(..., "error")` (using `error.issues[0].message` for zod errors), then
+  calls `process.exit(1)`. The `update` task also wraps individual steps in
+  `try/catch` to add context.
 - All user-facing output goes through `print()` from `src/cli/printer.ts` with a
   `"success" | "error" | "warning"` type; use `chalk` for styling and
   `spinnerPrint()` for long blocking operations. Do not use bare `console.log`
