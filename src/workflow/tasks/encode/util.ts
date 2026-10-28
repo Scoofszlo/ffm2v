@@ -1,9 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { generateScaleFilter } from "@/filtering/filters/scale.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
-import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 import type { InputSource } from "./types.ts";
 
@@ -158,49 +156,18 @@ export function generateFFmpegCommand(
   inputPath: string,
   outputPath: string,
   args: FFmpegArgs,
-  opts: EncodeWorkflowOpts,
-  filterchain: string | null,
+  filterchain: string,
 ): string[] {
   const command: string[] = [];
-  const filterchainArr: string[] = [];
 
   if (args.keepRotationMetadata) {
     command.push(...args.keepRotationMetadata);
   }
   command.push("-i", inputPath);
-
-  // If a filterchain is provided, add it to the command
-  if (filterchain) {
-    filterchainArr.push("-vf", filterchain);
-  }
-
-  // If user specified a output resolution, create a scale filter and append
-  // it to the filterchain at the end so that it is applied after all
-  // other filters.
-  if (opts.resolution) {
-    const scaleFilter = generateScaleFilter(
-      opts.resolution.width,
-      opts.resolution.height,
-    );
-
-    // If filterchainArr is empty, append "-vf" then the filter
-    if (filterchainArr.length === 0) {
-      filterchainArr.push("-vf", scaleFilter);
-    } else {
-      // If filterchainArr already has "-vf", append the resolution to the
-      // existing filterchain, which is at the second index of the array.
-      filterchainArr[1] += `,${scaleFilter}`;
-    }
-  }
-
-  command.push(...filterchainArr);
-
+  command.push("-vf", filterchain);
   command.push(...args.videoCodec);
-
   command.push(...args.crf);
-
   command.push(...args.audioArgs);
-
   command.push(outputPath);
 
   return command;
