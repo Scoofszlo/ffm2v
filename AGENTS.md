@@ -39,11 +39,12 @@ src/types.ts                  General types belong here: Resolution, etc.
 src/filters/                  pure filter-string builders: scale.ts, unsharp.ts,
                               stabilization.ts, plus escapeFilterPath() in
                               util.ts
-src/probe/                    ffprobe reads (index.ts) + pure parsers/math (parsers.ts)
-src/workflow/util.ts          process + fs layer: runCommand(), runFFprobe(),
-                              createMediaFile(), hasVideoExtension/checkHasAudio/
-                              getVideoDuration(), resolveFFmpegExecutable(),
-                              moveFile()
+src/probe/                    ffprobe reads (index.ts: runFFprobe(), resolution,
+                              fps, audio, duration) + pure parsers/math
+                              (parsers.ts)
+src/workflow/util.ts          process + fs layer: runCommand(),
+                              createMediaFile(), hasVideoExtension(),
+                              resolveFFmpegExecutable(), moveFile()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
 src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs
@@ -118,11 +119,12 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   Requirement: `ffmpeg`, `ffprobe`; `update-ffmpeg` additionally needs `7z` and
   `curl` on PATH (`which` is used to probe).
 - Use the existing runners rather than writing new spawn blocks: `runCommand()`
-  for ffmpeg/curl calls and `runFFprobe()` for any ffprobe call, both exported
-  from `src/workflow/util.ts`. Both check `result.error` (missing binary →
-  `ENOENT`) **before** `result.status !== 0`, so users get a real message instead
-  of `stderr: undefined`. The one existing exception is `extractAndMove()` in
-  `tasks/update/util.ts`, which spawns `7z` directly.
+  for ffmpeg/curl calls and `runFFprobe()` for any ffprobe call, exported from
+  `src/workflow/util.ts` and `src/probe/index.ts` respectively. Both check
+  `result.error` (missing binary → `ENOENT`) **before** `result.status !== 0`,
+  so users get a real message instead of `stderr: undefined`. The one existing
+  exception is `extractAndMove()` in `tasks/update/util.ts`, which spawns `7z`
+  directly.
 - Prefer `spawnSync` over `execSync`: no shell parsing, no quoting bugs, and
   `execSync` throws on non-zero exit without exposing `result.error`.
 - Never assume FFmpeg/probe availability in tests — see below.
@@ -164,8 +166,9 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   codec abstraction, cross-platform updater support, or new commands unless asked.
 - Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to test and belong
   next to their concern: filter-string builders in `src/filters/`, probe
-  parsers/ratio math in `src/probe/parsers.ts`, and process/fs utilities in
-  `src/workflow/util.ts`. Anything that reads a media file belongs behind
+  reads in `src/probe/index.ts` with parsers/ratio math in
+  `src/probe/parsers.ts`, and process/fs utilities in `src/workflow/util.ts`.
+  Anything that reads a media file goes through `src/probe/`, called from
   `createMediaFile()`/task code.
 - No monorepo tooling, task runners, or caching layers are set up — don't
   introduce one (Turborepo, nx, wireit, etc.) as a side effect of a task.

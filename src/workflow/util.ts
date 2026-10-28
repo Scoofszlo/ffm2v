@@ -2,6 +2,7 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { VIDEO_EXTENSIONS } from "@/constants.ts";
+import { checkHasAudio, getVideoDuration } from "@/probe/index.ts";
 import which from "which";
 import { MediaFile } from "./model/mediaFile.ts";
 
@@ -70,71 +71,6 @@ export function createMediaFile(filePath: string) {
  */
 export function hasVideoExtension(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
-}
-
-/**
- * Runs ffprobe with the given arguments (plus the target file) and returns its
- * trimmed stdout. Spawn failures such as a missing ffprobe binary and non-zero
- * exits are both reported with the target file, so callers never surface an
- * `undefined` stderr to the user.
- */
-export function runFFprobe(args: string[], filePath: string): string {
-  const result = spawnSync("ffprobe", ["-v", "error", ...args, filePath], {
-    encoding: "utf-8",
-  });
-
-  if (result.error) {
-    throw new Error(
-      `Failed to run ffprobe for '${filePath}': ${result.error.message}`,
-    );
-  }
-
-  if (result.status !== 0) {
-    const stderr = result.stderr.trim();
-    throw new Error(
-      `ffprobe exited with code ${result.status} for '${filePath}'${stderr ? `: ${stderr}` : "."}`,
-    );
-  }
-
-  return result.stdout.trim();
-}
-
-/**
- * Checks whether a video contains at least one audio stream using ffprobe.
- * @param filePath - The path to the video.
- * @returns `true` if at least one audio stream is present.
- * @throws Will throw an error if ffprobe fails.
- */
-export function checkHasAudio(filePath: string): boolean {
-  const output = runFFprobe(
-    ["-show_streams", "-select_streams", "a", "-print_format", "json"],
-    filePath,
-  );
-  const data = JSON.parse(output);
-  return data.streams.length > 0;
-}
-
-/**
- * Reads a video's duration in seconds using ffprobe.
- * @param filePath - The path to the video.
- * @returns The duration in seconds.
- * @throws Will throw an error if ffprobe fails or returns an invalid duration.
- */
-export function getVideoDuration(filePath: string): number {
-  const output = runFFprobe(
-    [
-      "-show_entries",
-      "format=duration",
-      "-of",
-      "default=noprint_wrappers=1:nokey=1",
-    ],
-    filePath,
-  );
-  const duration = parseFloat(output);
-  if (isNaN(duration)) {
-    throw new Error(`Invalid duration format for '${filePath}': ${output}`);
-  }
-  return duration;
 }
 
 /**
