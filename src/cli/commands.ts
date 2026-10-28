@@ -36,6 +36,12 @@ export const commonOptions = [
     null,
   ),
   optionFactory(
+    "interpolate",
+    "--interpolate <fps>",
+    "Interpolate the input video to the specified frame rate",
+    null,
+  ),
+  optionFactory(
     "disableAudio",
     "--disable-audio",
     "Disable audio in the output video",
