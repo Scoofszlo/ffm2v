@@ -121,7 +121,12 @@ export function generateFFmpegCommand(
     command.push("-map", "[outa]");
   }
 
-  command.push("-r", `${maxFps}`);
+  if (opts.interpolate) {
+    command.push("-r", opts.interpolate.toString());
+  } else {
+    command.push("-r", maxFps.toString());
+  }
+
   command.push(...args.videoCodec);
   command.push(...args.crf);
   command.push("-x265-params", "no-info=1");
