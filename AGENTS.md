@@ -148,6 +148,11 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 - `.github/workflows/ci.yml` composes four reusable workflows
   (`check_lint`, `check_type`, `test_unit`, `test_build`) that run as parallel
   jobs on Node 20 with `npm ci`.
+- CI is skipped for documentation/metadata-only changes via `paths-ignore`
+  (`**/*.md`, `.agents/**`, `.codegraph/**`, `LICENSE`, `.gitignore`,
+  `.gitattributes`, `.github/FUNDING.yml`) on both `push` and `pull_request`.
+  The list is an ignore list on purpose: anything not listed still triggers CI.
+  Keep the two `paths-ignore` blocks in sync when editing it.
 - `publish_to_npm.yml` publishes on `v*.*.*` tags using Node 24 and chooses the
   npm dist-tag automatically: any prerelease version (`0.1.0-beta.1`) → `beta`,
   otherwise `latest`.

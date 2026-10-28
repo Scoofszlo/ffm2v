@@ -1,10 +1,37 @@
 name: CI
 
+# Only documentation and repo-metadata files are ignored here. Anything not
+# listed (source, tests, configs, lockfiles, new files) still triggers the full
+# pipeline, so newly added files are covered by default.
+#
+# Keep the two paths-ignore lists identical: YAML anchors are not used in
+# trigger blocks for reliability.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - ".agents/**"
+      - ".codegraph/**"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".github/FUNDING.yml"
   pull_request:
     types: [opened, ready_for_review, synchronize]
+    paths-ignore:
+      - "**/*.md"
+      - ".agents/**"
+      - ".codegraph/**"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".github/FUNDING.yml"
+
+# A newer commit (or force-push) on the same branch makes older runs obsolete.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
