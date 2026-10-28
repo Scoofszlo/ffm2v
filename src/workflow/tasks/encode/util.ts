@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { generateScaleFilter } from "@/filters/scale.ts";
+import { generateScaleFilter } from "@/filtering/filters/scale.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";

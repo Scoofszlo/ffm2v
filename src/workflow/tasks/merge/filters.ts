@@ -1,6 +1,6 @@
-import { generateMinterpolateFilter } from "@/filters/interpolation/generator.ts";
-import { MINTERPOLATE_BALANCED_PRESET } from "@/filters/interpolation/presets.ts";
-import { generateStabilizationFilter } from "@/filters/stabilization.ts";
+import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator.ts";
+import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets.ts";
+import { generateStabilizationFilter } from "@/filtering/filters/stabilization.ts";
 import type { Resolution } from "@/types.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
