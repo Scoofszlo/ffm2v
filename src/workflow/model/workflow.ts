@@ -15,6 +15,11 @@ const commonOptionsSchema = z.object({
     .min(0, { message: "CRF must be between 0 and 51" })
     .max(51, { message: "CRF must be be between 0 and 51" })
     .default(23),
+  interpolate: z.coerce
+    .number()
+    .min(1, "Interpolation FPS must be a positive number")
+    .nullable()
+    .default(null),
   stabilize: z.coerce
     .number()
     .int()

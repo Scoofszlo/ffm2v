@@ -1,5 +1,7 @@
 import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
+import { generateMinterpolateFilter } from "@/filters/interpolation/generator.ts";
+import { MINTERPOLATE_BALANCED_PRESET } from "@/filters/interpolation/presets.ts";
 import { generateStabilizationFilter } from "@/filters/stabilization.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
@@ -119,6 +121,15 @@ export function runEncode(workflow: EncodeWorkflow) {
       filterchain += generateStabilizationFilter(trfFilePath, opts.stabilize);
     }
 
+    if (opts.interpolate) {
+      // Add a comma if there are already filters in the chain
+      filterchain += filterchain ? "," : "";
+
+      filterchain += generateMinterpolateFilter({
+        ...MINTERPOLATE_BALANCED_PRESET,
+        fps: opts.interpolate,
+      });
+    }
     const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
 
     // If filterchain is empty, set it to null to avoid passing an empty string

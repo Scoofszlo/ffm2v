@@ -93,12 +93,13 @@ export function resolveOutputPath(
 
 /**
  * Assembles the FFmpeg argument array for merging videos. It includes the
- * inputs, filtergraph, output mapping, frame rate, codec settings, and audio
- * handling. Audio is re-encoded as MP3 at 320k unless disabled.
+ * inputs, filtergraph, output mapping, frame rate (the interpolation target
+ * when set, otherwise `maxFps`), codec settings, and audio handling. Audio is
+ * re-encoded as MP3 at 320k unless disabled.
  * @param input - The FFmpeg input arguments from {@link getInputPaths}.
  * @param outputPath - The path to write the merged video to.
  * @param filtergraph - The filtergraph from `generateFiltergraph`.
- * @param maxFps - The output frame rate.
+ * @param maxFps - The output frame rate used when interpolation is disabled.
  * @param args - The encoding arguments derived from the user options.
  * @param opts - The merge options, used to determine whether audio is enabled.
  * @returns The FFmpeg arguments, excluding the executable name.
@@ -121,7 +122,12 @@ export function generateFFmpegCommand(
     command.push("-map", "[outa]");
   }
 
-  command.push("-r", `${maxFps}`);
+  if (opts.interpolate) {
+    command.push("-r", opts.interpolate.toString());
+  } else {
+    command.push("-r", maxFps.toString());
+  }
+
   command.push(...args.videoCodec);
   command.push(...args.crf);
   command.push("-x265-params", "no-info=1");

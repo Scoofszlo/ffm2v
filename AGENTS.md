@@ -37,8 +37,9 @@ src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URL
 src/util.ts                   createTmpDir(): unique "ffm2v-" dir under the OS temp path
 src/types.ts                  General types belong here: Resolution, etc.
 src/filters/                  pure filter-string builders: scale.ts, unsharp.ts,
-                              stabilization.ts, plus escapeFilterPath() in
-                              util.ts
+                              stabilization.ts, and interpolation/ (model.ts,
+                              presets.ts, generator.ts), plus
+                              escapeFilterPath() in util.ts
 src/probe/                    ffprobe reads (index.ts: runFFprobe(), resolution,
                               fps, audio, duration) + pure parsers/math
                               (parsers.ts)
