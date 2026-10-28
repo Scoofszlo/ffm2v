@@ -1,18 +1,19 @@
 import { generateStabilizationFilter } from "@/filters/stabilization.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { Resolution } from "@/types.ts";
+import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
 
 /**
  * Builds the `concat` segment of the filtergraph that joins all per-video
- * streams. Audio is included only when audio is enabled and the video has an
- * audio stream.
+ * streams. Audio labels are added only when audio is enabled and the video
+ * has an audio stream; the concat filter itself keeps audio when enabled.
  * @param videos - The videos being merged, in input order.
  * @param opts - The merge options, used to determine whether audio is enabled.
  * @returns The concat filter segment, ending in the `[outv]` and optionally
  * `[outa]` labels.
  */
 function getConcatFilterchain(
-  videos: FileEntry[],
+  videos: MediaFile[],
   opts: MergeWorkflowOpts,
 ): string {
   let filterchain = "";
@@ -47,8 +48,8 @@ function getConcatFilterchain(
  * transform file path.
  */
 function getPerVideoFilterchain(
-  videos: FileEntry[],
-  highestResolution: [number, number],
+  videos: MediaFile[],
+  highestResolution: Resolution,
   maxFps: number,
   opts: MergeWorkflowOpts,
 ): string {
@@ -61,14 +62,14 @@ function getPerVideoFilterchain(
     // Apply stabilization filter if enabled, and throw an error if the
     // transformation file path is missing for the video
     if (opts.stabilize) {
-      if (!video.transFormFilePath) {
+      if (!video.transformFilePath) {
         throw new Error(
           `Transformation file path is missing for video: ${video.fullPath}`,
         );
       }
 
       const strength = opts.stabilize;
-      filtergraph += `${generateStabilizationFilter(video.transFormFilePath, strength)},`;
+      filtergraph += `${generateStabilizationFilter(video.transformFilePath, strength)},`;
     }
 
     // Apply scaling and frame rate adjustments
@@ -99,8 +100,8 @@ function getPerVideoFilterchain(
  * transform file path.
  */
 export function generateFiltergraph(
-  videos: FileEntry[],
-  highestResolution: [number, number],
+  videos: MediaFile[],
+  highestResolution: Resolution,
   maxFps: number,
   opts: MergeWorkflowOpts,
   onSuccess: (filtergraph: string) => void,

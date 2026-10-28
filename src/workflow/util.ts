@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { VIDEO_EXTENSIONS } from "@/constants.ts";
 import which from "which";
-import { FileEntry } from "./model/fileEntry.ts";
+import { MediaFile } from "./model/mediaFile.ts";
 
 type SpawnSyncOptions = {
   stdio?: "pipe" | "ignore" | "inherit";
@@ -37,10 +37,18 @@ export function runCommand(
   return result.stdout?.trim() || "";
 }
 
-export function createFileEntry(filePath: string) {
+/**
+ * Creates a `MediaFile` for the given path. For videos, duration and audio
+ * presence are read with ffprobe; other files are marked as non-video with no
+ * duration.
+ * @param filePath - The path to the file.
+ * @returns The populated media file.
+ * @throws Will throw an error if ffprobe fails while reading video metadata.
+ */
+export function createMediaFile(filePath: string) {
   const sourceDir = path.dirname(filePath);
   const fileName = path.basename(filePath);
-  const isVideo = checkIsVideo(fileName);
+  const isVideo = hasVideoExtension(fileName);
   let hasAudio: boolean;
   let duration: number | null;
   if (isVideo) {
@@ -50,12 +58,17 @@ export function createFileEntry(filePath: string) {
     duration = null;
     hasAudio = false;
   }
-  const file = new FileEntry(sourceDir, fileName, isVideo, hasAudio, duration);
+  const file = new MediaFile(sourceDir, fileName, isVideo, hasAudio, duration);
 
   return file;
 }
 
-export function checkIsVideo(filePath: string): boolean {
+/**
+ * Checks whether a path has a supported video file extension.
+ * @param filePath - The path to check.
+ * @returns `true` if the extension is in `VIDEO_EXTENSIONS`, ignoring case.
+ */
+export function hasVideoExtension(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 
@@ -86,6 +99,12 @@ export function runFFprobe(args: string[], filePath: string): string {
   return result.stdout.trim();
 }
 
+/**
+ * Checks whether a video contains at least one audio stream using ffprobe.
+ * @param filePath - The path to the video.
+ * @returns `true` if at least one audio stream is present.
+ * @throws Will throw an error if ffprobe fails.
+ */
 export function checkHasAudio(filePath: string): boolean {
   const output = runFFprobe(
     ["-show_streams", "-select_streams", "a", "-print_format", "json"],
@@ -95,6 +114,12 @@ export function checkHasAudio(filePath: string): boolean {
   return data.streams.length > 0;
 }
 
+/**
+ * Reads a video's duration in seconds using ffprobe.
+ * @param filePath - The path to the video.
+ * @returns The duration in seconds.
+ * @throws Will throw an error if ffprobe fails or returns an invalid duration.
+ */
 export function getVideoDuration(filePath: string): number {
   const output = runFFprobe(
     [
@@ -132,23 +157,16 @@ export function resolveFFmpegExecutable(customPath: string | null): string {
 }
 
 /**
- * Escapes a path for use in FFmpeg filter options.
- *
- * Step 1: Resolve the path to an absolute path using `path.resolve()`. Step 2:
- * Replace backslashes (`\`) with forward slashes (`/`) for FFmpeg
- * compatibility. Step 3: Escape colons (`:`) and single quotes (`'`) by
- * prefixing them with a double backslash (`\\`).
- *
- * @param p The path to escape.
- * @returns The escaped path.
+ * Moves a file, invoking exactly one callback based on the outcome: the
+ * destination already exists, the move succeeds, or the move fails.
+ * @param options - The move options.
+ * @param options.src - The path to move from.
+ * @param options.dest - The path to move to.
+ * @param options.onSuccess - Called after a successful move.
+ * @param options.onExists - Called when `dest` already exists, in which case
+ * the file is not moved.
+ * @param options.onFailure - Called with the error if the move throws.
  */
-export function escapeFilterPath(p: string): string {
-  return path
-    .resolve(p) // Resolve the path to an absolute path
-    .replace(/\\/g, "/") // Replace backslashes with forward slashes for FFmpeg compatibility
-    .replace(/[:']/g, (c) => `\\\\${c}`); // Escape colons and single quotes by prefixing them with a double backslash
-}
-
 export function moveFile({
   src,
   dest,

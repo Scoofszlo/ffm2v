@@ -1,3 +1,5 @@
+import type { Resolution } from "@/types.ts";
+
 /**
  * Picks the largest resolution (by pixel area). All videos are scaled to this
  * size when merging.
@@ -5,11 +7,9 @@
  * @returns The `[width, height]` with the largest area, or `[0, 0]` if the list
  * is empty.
  */
-export function pickHighestResolution(
-  resolutions: [number, number][],
-): [number, number] {
+export function pickHighestResolution(resolutions: Resolution[]): Resolution {
   let highestResolutionArea = 0;
-  let highestResolution: [number, number] = [0, 0];
+  let highestResolution: Resolution = [0, 0];
 
   for (const resolution of resolutions) {
     const area = resolution[0] * resolution[1];
@@ -28,10 +28,7 @@ export function pickHighestResolution(
  * @returns The `[width, height]` of the video.
  * @throws Will throw an error if the output is not a valid resolution.
  */
-export function parseResolution(
-  output: string,
-  videoPath: string,
-): [number, number] {
+export function parseResolution(output: string, videoPath: string): Resolution {
   const [width, height] = output.split(",").map(Number);
   if (!width || !height || isNaN(width) || isNaN(height)) {
     throw new Error(`Invalid resolution format for '${videoPath}': ${output}`);

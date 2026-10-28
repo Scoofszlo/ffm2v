@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ArgsParser } from "../../src/cli/args_parser.ts";
+import { ArgsParser } from "../../src/cli/argsParser.ts";
 
 const parseArgs = (args: string[]) => {
   return new ArgsParser().parseArgs(["node", "ffm2v", ...args]);

@@ -29,6 +29,8 @@ Check whether the branch changes any documented or documentable user/developer-f
 - public APIs, configuration, environment variables, installation, requirements, and platform support
 - workflows, permissions, migrations, and compatibility expectations
 
+In addition to user-facing docs, audit TSDoc in changed code for stale references to renamed or removed symbols, `@param`/`@returns`/`@throws` entries that no longer match the signature, and summaries that contradict the final implementation.
+
 Classify findings as:
 
 - **Required:** existing documentation is now factually wrong, or omission would prevent correct use of a changed public behavior.

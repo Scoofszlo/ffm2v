@@ -1,16 +1,10 @@
 import fs from "fs";
 import path from "path";
 import { generateScaleFilter } from "@/filters/scale.ts";
-import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
-import {
-  checkIsVideo,
-  createFileEntry,
-  escapeFilterPath,
-  runCommand,
-} from "@/workflow/helpers.ts";
-import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
+import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";
+import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 import type { InputSource } from "./types.ts";
 
 /**
@@ -33,7 +27,7 @@ export function resolveInputSource(source: string): InputSource {
     return { path: source, dirName: source, type: "dir" };
   }
 
-  if (!checkIsVideo(source)) {
+  if (!hasVideoExtension(source)) {
     throw new Error(`File '${source}' is not a video file.`);
   }
 
@@ -73,14 +67,14 @@ export function resolveOutputDir(
  * that file is returned. For a directory, it recursively walks all
  * subdirectories.
  * @param inputSource - The input source to collect files from.
- * @param onSuccess - Callback invoked with each file entry as it is added.
- * @returns The list of collected file entries.
+ * @param onSuccess - Callback invoked with each media file as it is added.
+ * @returns The list of collected media files.
  */
 export function getFiles(
   inputSource: InputSource,
-  onSuccess: (file: FileEntry) => void,
-): FileEntry[] {
-  const files: FileEntry[] = [];
+  onSuccess: (file: MediaFile) => void,
+): MediaFile[] {
+  const files: MediaFile[] = [];
 
   const collect = (dirPath: string) => {
     for (const fetchedPath of fs.readdirSync(dirPath)) {
@@ -89,7 +83,7 @@ export function getFiles(
       if (stat.isDirectory()) {
         collect(constructedPath);
       } else {
-        const file = createFileEntry(constructedPath);
+        const file = createMediaFile(constructedPath);
         files.push(file);
         onSuccess(file);
       }
@@ -97,7 +91,7 @@ export function getFiles(
   };
 
   if (inputSource.type === "file") {
-    const file = createFileEntry(inputSource.path);
+    const file = createMediaFile(inputSource.path);
     files.push(file);
     onSuccess(file);
   } else if (inputSource.type === "dir") {
@@ -110,7 +104,7 @@ export function getFiles(
  * Builds the output path for a file, preserving its subdirectory structure
  * relative to the input source. Video files get an `-encoded` suffix. The
  * necessary output directories are created if they do not exist.
- * @param video - The file entry being processed.
+ * @param video - The media file being processed.
  * @param inputSource - The input source the file was collected from.
  * @param outputDir - The resolved output directory.
  * @param isVideo - Whether the file is a video, which controls the `-encoded`
@@ -118,7 +112,7 @@ export function getFiles(
  * @returns The full path where the output file should be written.
  */
 export function resolveOutputPath(
-  video: FileEntry,
+  video: MediaFile,
   inputSource: InputSource,
   outputDir: string,
   isVideo: boolean,
@@ -126,7 +120,7 @@ export function resolveOutputPath(
   let outputFilename: string;
 
   if (isVideo) {
-    outputFilename = `${video.fileNameWithoutExt}-encoded${path.extname(video.fileName)}`;
+    outputFilename = `${video.baseName}-encoded${video.extension}`;
   } else {
     outputFilename = video.fileName;
   }
@@ -149,27 +143,29 @@ export function resolveOutputPath(
 
 /**
  * Assembles the FFmpeg argument array for encoding a single video, in the
- * order: rotation metadata, input, optional filter chain, video codec, CRF,
- * resolution, audio options, and output path.
+ * order: rotation metadata, input, optional filter chain (including any
+ * resolution scale), video codec, CRF, audio options, and output path.
  * @param inputPath - The path to the input video.
  * @param outputPath - The path to write the encoded video to.
- * @param params - The encoding parameters derived from the user options.
+ * @param args - The encoding arguments derived from the user options.
+ * @param opts - The encode options, whose resolution is appended as a scale
+ * filter.
  * @param filterchain - The filter chain to apply, or `null` to skip the `-vf`
  * flag.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
-export function generateFFMpegCommand(
+export function generateFFmpegCommand(
   inputPath: string,
   outputPath: string,
-  params: FFmpegEncodingParams,
+  args: FFmpegArgs,
   opts: EncodeWorkflowOpts,
   filterchain: string | null,
 ): string[] {
   const command: string[] = [];
   const filterchainArr: string[] = [];
 
-  if (params.keepRotationMetadata) {
-    command.push(...params.keepRotationMetadata);
+  if (args.keepRotationMetadata) {
+    command.push(...args.keepRotationMetadata);
   }
   command.push("-i", inputPath);
 
@@ -199,50 +195,13 @@ export function generateFFMpegCommand(
 
   command.push(...filterchainArr);
 
-  command.push(...params.videoCodec);
+  command.push(...args.videoCodec);
 
-  if (params.crf) {
-    command.push(...params.crf);
-  }
+  command.push(...args.crf);
 
-  if (params.disableAudio) {
-    command.push(...params.disableAudio);
-  }
+  command.push(...args.audioArgs);
+
   command.push(outputPath);
 
   return command;
-}
-
-/**
- * Runs the FFmpeg `vidstabdetect` pass on a video to produce a transform file
- * used for stabilization.
- * @param ffmpegPath - The path to the FFmpeg executable.
- * @param tmpDir - The directory where the transform file is written.
- * @param inputPath - The path to the video to analyze.
- * @param strength - The stabilization strength, from 1 (weakest) to 5
- * (strongest).
- * @returns The path to the generated transform (`.trf`) file.
- */
-export function generateStabilizationData(
-  ffmpegPath: string,
-  tmpDir: string,
-  inputPath: string,
-  strength: number,
-) {
-  const trfFilePath = path.join(tmpDir, `transforms.trf`);
-  const escapedTrfFilePath = escapeFilterPath(trfFilePath);
-
-  const command = [
-    "-i",
-    inputPath,
-    "-vf",
-    generateVidstabDetectFilter(strength, escapedTrfFilePath),
-    "-f",
-    "null",
-    "-",
-  ];
-
-  runCommand(ffmpegPath, command, { stdio: "inherit" });
-
-  return trfFilePath;
 }

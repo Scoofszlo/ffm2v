@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { print } from "@/cli/printer.ts";
 import { REMOTE_FFMPEG_VERSION_URL } from "@/constants.ts";
-import { runCommand } from "@/workflow/helpers.ts";
+import { runCommand } from "@/workflow/util.ts";
 import which from "which";
 
 const GIT_VERSION_REGEX = /\d{4}-\d{2}-\d{2}-git-[a-f0-9]+/;
@@ -75,11 +75,11 @@ export function isVersionOutdated(
   localVersion: string,
   remoteVersion: string,
 ): boolean {
-  const localVers = localVersion.slice(0, 10);
-  const remoteVers = remoteVersion.slice(0, 10);
+  const localDatePart = localVersion.slice(0, 10);
+  const remoteDatePart = remoteVersion.slice(0, 10);
 
-  const localDate = new Date(localVers);
-  const remoteDate = new Date(remoteVers);
+  const localDate = new Date(localDatePart);
+  const remoteDate = new Date(remoteDatePart);
 
   return localDate < remoteDate;
 }

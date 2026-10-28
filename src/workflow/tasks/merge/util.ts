@@ -1,31 +1,25 @@
 import fs from "fs";
 import path from "path";
-import { generateVidstabDetectFilter } from "@/filters/stabilization.ts";
-import {
-  checkIsVideo,
-  createFileEntry,
-  escapeFilterPath,
-  runCommand,
-} from "@/workflow/helpers.ts";
-import type { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
-import type { FileEntry } from "@/workflow/model/fileEntry.ts";
+import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
+import type { MediaFile } from "@/workflow/model/mediaFile.ts";
 import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
+import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 
 /**
- * Validates each input path and creates a file entry for it. Each path must
+ * Validates each input path and creates a media file for it. Each path must
  * exist, be a file, and be a video.
  * @param input - The list of input file paths.
- * @param onSuccess - Callback invoked with each file entry as it is validated.
- * @returns The file entries as a tuple guaranteed to contain at least two
+ * @param onSuccess - Callback invoked with each media file as it is validated.
+ * @returns The media files as a tuple guaranteed to contain at least two
  * items.
  * @throws Will throw an error if fewer than two inputs are given, or if any
  * input does not exist, is not a file, or is not a video.
  */
 export function getFiles(
   input: string[],
-  onSuccess: (file: FileEntry) => void,
-): [FileEntry, ...FileEntry[]] {
-  const files: FileEntry[] = [];
+  onSuccess: (file: MediaFile) => void,
+): [MediaFile, ...MediaFile[]] {
+  const files: MediaFile[] = [];
 
   if (input.length < 2) {
     throw new Error("At least two video files must be provided for merging.");
@@ -38,15 +32,15 @@ export function getFiles(
       throw new Error(`Input path '${filePath}' is not a file.`);
     }
 
-    if (!checkIsVideo(filePath)) {
+    if (!hasVideoExtension(filePath)) {
       throw new Error(`Input file '${filePath}' is not a valid video file.`);
     }
 
-    const file = createFileEntry(filePath);
+    const file = createMediaFile(filePath);
     onSuccess(file);
     files.push(file);
   }
-  return files as [FileEntry, FileEntry, ...FileEntry[]];
+  return files as [MediaFile, MediaFile, ...MediaFile[]];
 }
 
 /**
@@ -55,7 +49,7 @@ export function getFiles(
  * @param videos - The videos being merged, in input order.
  * @returns A flat array such as `['-i', 'a.mp4', '-i', 'b.mp4']`.
  */
-export function getInputPaths(videos: FileEntry[]): string[] {
+export function getInputPaths(videos: MediaFile[]): string[] {
   return videos.map((video) => ["-i", video.fullPath]).flat();
 }
 
@@ -98,44 +92,6 @@ export function resolveOutputPath(
 }
 
 /**
- * Runs the FFmpeg `vidstabdetect` pass on a video to produce a transform file
- * used for stabilization. The file name includes the index so that each video
- * gets its own file.
- * @param ffmpegPath - The path to the FFmpeg executable.
- * @param tmpDir - The directory where the transform file is written.
- * @param inputPath - The path to the video to analyze.
- * @param strength - The stabilization strength, from 1 (weakest) to 5
- * (strongest).
- * @param idx - The video's position in the merge list, used to name the
- * transform file.
- * @returns The path to the generated transform (`.trf`) file.
- */
-export function generateStabilizationData(
-  ffmpegPath: string,
-  tmpDir: string,
-  inputPath: string,
-  strength: number,
-  idx: number,
-) {
-  const trfFilePath = path.join(tmpDir, `transforms-${idx}.trf`);
-  const escapedTrfFilePath = escapeFilterPath(trfFilePath);
-
-  const command = [
-    "-i",
-    inputPath,
-    "-vf",
-    generateVidstabDetectFilter(strength, escapedTrfFilePath),
-    "-f",
-    "null",
-    "-",
-  ];
-
-  runCommand(ffmpegPath, command, { stdio: "inherit" });
-
-  return trfFilePath;
-}
-
-/**
  * Assembles the FFmpeg argument array for merging videos. It includes the
  * inputs, filtergraph, output mapping, frame rate, codec settings, and audio
  * handling. Audio is re-encoded as MP3 at 320k unless disabled.
@@ -143,16 +99,16 @@ export function generateStabilizationData(
  * @param outputPath - The path to write the merged video to.
  * @param filtergraph - The filtergraph from `generateFiltergraph`.
  * @param maxFps - The output frame rate.
- * @param params - The encoding parameters derived from the user options.
+ * @param args - The encoding arguments derived from the user options.
  * @param opts - The merge options, used to determine whether audio is enabled.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
-export function generateFFMpegCommand(
+export function generateFFmpegCommand(
   input: string[],
   outputPath: string,
   filtergraph: string,
   maxFps: number,
-  params: FFmpegEncodingParams,
+  args: FFmpegArgs,
   opts: MergeWorkflowOpts,
 ): string[] {
   const command: string[] = [];
@@ -166,11 +122,11 @@ export function generateFFMpegCommand(
   }
 
   command.push("-r", `${maxFps}`);
-  command.push(...params.videoCodec);
-  command.push(...params.crf);
+  command.push(...args.videoCodec);
+  command.push(...args.crf);
   command.push("-x265-params", "no-info=1");
-  if (params.disableAudio[0] === "-an") {
-    command.push(...params.disableAudio);
+  if (opts.disableAudio) {
+    command.push("-an");
   } else {
     command.push("-c:a", "libmp3lame");
     command.push("-b:a", "320k");

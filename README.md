@@ -10,7 +10,7 @@ This is really just a personal project and is not meant to be a replacement of f
 
 ### Requirements
 
-- Node.js (version 20 or higher)
+- Node.js (version 20.20 or higher)
 - npm (comes with Node.js)
 
 ### Steps
@@ -49,7 +49,7 @@ You can customize the encoding options using the available flags:
 - `--vc, --video-codec <codec>`: Specify the video codec to use (default: libx265). Currently, only H.265 is supported as this is really just my preferred codec so there's no point on using this flag. I just added this for future additional codec support.
 - `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size.
 - `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
-- `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to the current working directory and deletes it when each video finishes.
+- `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to a unique `ffm2v-` directory under the OS temp path; the file is reused for each video and the directory is removed when the command exits.
 - `--disable-audio`: Disable audio in the output video.
 - `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
 - `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of baking the rotation into the pixels (default: false). Has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways, and `--resolution` will refer to the stored frame rather than the displayed frame (e.g. `--resolution -2:1080` on a 90°-rotated video produces a 1440x1080 stored frame that displays as 1080x1440).
@@ -81,11 +81,11 @@ where `<file...>` is a space-separated list of video files to merge. The output 
 > [!IMPORTANT]  
 > This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased.
 
-The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in the current working directory. These files are deleted after the merge finishes. The `--ffmpeg-path <path>` option is also supported, as in `encode`.
+The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits. The `--ffmpeg-path <path>` option is also supported, as in `encode`.
 
 ## Updating ffmpeg
 
-This command updates the locally installed ffmpeg to the latest version available. It only works if you are using the full master build of [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/) and if you are on Windows. If you attempt to use this command without using this build, it will result in an error.
+This command updates the locally installed ffmpeg to the latest version available. It only works if you are using the full master build of [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/) and if you are on Windows. It also requires `7z` and `curl` to be available on your PATH. If you attempt to use this command without using this build, it will result in an error.
 
 To update locally installed ffmpeg, you can use the following command:
 

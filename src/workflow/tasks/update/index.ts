@@ -1,7 +1,7 @@
 import os from "os";
 import path from "path";
 import { print, spinnerPrint } from "@/cli/printer.ts";
-import { FFMPEG_LATEST_DOWNLOAD_URL } from "@/constants.ts";
+import { buildFFmpegDownloadUrl } from "@/constants.ts";
 import type { UpdateWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import {
@@ -16,7 +16,7 @@ import {
   getLocalFFmpegVersion,
   getRemoteFFmpegVersion,
   isVersionOutdated,
-} from "./helpers.ts";
+} from "./util.ts";
 
 function runUpdate(workflow: UpdateWorkflow) {
   const opts = workflow.options;
@@ -109,10 +109,7 @@ function runUpdate(workflow: UpdateWorkflow) {
 
   spinnerPrint("Downloading new FFmpeg version...", () => {
     try {
-      downloadNewVersion(
-        FFMPEG_LATEST_DOWNLOAD_URL(remoteVersion),
-        archivePath,
-      );
+      downloadNewVersion(buildFFmpegDownloadUrl(remoteVersion), archivePath);
     } catch (error) {
       throw new Error(`Failed to download new FFmpeg version: ${error}`, {
         cause: error,

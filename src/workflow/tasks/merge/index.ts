@@ -1,18 +1,18 @@
 import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
 import { getHighestResolution, getMaxFps } from "@/probe/index.ts";
-import { resolveFFmpegExecutable } from "@/workflow/helpers.ts";
-import { FFmpegEncodingParams } from "@/workflow/model/encodingParams.ts";
+import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
+import { generateStabilizationData } from "@/workflow/stabilization.ts";
+import { resolveFFmpegExecutable } from "@/workflow/util.ts";
 import chalk from "chalk";
 import { generateFiltergraph } from "./filters.ts";
 import {
-  generateFFMpegCommand,
-  generateStabilizationData,
+  generateFFmpegCommand,
   getFiles,
   getInputPaths,
   resolveOutputPath,
-} from "./helpers.ts";
+} from "./util.ts";
 
 /**
  * Runs FFmpeg to merge the videos and reports the result. Output is streamed to
@@ -22,7 +22,7 @@ import {
  * @param ffmpegPath - The path to the FFmpeg executable.
  * @param command - The FFmpeg arguments, excluding the executable name.
  */
-function encodeVideo(
+function mergeVideos(
   outputPath: string,
   ffmpegPath: string,
   command: string[],
@@ -54,7 +54,7 @@ function encodeVideo(
  */
 export function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
-  const params = new FFmpegEncodingParams(opts);
+  const encodingArgs = new FFmpegArgs(opts);
   const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
   const tmpDir = workflow.tmpDir;
 
@@ -84,7 +84,7 @@ export function runMerge(workflow: MergeWorkflow) {
         tmpDir,
         video.fullPath,
         strength,
-        index,
+        `transforms-${index}.trf`,
       );
 
       // Set the transformation file path in the video object for later use
@@ -105,14 +105,14 @@ export function runMerge(workflow: MergeWorkflow) {
     },
   );
 
-  const command = generateFFMpegCommand(
+  const command = generateFFmpegCommand(
     inputPaths,
     outputPath,
     filtergraph,
     maxFps,
-    params,
+    encodingArgs,
     opts,
   );
 
-  encodeVideo(outputPath, ffmpegPath, command);
+  mergeVideos(outputPath, ffmpegPath, command);
 }
