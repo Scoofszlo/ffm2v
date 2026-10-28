@@ -1,3 +1,5 @@
+import { FilterchainHandler } from "@/filtering/filterchain/handler.ts";
+import { FiltergraphHandler } from "@/filtering/filtergraph/handler.ts";
 import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator.ts";
 import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets.ts";
 import { generateStabilizationFilter } from "@/filtering/filters/stabilization.ts";
@@ -18,23 +20,49 @@ function getConcatFilterchain(
   videos: MediaFile[],
   opts: MergeWorkflowOpts,
 ): string {
-  let filterchain = "";
+  const fch = new FilterchainHandler();
 
+  // Add input labels depending on the number of videos and whether audio is
+  // enabled
   videos.forEach((video, index) => {
-    filterchain += `[v${index}]`;
+    fch.addInputLabel(`v${index}`);
 
     if (video.hasAudio && opts.disableAudio === false) {
-      filterchain += `[a${index}]`;
+      fch.addInputLabel(`a${index}`);
     }
   });
 
+  // Add the concat filter with the appropriate number of video and audio streams
   if (opts.disableAudio === false) {
-    filterchain += ` concat=n=${videos.length}:v=1:a=1 [outv][outa]`;
+    fch.addFilter(`concat=n=${videos.length}:v=1:a=1`);
+    fch.addOutputLabel("outv");
+    fch.addOutputLabel("outa");
   } else {
-    filterchain += ` concat=n=${videos.length}:v=1:a=0 [outv]`;
+    fch.addFilter(`concat=n=${videos.length}:v=1:a=0`);
+    fch.addOutputLabel("outv");
   }
 
-  return filterchain;
+  return fch.getFilters({ includeLabels: true });
+}
+
+function getPerAudioStreamFilterchain(
+  index: number,
+  video: MediaFile,
+  opts: MergeWorkflowOpts,
+): string {
+  const audFch = new FilterchainHandler({
+    inputLabel: [`${index}:a`],
+    outputLabel: [`a${index}`],
+  });
+
+  // Apply audio processing if the video has audio and audio is not disabled
+  if (video.hasAudio && opts.disableAudio === false) {
+    audFch.addFilter(
+      `aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo`,
+    );
+  }
+
+  return audFch.getFilters({ includeLabels: true });
 }
 
 /**
@@ -52,58 +80,55 @@ function getConcatFilterchain(
  * @throws Will throw an error if stabilization is enabled and a video has no
  * transform file path.
  */
-function getPerVideoFilterchain(
-  videos: MediaFile[],
+function getPerVideoStreamFilterchain(
+  index: number,
+  video: MediaFile,
   highestResolution: Resolution,
   maxFps: number,
   opts: MergeWorkflowOpts,
 ): string {
-  let filtergraph = "";
-
-  videos.forEach((video, index) => {
-    // Start the filtergraph segment for this video
-    filtergraph += `[${index}:v]`;
-
-    // Apply stabilization filter if enabled, and throw an error if the
-    // transformation file path is missing for the video
-    if (opts.stabilize) {
-      if (!video.transformFilePath) {
-        throw new Error(
-          `Transformation file path is missing for video: ${video.fullPath}`,
-        );
-      }
-
-      const strength = opts.stabilize;
-      filtergraph += `${generateStabilizationFilter(video.transformFilePath, strength)},`;
-    }
-
-    // Apply scaling and frame rate adjustments
-    filtergraph += `scale=${highestResolution[0]}:${highestResolution[1]},setsar=1,`;
-
-    // Apply interpolation filter if enabled, otherwise set the frame rate to the videos
-    // who have the highest FPS.
-    if (opts.interpolate) {
-      const targetFps = opts.interpolate;
-
-      filtergraph += generateMinterpolateFilter({
-        ...MINTERPOLATE_BALANCED_PRESET,
-        fps: targetFps,
-      });
-      filtergraph += `,fps=${targetFps}`;
-    } else {
-      filtergraph += `fps=${maxFps}`;
-    }
-
-    // End the filtergraph segment for this video
-    filtergraph += `[v${index}];`;
-
-    // Apply audio processing if the video has audio and audio is not disabled
-    if (video.hasAudio && opts.disableAudio === false) {
-      filtergraph += `[${index}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a${index}];`;
-    }
+  const vidFch = new FilterchainHandler({
+    inputLabel: [`${index}:v`],
+    outputLabel: [`v${index}`],
   });
 
-  return filtergraph;
+  // Apply stabilization filter if enabled, and throw an error if the
+  // transformation file path is missing for the video
+  if (opts.stabilize) {
+    if (!video.transformFilePath) {
+      throw new Error(
+        `Transformation file path is missing for video: ${video.fullPath}`,
+      );
+    }
+
+    const strength = opts.stabilize;
+    vidFch.addFilter(
+      generateStabilizationFilter(video.transformFilePath, strength),
+    );
+  }
+
+  // Apply scaling and frame rate adjustments
+  vidFch.addFilter(
+    `scale=${highestResolution[0]}:${highestResolution[1]},setsar=1`,
+  );
+
+  // Apply interpolation filter if enabled, otherwise set the frame rate to the videos
+  // who have the highest FPS.
+  if (opts.interpolate) {
+    const targetFps = opts.interpolate;
+
+    vidFch.addFilter(
+      generateMinterpolateFilter({
+        ...MINTERPOLATE_BALANCED_PRESET,
+        fps: targetFps,
+      }),
+    );
+    vidFch.addFilter(`fps=${targetFps}`);
+  } else {
+    vidFch.addFilter(`fps=${maxFps}`);
+  }
+
+  return vidFch.getFilters({ includeLabels: true });
 }
 
 /**
@@ -126,21 +151,28 @@ export function generateFiltergraph(
   opts: MergeWorkflowOpts,
   onSuccess: (filtergraph: string) => void,
 ): string {
-  let filtergraph = "";
+  const fgh = new FiltergraphHandler();
 
-  // Get the per-video filterchain segments for scaling and audio processing
-  filtergraph += getPerVideoFilterchain(
-    videos,
-    highestResolution,
-    maxFps,
-    opts,
-  );
+  // For each video, get the per-video filterchain and the per-audio
+  // filterchain, and add them to the filtergraph
+  videos.forEach((video, index) => {
+    const videoFilterchain = getPerVideoStreamFilterchain(
+      index,
+      video,
+      highestResolution,
+      maxFps,
+      opts,
+    );
+    const audioFilterchain = getPerAudioStreamFilterchain(index, video, opts);
 
-  // Add a space before the concat filterchain segment
-  filtergraph += " ";
+    fgh.addFilterchain(videoFilterchain);
+    fgh.addFilterchain(audioFilterchain);
+  });
 
   // Add the concat filterchain segment
-  filtergraph += getConcatFilterchain(videos, opts);
+  fgh.addFilterchain(getConcatFilterchain(videos, opts));
+
+  const filtergraph = fgh.getFiltergraph();
 
   onSuccess(filtergraph);
   return filtergraph;
