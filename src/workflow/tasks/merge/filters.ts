@@ -39,12 +39,15 @@ function getConcatFilterchain(
 
 /**
  * Builds the per-video filtergraph segments. Each video is optionally
- * stabilized, then scaled to the target resolution with a fixed frame rate.
+ * stabilized, then scaled to the target resolution and given a target frame
+ * rate: the interpolation filter when `--interpolate` is set, otherwise
+ * `maxFps`.
  * Audio is resampled to 48 kHz stereo FLTP when present and enabled.
  * @param videos - The videos being merged, in input order.
  * @param highestResolution - The target `[width, height]` for all videos.
- * @param maxFps - The target frame rate for all videos.
- * @param opts - The merge options controlling stabilization and audio.
+ * @param maxFps - The target frame rate used when interpolation is disabled.
+ * @param opts - The merge options controlling stabilization, interpolation,
+ * and audio.
  * @returns The concatenated per-video filtergraph segments.
  * @throws Will throw an error if stabilization is enabled and a video has no
  * transform file path.
@@ -108,8 +111,9 @@ function getPerVideoFilterchain(
  * per-video segments with the concat segment.
  * @param videos - The videos being merged, in input order.
  * @param highestResolution - The target `[width, height]` for all videos.
- * @param maxFps - The target frame rate for all videos.
- * @param opts - The merge options controlling stabilization and audio.
+ * @param maxFps - The target frame rate used when interpolation is disabled.
+ * @param opts - The merge options controlling stabilization, interpolation,
+ * and audio.
  * @param onSuccess - Callback invoked with the generated filtergraph.
  * @returns The complete filtergraph string.
  * @throws Will throw an error if stabilization is enabled and a video has no

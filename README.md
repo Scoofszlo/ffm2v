@@ -50,6 +50,7 @@ You can customize the encoding options using the available flags:
 - `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size.
 - `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
 - `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to a unique `ffm2v-` directory under the OS temp path; the file is reused for each video and the directory is removed when the command exits.
+- `--interpolate <fps>`: Interpolate the input video to the specified frame rate using FFmpeg's motion-compensated `minterpolate` filter. It runs after stabilization and before any `--resolution` scaling, and always uses a fixed "balanced" preset, so its quality/speed cannot be tuned. Interpolation significantly increases processing time and the number of frames in the output.
 - `--disable-audio`: Disable audio in the output video.
 - `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
 - `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of baking the rotation into the pixels (default: false). Has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways, and `--resolution` will refer to the stored frame rather than the displayed frame (e.g. `--resolution -2:1080` on a 90°-rotated video produces a 1440x1080 stored frame that displays as 1080x1440).
@@ -79,9 +80,11 @@ ffm2v merge -i <file...> [options]
 where `<file...>` is a space-separated list of video files to merge. The output file will be created in the same directory as the first input file, with `-merged` appended to the base name.
 
 > [!IMPORTANT]  
-> This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased.
+> This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased. When `--interpolate <fps>` is used, the output frame rate is that value instead of the highest input frame rate.
 
-The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits. The `--ffmpeg-path <path>` option is also supported, as in `encode`.
+The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits.
+
+The `--interpolate <fps>` option is also supported and applies to every input video, so all videos are interpolated to that frame rate and the merged output uses it. The `--disable-audio` and `--ffmpeg-path <path>` options are also supported, as in `encode`.
 
 ## Updating ffmpeg
 
