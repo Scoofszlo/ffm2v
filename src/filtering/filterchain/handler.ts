@@ -19,7 +19,6 @@ export class FilterchainHandler {
   }: {
     inputLabel?: string[];
     outputLabel?: string[];
-    filters?: string[];
   } = {}) {
     this.inputLabel = this.transformLabels(inputLabel);
     this.outputLabel = this.transformLabels(outputLabel);
