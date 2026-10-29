@@ -146,8 +146,8 @@ export function resolveOutputPath(
  * @param inputPath - The path to the input video.
  * @param outputPath - The path to write the encoded video to.
  * @param args - The encoding arguments derived from the user options.
- * @param filterchain - The filter chain to apply, emitted via `-vf`. It
- * already includes any resolution scale.
+ * @param filterchain - The filter chain to apply, emitted via `-vf`; an
+ * empty string omits the flag. It already includes any resolution scale.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
 export function generateFFmpegCommand(
@@ -162,7 +162,11 @@ export function generateFFmpegCommand(
     command.push(...args.keepRotationMetadata);
   }
   command.push("-i", inputPath);
-  command.push("-vf", filterchain);
+
+  if (filterchain) {
+    command.push("-vf", filterchain);
+  }
+
   command.push(...args.videoCodec);
   command.push(...args.crf);
   command.push(...args.audioArgs);

@@ -79,15 +79,16 @@ export class FilterchainHandler {
    * wrapped in its input and output labels.
    * @param options - Set `includeLabels` to `true` to prefix the input labels
    * and suffix the output labels.
-   * @returns The filterchain string, e.g. `scale=1280:720,fps=60`.
-   * @throws Will throw an error if the chain has no filters, or if
-   * `includeLabels` is `true` and either label set is missing.
+   * @returns The filterchain string, e.g. `scale=1280:720,fps=60`, or an
+   * empty string when no filters have been added.
+   * @throws Will throw an error if `includeLabels` is `true` and either label
+   * set is missing.
    */
   getFilters({
     includeLabels = false,
   }: { includeLabels?: boolean } = {}): string {
     if (this.filters.length === 0) {
-      throw new Error("No filters have been added to the filterchain.");
+      return "";
     }
 
     if (includeLabels) {

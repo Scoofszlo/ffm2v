@@ -8,9 +8,14 @@ export class FiltergraphHandler {
   /**
    * Appends a filterchain to the graph.
    * @param filterchain - The filterchain to append, with or without labels.
+   * Empty strings are ignored.
    */
   addFilterchain(filterchain: string): void {
-    this.filterchains.push(filterchain);
+    // A guard clause is used here because we have to check empty filterchains
+    // (i.e., empty strings) so we only add non-empty filterchains to the graph.
+    if (filterchain) {
+      this.filterchains.push(filterchain);
+    }
   }
 
   /**
