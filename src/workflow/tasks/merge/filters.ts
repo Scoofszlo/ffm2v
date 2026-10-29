@@ -45,22 +45,15 @@ function getConcatFilterchain(
   return fch.getFilters({ includeLabels: true });
 }
 
-function getPerAudioStreamFilterchain(
-  index: number,
-  video: MediaFile,
-  opts: MergeWorkflowOpts,
-): string {
+function getPerAudioStreamFilterchain(index: number): string {
   const audFch = new FilterchainHandler({
     inputLabel: [`${index}:a`],
     outputLabel: [`a${index}`],
   });
 
-  // Apply audio processing if the video has audio and audio is not disabled
-  if (video.hasAudio && opts.disableAudio === false) {
-    audFch.addFilter(
-      `aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo`,
-    );
-  }
+  audFch.addFilter(
+    `aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo`,
+  );
 
   return audFch.getFilters({ includeLabels: true });
 }
@@ -163,10 +156,14 @@ export function generateFiltergraph(
       maxFps,
       opts,
     );
-    const audioFilterchain = getPerAudioStreamFilterchain(index, video, opts);
 
     fgh.addFilterchain(videoFilterchain);
-    fgh.addFilterchain(audioFilterchain);
+
+    // Apply audio processing if the video has audio and audio is not disabled
+    if (video.hasAudio && opts.disableAudio === false) {
+      const audioFilterchain = getPerAudioStreamFilterchain(index);
+      fgh.addFilterchain(audioFilterchain);
+    }
   });
 
   // Add the concat filterchain segment
