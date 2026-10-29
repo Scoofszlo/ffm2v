@@ -36,7 +36,9 @@ src/cli/printer.ts            print() (success/error/warning) and spinnerPrint()
 src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URLs
 src/util.ts                   createTmpDir(): unique "ffm2v-" dir under the OS temp path
 src/types.ts                  General types belong here: Resolution, etc.
-src/filters/                  pure filter-string builders: scale.ts, unsharp.ts,
+src/filtering/filterchain/    FilterchainHandler: filter list + in/out labels
+src/filtering/filtergraph/    FiltergraphHandler: joins filterchains with ";"
+src/filtering/filters/        pure filter-string builders: scale.ts, unsharp.ts,
                               stabilization.ts, and interpolation/ (model.ts,
                               presets.ts, generator.ts), plus
                               escapeFilterPath() in util.ts
@@ -171,7 +173,9 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 - This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
   codec abstraction, cross-platform updater support, or new commands unless asked.
 - Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to test and belong
-  next to their concern: filter-string builders in `src/filters/`, probe
+  next to their concern: filter-string builders in `src/filtering/filters/` and
+  the chain/graph assemblers in `src/filtering/filterchain/` and
+  `src/filtering/filtergraph/`, probe
   reads in `src/probe/index.ts` with parsers/ratio math in
   `src/probe/parsers.ts`, and process/fs utilities in `src/workflow/util.ts`.
   Anything that reads a media file goes through `src/probe/`, called from

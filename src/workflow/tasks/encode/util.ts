@@ -141,15 +141,13 @@ export function resolveOutputPath(
 
 /**
  * Assembles the FFmpeg argument array for encoding a single video, in the
- * order: rotation metadata, input, optional filter chain (including any
- * resolution scale), video codec, CRF, audio options, and output path.
+ * order: rotation metadata, input, filter chain, video codec, CRF, audio
+ * options, and output path.
  * @param inputPath - The path to the input video.
  * @param outputPath - The path to write the encoded video to.
  * @param args - The encoding arguments derived from the user options.
- * @param opts - The encode options, whose resolution is appended as a scale
- * filter.
- * @param filterchain - The filter chain to apply, or `null` to skip the `-vf`
- * flag.
+ * @param filterchain - The filter chain to apply, emitted via `-vf`. It
+ * already includes any resolution scale.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
 export function generateFFmpegCommand(

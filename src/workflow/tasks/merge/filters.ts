@@ -45,6 +45,12 @@ function getConcatFilterchain(
   return fch.getFilters({ includeLabels: true });
 }
 
+/**
+ * Builds the audio-stream filterchain for a single input video, resampling to
+ * 48 kHz stereo FLTP.
+ * @param index - The input index used in the `[index:a]` input label.
+ * @returns The filterchain from `[<index>:a]` to `[a<index>]`.
+ */
 function getPerAudioStreamFilterchain(index: number): string {
   const audFch = new FilterchainHandler({
     inputLabel: [`${index}:a`],
@@ -59,18 +65,17 @@ function getPerAudioStreamFilterchain(index: number): string {
 }
 
 /**
- * Builds the per-video filtergraph segments. Each video is optionally
- * stabilized, then scaled to the target resolution and given a target frame
- * rate: the interpolation filter when `--interpolate` is set, otherwise
- * `maxFps`.
- * Audio is resampled to 48 kHz stereo FLTP when present and enabled.
- * @param videos - The videos being merged, in input order.
+ * Builds the video-stream filterchain for a single input video. The stream is
+ * optionally stabilized, then scaled to the target resolution and given a
+ * target frame rate: the interpolation filter plus `fps` when `--interpolate`
+ * is set, otherwise `maxFps`.
+ * @param index - The input index used in the `[index:v]` input label.
+ * @param video - The video whose streams are being processed.
  * @param highestResolution - The target `[width, height]` for all videos.
  * @param maxFps - The target frame rate used when interpolation is disabled.
- * @param opts - The merge options controlling stabilization, interpolation,
- * and audio.
- * @returns The concatenated per-video filtergraph segments.
- * @throws Will throw an error if stabilization is enabled and a video has no
+ * @param opts - The merge options controlling stabilization and interpolation.
+ * @returns The filterchain from `[<index>:v]` to `[v<index>]`.
+ * @throws Will throw an error if stabilization is enabled and the video has no
  * transform file path.
  */
 function getPerVideoStreamFilterchain(
