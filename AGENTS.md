@@ -172,13 +172,12 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 - This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
   codec abstraction, cross-platform updater support, or new commands unless asked.
-- Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to test and belong
-  next to their concern: filter-string builders in `src/filtering/filters/` and
-  the chain/graph assemblers in `src/filtering/filterchain/` and
-  `src/filtering/filtergraph/`, probe
-  reads in `src/probe/index.ts` with parsers/ratio math in
-  `src/probe/parsers.ts`, and process/fs utilities in `src/workflow/util.ts`.
-  Anything that reads a media file goes through `src/probe/`, called from
-  `createMediaFile()`/task code.
+- Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to
+  test and belong next to their concern: filter-string builders in
+  `src/filtering/filters/`, chain/graph assemblers in
+  `src/filtering/filterchain/` and `src/filtering/filtergraph/`, probe reads in
+  `src/probe/index.ts` with parsers/ratio math in `src/probe/parsers.ts`, and
+  process/fs utilities in `src/workflow/util.ts`. Anything that reads a media
+  file goes through `src/probe/`, called from `createMediaFile()`/task code.
 - No monorepo tooling, task runners, or caching layers are set up — don't
   introduce one (Turborepo, nx, wireit, etc.) as a side effect of a task.
