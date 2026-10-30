@@ -1,8 +1,10 @@
 import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
-import { generateMinterpolateFilter } from "@/filters/interpolation/generator.ts";
-import { MINTERPOLATE_BALANCED_PRESET } from "@/filters/interpolation/presets.ts";
-import { generateStabilizationFilter } from "@/filters/stabilization.ts";
+import { FilterchainHandler } from "@/filtering/filterchain/handler.ts";
+import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator.ts";
+import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets.ts";
+import { generateScaleFilter } from "@/filtering/filters/scale.ts";
+import { generateStabilizationFilter } from "@/filtering/filters/stabilization.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
@@ -79,7 +81,7 @@ export function runEncode(workflow: EncodeWorkflow) {
 
   // Start the encoding process for each file, OR move non-video files to the output directory
   for (const file of files) {
-    let filterchain: string | null = "";
+    const fch = new FilterchainHandler();
 
     if (!file.isVideo) {
       const outputPath = resolveOutputPath(file, inputSource, outputDir, false);
@@ -118,32 +120,40 @@ export function runEncode(workflow: EncodeWorkflow) {
       );
       file.setTransformFilePath(trfFilePath);
 
-      filterchain += generateStabilizationFilter(trfFilePath, opts.stabilize);
+      const stabFilter = generateStabilizationFilter(
+        trfFilePath,
+        opts.stabilize,
+      );
+      fch.addFilter(stabFilter);
     }
 
+    // If user supplies an interpolation value, generate the minterpolate
+    // filter and add it to the filterchain
     if (opts.interpolate) {
-      // Add a comma if there are already filters in the chain
-      filterchain += filterchain ? "," : "";
-
-      filterchain += generateMinterpolateFilter({
+      const minterpFilter = generateMinterpolateFilter({
         ...MINTERPOLATE_BALANCED_PRESET,
         fps: opts.interpolate,
       });
+      fch.addFilter(minterpFilter);
     }
-    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
 
-    // If filterchain is empty, set it to null to avoid passing an empty string
-    // to the FFmpeg command
-    if (!filterchain) {
-      filterchain = null;
+    // If user supplies a resolution value, generate the scale filter and
+    // add it to the filterchain
+    if (opts.resolution) {
+      const scaleFilter = generateScaleFilter(
+        opts.resolution.width,
+        opts.resolution.height,
+      );
+      fch.addFilter(scaleFilter);
     }
+
+    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
 
     const command = generateFFmpegCommand(
       file.fullPath,
       outputPath,
       encodingArgs,
-      opts,
-      filterchain,
+      fch.getFilters(),
     );
 
     encodeVideo(file.fullPath, outputPath, ffmpegPath, command);

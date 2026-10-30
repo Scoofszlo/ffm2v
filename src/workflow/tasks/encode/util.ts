@@ -1,9 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { generateScaleFilter } from "@/filters/scale.ts";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
-import type { EncodeWorkflowOpts } from "@/workflow/model/workflow.ts";
 import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 import type { InputSource } from "./types.ts";
 
@@ -143,64 +141,35 @@ export function resolveOutputPath(
 
 /**
  * Assembles the FFmpeg argument array for encoding a single video, in the
- * order: rotation metadata, input, optional filter chain (including any
- * resolution scale), video codec, CRF, audio options, and output path.
+ * order: rotation metadata, input, filter chain, video codec, CRF, audio
+ * options, and output path.
  * @param inputPath - The path to the input video.
  * @param outputPath - The path to write the encoded video to.
  * @param args - The encoding arguments derived from the user options.
- * @param opts - The encode options, whose resolution is appended as a scale
- * filter.
- * @param filterchain - The filter chain to apply, or `null` to skip the `-vf`
- * flag.
+ * @param filterchain - The filter chain to apply, emitted via `-vf`; an
+ * empty string omits the flag. It already includes any resolution scale.
  * @returns The FFmpeg arguments, excluding the executable name.
  */
 export function generateFFmpegCommand(
   inputPath: string,
   outputPath: string,
   args: FFmpegArgs,
-  opts: EncodeWorkflowOpts,
-  filterchain: string | null,
+  filterchain: string,
 ): string[] {
   const command: string[] = [];
-  const filterchainArr: string[] = [];
 
   if (args.keepRotationMetadata) {
     command.push(...args.keepRotationMetadata);
   }
   command.push("-i", inputPath);
 
-  // If a filterchain is provided, add it to the command
   if (filterchain) {
-    filterchainArr.push("-vf", filterchain);
+    command.push("-vf", filterchain);
   }
-
-  // If user specified a output resolution, create a scale filter and append
-  // it to the filterchain at the end so that it is applied after all
-  // other filters.
-  if (opts.resolution) {
-    const scaleFilter = generateScaleFilter(
-      opts.resolution.width,
-      opts.resolution.height,
-    );
-
-    // If filterchainArr is empty, append "-vf" then the filter
-    if (filterchainArr.length === 0) {
-      filterchainArr.push("-vf", scaleFilter);
-    } else {
-      // If filterchainArr already has "-vf", append the resolution to the
-      // existing filterchain, which is at the second index of the array.
-      filterchainArr[1] += `,${scaleFilter}`;
-    }
-  }
-
-  command.push(...filterchainArr);
 
   command.push(...args.videoCodec);
-
   command.push(...args.crf);
-
   command.push(...args.audioArgs);
-
   command.push(outputPath);
 
   return command;
