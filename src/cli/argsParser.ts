@@ -1,5 +1,5 @@
 import { APP_VERSION } from "@/constants.ts";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { createEncodeCommand } from "./commands/encode.ts";
 import { createMergeCommand } from "./commands/merge.ts";
 import { print } from "./printer.ts";
@@ -21,13 +21,30 @@ export class ArgsParser {
         print(str.replace(/^error:\s*/, "").trimEnd(), "error"),
     });
 
+    // Add help option with custom help group
+    this.program.addHelpOption(
+      new Option("-h, --help", "Display help information").helpGroup(
+        "General Options",
+      ),
+    );
+
+    // Add version option and handle its action
+    this.program.addOption(
+      new Option("-v, --version", "Display app version").helpGroup(
+        "General Options",
+      ),
+    );
+    this.program.on("option:version", () => {
+      console.log(APP_VERSION);
+      process.exit(0);
+    });
+
     // Generate program introduction and version
     this.program
       .name("ffm2v")
       .description(
         "A personalized FFmpeg tool for converting video files to H.265 with easy-to-run commands.",
-      )
-      .version(APP_VERSION);
+      );
 
     // Define 'encode' command with options
     createEncodeCommand(this.program).action((options) => {
