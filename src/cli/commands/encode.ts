@@ -4,7 +4,7 @@ import { commonEncodingOpts, commonGeneralOpts } from "./common.ts";
 const generalOpts = [
   () => new Option("-i, --input <file>", "Input video file"),
   ...commonGeneralOpts,
-];
+] as const;
 
 const encodingOpts = [
   () =>
@@ -18,7 +18,7 @@ const encodingOpts = [
       "--keep-rotation-metadata",
       "Keep the input video's rotation metadata instead of baking rotation into the pixels",
     ).default(false),
-];
+] as const;
 
 const withGeneralOpts = (cmd: Command) => {
   generalOpts.forEach((opt) =>

@@ -1,6 +1,7 @@
 import { APP_VERSION } from "@/constants.ts";
 import { Command } from "commander";
-import { applyCommonOptions } from "./commands.ts";
+import { createEncodeCommand } from "./commands/encode.ts";
+import { createMergeCommand } from "./commands/merge.ts";
 import { print } from "./printer.ts";
 
 type ParsedOptions = Record<string, unknown>;
@@ -28,31 +29,14 @@ export class ArgsParser {
       )
       .version(APP_VERSION);
 
-    // Define 'encode' command with options and validation
-    applyCommonOptions(
-      this.program
-        .command("encode")
-        .description("Encode a video file")
-        .option("-i, --input <file>", "Input video file"),
-    )
-      .action((options) => {
-        this.parseCommand = "encode";
-        this.parsedOptions = options;
-      })
-      .option(
-        "--keep-rotation-metadata",
-        "Keep the input video's rotation metadata instead of baking rotation into the pixels",
-        false,
-      );
+    // Define 'encode' command with options
+    createEncodeCommand(this.program).action((options) => {
+      this.parseCommand = "encode";
+      this.parsedOptions = options;
+    });
 
-    // Define 'merge' command with options and validation
-    applyCommonOptions(
-      this.program
-        .command("merge")
-        .description("Merge multiple video files")
-        .option("-i, --input <file...>", "Input video files"),
-      ["resolution"],
-    ).action((options) => {
+    // Define 'merge' command with options
+    createMergeCommand(this.program).action((options) => {
       this.parseCommand = "merge";
       this.parsedOptions = options;
     });

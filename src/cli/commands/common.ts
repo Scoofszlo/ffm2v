@@ -8,7 +8,7 @@ export const commonGeneralOpts = [
       "--ffmpeg-path <path>",
       "Custom path to the FFmpeg executable",
     ).default(null),
-];
+] as const;
 
 export const commonEncodingOpts = [
   () =>
@@ -31,4 +31,4 @@ export const commonEncodingOpts = [
     new Option("--disable-audio", "Disable audio in the output video").default(
       false,
     ),
-];
+] as const;
