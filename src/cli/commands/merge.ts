@@ -10,7 +10,7 @@ const encodingOpts = [...commonEncodingOpts];
 
 const withGeneralOpts = (cmd: Command) => {
   generalOpts.forEach((opt) =>
-    cmd.addOption(opt().helpGroup("General Options")),
+    cmd.addOption(opt().helpGroup("General Options:")),
   );
   return cmd;
 };
@@ -18,7 +18,7 @@ const withGeneralOpts = (cmd: Command) => {
 const withEncodingOpts = (cmd: Command) => {
   withGeneralOpts(cmd);
   encodingOpts.forEach((opt) =>
-    cmd.addOption(opt().helpGroup("Encoding Options")),
+    cmd.addOption(opt().helpGroup("Encoding Options:")),
   );
   return cmd;
 };

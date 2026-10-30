@@ -24,14 +24,14 @@ export class ArgsParser {
     // Add help option with custom help group
     this.program.addHelpOption(
       new Option("-h, --help", "Display help information").helpGroup(
-        "General Options",
+        "General Options:",
       ),
     );
 
     // Add version option and handle its action
     this.program.addOption(
       new Option("-v, --version", "Display app version").helpGroup(
-        "General Options",
+        "General Options:",
       ),
     );
     this.program.on("option:version", () => {
