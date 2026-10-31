@@ -176,6 +176,16 @@ export function generateFFmpegCommand(
   return command;
 }
 
+/**
+ * Builds the video2x argument list for a single input file. The processor and
+ * model are fixed, while the codec, CRF, FPS multiplier, and optional Vulkan
+ * device come from the user's options.
+ * @param inputPath - The path to the input video.
+ * @param outputPath - The path video2x writes the interpolated video to.
+ * @param args - The video2x flag fragments derived from the user options.
+ * @returns The video2x arguments, excluding the executable name.
+ * @throws Error if no FPS multiplier is set (thrown by `args.fpsMultiplier`).
+ */
 export function generateVideo2xCommand(
   inputPath: string,
   outputPath: string,

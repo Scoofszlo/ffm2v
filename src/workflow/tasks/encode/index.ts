@@ -25,13 +25,14 @@ import {
 } from "./util.ts";
 
 /**
- * Runs FFmpeg to encode a single video and reports the result. Output is
- * streamed to the terminal.
+ * Runs a program to encode a single video and reports the result. Output is
+ * streamed to the terminal. Used for both FFmpeg and video2x.
  * @param filePath - The path to the input video, used for messages.
  * @param outputPath - The path the encoded video is written to, used for
  * messages.
- * @param programPath - The path to the FFmpeg executable.
- * @param command - The FFmpeg arguments, excluding the executable name.
+ * @param programPath - The path to the executable producing the output, either
+ * FFmpeg or video2x.
+ * @param command - The program arguments, excluding the executable name.
  */
 function encodeVideo(
   filePath: string,
@@ -64,7 +65,9 @@ function encodeVideo(
 /**
  * Runs the encode workflow. Collects files from the input source, moves
  * non-video files to the output directory, and encodes each video.
- * Videos with stabilization enabled get a detection pass first.
+ * Videos with stabilization enabled get a detection pass first. Videos encoded
+ * with video2x interpolation skip the filterchain path entirely and are handed
+ * to video2x instead.
  * @param workflow - The validated encode workflow containing the
  * options and temp directory.
  */
@@ -73,7 +76,6 @@ export function runEncode(workflow: EncodeWorkflow) {
   const opts = workflow.options;
   const ffmpegArgs = new FFmpegArgs(opts);
   const ffmpegPath = resolveProgramExecutable("ffmpeg", opts.ffmpegPath);
-  const video2xPath = resolveProgramExecutable("video2x", opts.video2xPath);
   const tmpDir = workflow.tmpDir;
   const inputSource = resolveInputSource(opts.input);
   const outputDir = resolveOutputDir(inputSource, opts.output);
@@ -116,8 +118,12 @@ export function runEncode(workflow: EncodeWorkflow) {
 
     // If user uses video2x interpolation, skip the rest of stuff and proceed in this
     // block since most of the options after this block are not compatible with video2x
-    if (opts.interpolationMode === "video2x" && workflow.type === "encode") {
-      checkDeps(["video2x"]);
+    if (opts.interpolationMode === "video2x") {
+      if (!opts.video2xPath) {
+        checkDeps(["video2x"]);
+      }
+
+      const video2xPath = resolveProgramExecutable("video2x", opts.video2xPath);
       const video2xArgs = new Video2xArgs(opts);
       const command = generateVideo2xCommand(
         file.fullPath,

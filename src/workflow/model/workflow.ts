@@ -24,10 +24,6 @@ const commonOptionsSchema = z.object({
     .default(null),
   disableAudio: z.boolean().default(false),
   ffmpegPath: z.string().nullable().default(null),
-  interpolationMode: z
-    .enum(["minterpolate", "video2x"])
-    .nullable()
-    .default(null),
   targetFps: z.coerce
     .number()
     .int()
@@ -66,6 +62,10 @@ const encodeOptionsSchema = commonOptionsSchema
         return { width, height };
       }),
     keepRotationMetadata: z.boolean().default(false),
+    interpolationMode: z
+      .enum(["minterpolate", "video2x"])
+      .nullable()
+      .default(null),
     fpsMultiplier: z.coerce
       .number()
       .int()
@@ -116,6 +116,7 @@ const mergeOptionsSchema = commonOptionsSchema.extend({
         .min(1, "Input file must be specified"),
     )
     .min(1),
+  interpolationMode: z.enum(["minterpolate"]).nullable().default(null),
 });
 
 const updateOptionsSchema = z.object({

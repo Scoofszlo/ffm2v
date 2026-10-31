@@ -67,8 +67,9 @@ function getPerAudioStreamFilterchain(index: number): string {
 /**
  * Builds the video-stream filterchain for a single input video. The stream is
  * optionally stabilized, then scaled to the target resolution and given a
- * target frame rate: the interpolation filter plus `fps` when `--interpolate`
- * is set, otherwise `maxFps`.
+ * target frame rate: the interpolation filter plus `fps` when
+ * `--interpolation-mode minterpolate` and `--target-fps` are set, otherwise
+ * `maxFps`.
  * @param index - The input index used in the `[index:v]` input label.
  * @param video - The video whose streams are being processed.
  * @param highestResolution - The target `[width, height]` for all videos.

@@ -73,6 +73,16 @@ export function hasVideoExtension(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 
+/**
+ * Resolves the executable path for a program. If a custom path is provided, it
+ * is resolved with `which`; otherwise the bare program name is returned so the
+ * executable is looked up on the system PATH.
+ * @param programName - The program name, also used in error messages.
+ * @param customPath - The custom executable path, or `null` to use PATH.
+ * @returns The resolved executable path, or `programName` when no custom path
+ * is given.
+ * @throws Error if `customPath` cannot be resolved.
+ */
 export function resolveProgramExecutable(
   programName: string,
   customPath: string | null,
@@ -127,6 +137,12 @@ export function moveFile({
   }
 }
 
+/**
+ * Verifies that every given program is available on the system PATH.
+ * @param deps - The program names to check for.
+ * @throws Error listing every missing program, so the user knows what to
+ * install or add to PATH.
+ */
 export function checkDeps(deps: string[]) {
   const missingDeps = new Set<string>();
 
