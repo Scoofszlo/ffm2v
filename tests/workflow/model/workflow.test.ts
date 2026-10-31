@@ -46,6 +46,8 @@ describe("WorkflowSchema", () => {
           keepRotationMetadata: false,
           interpolationMode: null,
           targetFps: null,
+          fpsMultiplier: null,
+          video2xPath: null,
           stabilize: null,
           ffmpegPath: null,
         },
