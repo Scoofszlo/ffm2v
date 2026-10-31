@@ -30,8 +30,11 @@ Use npm (a `package-lock.json` exists; do not switch package managers).
 
 ```
 src/index.ts                  entry: create tmp dir -> parse args -> validate -> dispatch to one task
-src/cli/argsParser.ts         ArgsParser class: commander program + command definitions
-src/cli/commands.ts           shared option definitions + applyCommonOptions()
+src/cli/argsParser.ts         ArgsParser class: commander program, program-level -h/-v
+                              options, command wiring
+src/cli/commands/             per-command option lists attached via helpGroup():
+                              common.ts (shared general/encoding option factories),
+                              encode.ts, merge.ts, updateFFmpeg.ts
 src/cli/printer.ts            print() (success/error/warning) and spinnerPrint()
 src/constants.ts              APP_VERSION, VIDEO_EXTENSIONS, ffmpeg download URLs
 src/util.ts                   createTmpDir(): unique "ffm2v-" dir under the OS temp path
@@ -98,9 +101,10 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 ## Validation and errors
 
 - **All option validation, coercion, and defaults live in the zod schemas in
-  `src/workflow/model/workflow.ts`.** Adding a flag means: define it in
-  `src/cli/commands.ts` (or the command in `argsParser.ts`), then extend the
-  matching zod schema so defaults and types appear downstream.
+  `src/workflow/model/workflow.ts`.** Adding a flag means: define it in the
+  matching module under `src/cli/commands/` and attach it with `helpGroup` so it
+  lands in the right help section, then extend the matching zod schema so
+  defaults and types appear downstream.
 - Error messages are user-facing prose; custom messages in zod are expected
   (e.g. `"CRF must be between 0 and 51"`).
 - `index.ts` deliberately prints only `error.issues[0].message` to avoid dumping a

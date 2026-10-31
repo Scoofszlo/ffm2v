@@ -1,5 +1,11 @@
 import type { Command } from "commander";
 
+/**
+ * Creates the `update-ffmpeg` command with its update options.
+ *
+ * @param cmd - Program or parent command to attach the command to.
+ * @returns The configured `update-ffmpeg` command.
+ */
 export const createUpdateFFmpegCommand = (cmd: Command) => {
   return cmd
     .command("update-ffmpeg")

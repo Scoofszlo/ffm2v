@@ -23,6 +23,12 @@ const withEncodingOpts = (cmd: Command) => {
   return cmd;
 };
 
+/**
+ * Creates the `merge` command with its general and encoding options.
+ *
+ * @param cmd - Program or parent command to attach the command to.
+ * @returns The configured `merge` command.
+ */
 export const createMergeCommand = (cmd: Command) => {
   return withEncodingOpts(
     cmd.command("merge").description("Merge multiple video files"),

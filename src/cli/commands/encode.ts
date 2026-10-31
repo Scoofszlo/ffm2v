@@ -35,6 +35,12 @@ const withEncodingOpts = (cmd: Command) => {
   return cmd;
 };
 
+/**
+ * Creates the `encode` command with its general and encoding options.
+ *
+ * @param cmd - Program or parent command to attach the command to.
+ * @returns The configured `encode` command.
+ */
 export const createEncodeCommand = (cmd: Command) => {
   return withEncodingOpts(
     cmd.command("encode").description("Encode a video file"),
