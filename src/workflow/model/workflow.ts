@@ -15,11 +15,6 @@ const commonOptionsSchema = z.object({
     .min(0, { message: "CRF must be between 0 and 51" })
     .max(51, { message: "CRF must be be between 0 and 51" })
     .default(23),
-  interpolate: z.coerce
-    .number()
-    .min(1, "Interpolation FPS must be a positive number")
-    .nullable()
-    .default(null),
   stabilize: z.coerce
     .number()
     .int()
@@ -61,6 +56,22 @@ const encodeOptionsSchema = commonOptionsSchema
         return { width, height };
       }),
     keepRotationMetadata: z.boolean().default(false),
+    interpolationMode: z
+      .enum(["minterpolate", "video2x"])
+      .nullable()
+      .default(null),
+    targetFps: z.coerce
+      .number()
+      .int()
+      .min(1, "Target FPS must be a positive integer")
+      .nullable()
+      .default(null),
+    fpsMultiplier: z.coerce
+      .number()
+      .int()
+      .min(1, "FPS multiplier must be a positive integer")
+      .nullable()
+      .default(null),
   })
   .superRefine((data, ctx) => {
     if (data.input === data.output) {
@@ -68,6 +79,24 @@ const encodeOptionsSchema = commonOptionsSchema
         code: "custom",
         message: "Input and output files cannot be the same.",
         path: ["output"],
+      });
+    }
+    // If interpolation mode used is minterpolate, then target FPS must be specified
+    if (data.interpolationMode === "minterpolate" && !data.targetFps) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Target FPS must be specified when using minterpolate filter for frame interpolation.",
+        path: ["targetFps"],
+      });
+    }
+
+    if (data.interpolationMode === "video2x" && !data.fpsMultiplier) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "FPS multiplier must be specified when using video2x for frame interpolation.",
+        path: ["fpsMultiplier"],
       });
     }
   });
