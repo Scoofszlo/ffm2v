@@ -49,6 +49,7 @@ function encodeVideo(
   });
   if (result.error) {
     print(`\nError encoding '${filePath}': ${result.error.message}`, "error");
+    // video2x uses 3221225477 as a success code, so we ignore it here.
   } else if (result.status !== 0 && result.status !== 3221225477) {
     print(
       `\nProgram exited with code ${result.status} while encoding '${filePath}'.`,

@@ -98,6 +98,7 @@ const encodeOptionsSchema = commonOptionsSchema
       });
     }
 
+    // If interpolation mode used is video2x, then FPS multiplier must be specified
     if (data.interpolationMode === "video2x" && !data.fpsMultiplier) {
       ctx.addIssue({
         code: "custom",
