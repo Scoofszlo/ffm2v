@@ -2,6 +2,7 @@ import { APP_VERSION } from "@/constants.ts";
 import { Command, Option } from "commander";
 import { createEncodeCommand } from "./commands/encode.ts";
 import { createMergeCommand } from "./commands/merge.ts";
+import { createUpdateFFmpegCommand } from "./commands/updateFFmpeg.ts";
 import { print } from "./printer.ts";
 
 type ParsedOptions = Record<string, unknown>;
@@ -59,23 +60,10 @@ export class ArgsParser {
     });
 
     // Define 'update' command with options
-    this.program
-      .command("update-ffmpeg")
-      .description("Update locally installed FFmpeg to the latest version")
-      .option(
-        "--disable-archive",
-        "Deletes the installed FFmpeg instead of moving it to the archive folder",
-        false,
-      )
-      .option(
-        "-c, --check-only",
-        "Only check for updates without performing the update",
-        false,
-      )
-      .action((options) => {
-        this.parseCommand = "update";
-        this.parsedOptions = options;
-      });
+    createUpdateFFmpegCommand(this.program).action((options) => {
+      this.parseCommand = "update";
+      this.parsedOptions = options;
+    });
   }
 
   parseArgs(argv: string[] = process.argv) {
