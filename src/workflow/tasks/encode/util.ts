@@ -196,7 +196,7 @@ export function generateVideo2xCommand(
   // Other common defaults
   command.push("--processor", "rife");
   command.push("--rife-model", "rife-v4.26");
-  command.push("-d", "1"); // TO-DO: Add logic to automatically target GPU
+  command.push(...args.vulkanDeviceId);
 
   return command;
 }

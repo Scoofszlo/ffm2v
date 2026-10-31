@@ -24,6 +24,14 @@ export class Video2xArgs {
     return ["-m", this.opts.fpsMultiplier.toString()];
   }
 
+  get vulkanDeviceId() {
+    if (!this.opts.vulkanDeviceId) {
+      // If nothing is specified, we will let video2x choose the default device.
+      return [];
+    }
+    return ["-d", this.opts.vulkanDeviceId.toString()];
+  }
+
   private buildExtraEncoderOption<T>(key: string, value: T): string[] {
     return ["-e", `${key}=${value}`];
   }

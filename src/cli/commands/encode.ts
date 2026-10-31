@@ -37,6 +37,11 @@ const interpolationOpts = [
     ).default(null),
   () =>
     new Option(
+      "--vulkan-device-id <number>",
+      "The Vulkan device ID to use for video2x. To get the available IDs, run `video2x -l` in the terminal and get the device ID of your choice that will be used for interpolation. This is recommended to set so that appropriate GPU will be selected for faster interpolation. Only works for video2x mode",
+    ).default(null),
+  () =>
+    new Option(
       "--video2x-path <path>",
       "Path to the video2x executable. Only works for video2x mode",
     ).default(null),

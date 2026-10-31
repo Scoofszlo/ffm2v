@@ -47,6 +47,7 @@ describe("WorkflowSchema", () => {
           interpolationMode: null,
           targetFps: null,
           fpsMultiplier: null,
+          vulkanDeviceId: null,
           video2xPath: null,
           stabilize: null,
           ffmpegPath: null,
