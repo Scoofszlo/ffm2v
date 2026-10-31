@@ -112,8 +112,8 @@ function getPerVideoStreamFilterchain(
 
   // Apply interpolation filter if enabled, otherwise set the frame rate to the videos
   // who have the highest FPS.
-  if (opts.interpolate) {
-    const targetFps = opts.interpolate;
+  if (opts.interpolationMode === "minterpolate" && opts.targetFps) {
+    const targetFps = opts.targetFps;
 
     vidFch.addFilter(
       generateMinterpolateFilter({

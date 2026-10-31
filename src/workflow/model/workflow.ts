@@ -24,6 +24,16 @@ const commonOptionsSchema = z.object({
     .default(null),
   disableAudio: z.boolean().default(false),
   ffmpegPath: z.string().nullable().default(null),
+  interpolationMode: z
+    .enum(["minterpolate", "video2x"])
+    .nullable()
+    .default(null),
+  targetFps: z.coerce
+    .number()
+    .int()
+    .min(1, "Target FPS must be a positive integer")
+    .nullable()
+    .default(null),
 });
 
 const encodeOptionsSchema = commonOptionsSchema
@@ -56,16 +66,6 @@ const encodeOptionsSchema = commonOptionsSchema
         return { width, height };
       }),
     keepRotationMetadata: z.boolean().default(false),
-    interpolationMode: z
-      .enum(["minterpolate", "video2x"])
-      .nullable()
-      .default(null),
-    targetFps: z.coerce
-      .number()
-      .int()
-      .min(1, "Target FPS must be a positive integer")
-      .nullable()
-      .default(null),
     fpsMultiplier: z.coerce
       .number()
       .int()

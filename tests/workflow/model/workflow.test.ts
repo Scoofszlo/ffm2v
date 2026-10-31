@@ -157,6 +157,8 @@ describe("WorkflowSchema", () => {
           disableAudio: false,
           stabilize: null,
           ffmpegPath: null,
+          interpolationMode: null,
+          targetFps: null,
         },
       });
     });
