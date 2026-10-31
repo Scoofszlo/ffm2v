@@ -90,6 +90,8 @@ describe("ArgsParser", () => {
         disableAudio: true,
         stabilize: null,
         ffmpegPath: null,
+        interpolationMode: null,
+        targetFps: null,
       },
     });
   });
