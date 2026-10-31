@@ -6,12 +6,14 @@ import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/
 import { generateScaleFilter } from "@/filtering/filters/scale.ts";
 import { generateStabilizationFilter } from "@/filtering/filters/stabilization.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
+import { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
 import { moveFile, resolveFFmpegExecutable } from "@/workflow/util.ts";
 import chalk from "chalk";
 import {
   generateFFmpegCommand,
+  generateVideo2xCommand,
   getFiles,
   resolveInputSource,
   resolveOutputDir,
@@ -24,29 +26,27 @@ import {
  * @param filePath - The path to the input video, used for messages.
  * @param outputPath - The path the encoded video is written to, used for
  * messages.
- * @param ffmpegPath - The path to the FFmpeg executable.
+ * @param programPath - The path to the FFmpeg executable.
  * @param command - The FFmpeg arguments, excluding the executable name.
  */
 function encodeVideo(
   filePath: string,
   outputPath: string,
-  ffmpegPath: string,
+  programPath: string,
   command: string[],
 ) {
   print(`\n${chalk.bold(`Encoding '${filePath}' to '${outputPath}'`)}`);
 
-  print(
-    chalk.gray(`Running FFmpeg command: ${ffmpegPath} ${command.join(" ")}\n`),
-  );
+  print(chalk.gray(`Running command: ${programPath} ${command.join(" ")}\n`));
 
-  const result = spawnSync(ffmpegPath, command, {
+  const result = spawnSync(programPath, command, {
     stdio: "inherit",
   });
   if (result.error) {
     print(`\nError encoding '${filePath}': ${result.error.message}`, "error");
-  } else if (result.status !== 0) {
+  } else if (result.status !== 0 && result.status !== 3221225477) {
     print(
-      `\nFFmpeg exited with code ${result.status} while encoding '${filePath}'.`,
+      `\nProgram exited with code ${result.status} while encoding '${filePath}'.`,
       "error",
     );
   } else {
@@ -105,6 +105,23 @@ export function runEncode(workflow: EncodeWorkflow) {
       continue;
     }
 
+    // Get the output path for the encoded video, which may be different from the
+    // input path
+    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
+
+    // If user uses video2x interpolation, skip the rest of stuff and proceed in this
+    // block since most of the options after this block are not compatible with video2x
+    if (opts.interpolationMode === "video2x" && workflow.type === "encode") {
+      const video2xArgs = new Video2xArgs(opts);
+      const command = generateVideo2xCommand(
+        file.fullPath,
+        outputPath,
+        video2xArgs,
+      );
+      encodeVideo(file.fullPath, outputPath, "video2x", command);
+      continue;
+    }
+
     // If user supplies a stabilization value, generate stabilization data
     // for the video before encoding
     if (opts.stabilize) {
@@ -129,10 +146,10 @@ export function runEncode(workflow: EncodeWorkflow) {
 
     // If user supplies an interpolation value, generate the minterpolate
     // filter and add it to the filterchain
-    if (opts.interpolate) {
+    if (opts.interpolationMode === "minterpolate" && opts.targetFps) {
       const minterpFilter = generateMinterpolateFilter({
         ...MINTERPOLATE_BALANCED_PRESET,
-        fps: opts.interpolate,
+        fps: opts.targetFps,
       });
       fch.addFilter(minterpFilter);
     }
@@ -146,8 +163,6 @@ export function runEncode(workflow: EncodeWorkflow) {
       );
       fch.addFilter(scaleFilter);
     }
-
-    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
 
     const command = generateFFmpegCommand(
       file.fullPath,
