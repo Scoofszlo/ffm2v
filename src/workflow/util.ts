@@ -73,23 +73,21 @@ export function hasVideoExtension(filePath: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 
-/**
- * Returns the path to the ffmpeg executable. If a custom path is provided, it
- * will be resolved and returned. If no custom path is provided, "ffmpeg" will
- * be returned, which assumes that ffmpeg is in the system's PATH.
- */
-export function resolveFFmpegExecutable(customPath: string | null): string {
+export function resolveProgramExecutable(
+  programName: string,
+  customPath: string | null,
+): string {
   if (customPath) {
     try {
       const resolvedPath = which.sync(customPath);
       return resolvedPath;
     } catch (error) {
-      const errorMsg = `Failed to resolve custom FFmpeg path '${customPath}'.`;
+      const errorMsg = `Failed to resolve custom path for '${programName}' executable '${customPath}'.`;
       throw new Error(errorMsg, { cause: error });
     }
   }
 
-  return "ffmpeg";
+  return programName;
 }
 
 /**
