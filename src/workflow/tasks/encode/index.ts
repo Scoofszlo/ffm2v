@@ -9,7 +9,11 @@ import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
-import { moveFile, resolveProgramExecutable } from "@/workflow/util.ts";
+import {
+  checkDeps,
+  moveFile,
+  resolveProgramExecutable,
+} from "@/workflow/util.ts";
 import chalk from "chalk";
 import {
   generateFFmpegCommand,
@@ -113,6 +117,7 @@ export function runEncode(workflow: EncodeWorkflow) {
     // If user uses video2x interpolation, skip the rest of stuff and proceed in this
     // block since most of the options after this block are not compatible with video2x
     if (opts.interpolationMode === "video2x" && workflow.type === "encode") {
+      checkDeps(["video2x"]);
       const video2xArgs = new Video2xArgs(opts);
       const command = generateVideo2xCommand(
         file.fullPath,

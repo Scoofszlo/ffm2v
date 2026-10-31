@@ -6,7 +6,6 @@ import type { UpdateWorkflow } from "@/workflow/model/workflow.ts";
 import chalk from "chalk";
 import {
   archiveOldVersion,
-  checkDeps,
   cleanup,
   deleteOldVersion,
   downloadNewVersion,
@@ -25,19 +24,6 @@ function runUpdate(workflow: UpdateWorkflow) {
     throw new Error(
       "The update feature is currently only supported on Windows.",
     );
-  }
-
-  const result = checkDeps();
-  if (result.status === "missing") {
-    if (!result.deps.ffmpeg) {
-      throw new Error(
-        "FFmpeg is not installed or not found in PATH. Please install FFmpeg to use the update feature.",
-      );
-    } else if (!result.deps.sevenZip) {
-      throw new Error(
-        "7-Zip is not installed or not found in PATH. Please install 7-Zip to use the update feature.",
-      );
-    }
   }
 
   const { ffmpegExecutablePath, ffmpegDirPath } = getFFmpegPaths();

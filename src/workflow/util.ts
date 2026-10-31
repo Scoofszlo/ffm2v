@@ -126,3 +126,21 @@ export function moveFile({
     onFailure?.(error);
   }
 }
+
+export function checkDeps(deps: string[]) {
+  const missingDeps = new Set<string>();
+
+  for (const programName of deps) {
+    try {
+      which.sync(programName);
+    } catch {
+      missingDeps.add(programName);
+    }
+  }
+
+  if (missingDeps.size > 0) {
+    throw new Error(
+      `Missing dependencies: ${Array.from(missingDeps).join(", ")}. Please install them and ensure they are in your PATH.`,
+    );
+  }
+}
