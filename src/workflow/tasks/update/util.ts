@@ -9,36 +9,6 @@ import which from "which";
 const GIT_VERSION_REGEX = /\d{4}-\d{2}-\d{2}-git-[a-f0-9]+/;
 const FFMPEG_VERSION_REGEX = /ffmpeg version (\d{4}-\d{2}-\d{2}-git-[a-f0-9]+)/;
 
-export function checkDeps(): {
-  status: "success" | "missing";
-  deps: { ffmpeg: boolean; sevenZip: boolean };
-} {
-  let ffmpegAvailable;
-  let sevenZipAvailable;
-  let status: "success" | "missing" = "success";
-
-  try {
-    which.sync("ffmpeg");
-    ffmpegAvailable = true;
-  } catch {
-    ffmpegAvailable = false;
-    status = "missing";
-  }
-
-  try {
-    which.sync("7z");
-    sevenZipAvailable = true;
-  } catch {
-    sevenZipAvailable = false;
-    status = "missing";
-  }
-
-  return {
-    status,
-    deps: { ffmpeg: ffmpegAvailable, sevenZip: sevenZipAvailable },
-  };
-}
-
 export function getFFmpegExecutablePath(): string | null {
   return which.sync("ffmpeg", { nothrow: true });
 }

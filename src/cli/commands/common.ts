@@ -23,11 +23,6 @@ export const commonEncodingOpts = [
       "Stabilize the input video from 1 to 5 (1 = weakest, 5 = strongest)",
     ).default(null),
   () =>
-    new Option(
-      "--interpolate <fps>",
-      "Interpolate the input video to the specified frame rate",
-    ).default(null),
-  () =>
     new Option("--disable-audio", "Disable audio in the output video").default(
       false,
     ),

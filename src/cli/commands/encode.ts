@@ -20,17 +20,42 @@ const encodingOpts = [
     ).default(false),
 ] as const;
 
-const withGeneralOpts = (cmd: Command) => {
+const interpolationOpts = [
+  () =>
+    new Option("--interpolation-mode <mode>", "Mode to use for interpolation")
+      .choices(["minterpolate", "video2x"])
+      .default(null),
+  () =>
+    new Option(
+      "--target-fps <fps>",
+      "Interpolate the input video to the target frame rate. Only works for minterpolate mode",
+    ).default(null),
+  () =>
+    new Option(
+      "--fps-multiplier <number>",
+      "Multiply the input video's frame rate by this factor. Only works for video2x mode",
+    ).default(null),
+  () =>
+    new Option(
+      "--vulkan-device-id <number>",
+      "The Vulkan device ID to use for video2x. To get the available IDs, run `video2x -l` in the terminal and get the device ID of your choice that will be used for interpolation. This is recommended to set so that appropriate GPU will be selected for faster interpolation. Only works for video2x mode",
+    ).default(null),
+  () =>
+    new Option(
+      "--video2x-path <path>",
+      "Path to the video2x executable. Only works for video2x mode",
+    ).default(null),
+] as const;
+
+const withEncodingOpts = (cmd: Command) => {
   generalOpts.forEach((opt) =>
     cmd.addOption(opt().helpGroup("General Options:")),
   );
-  return cmd;
-};
-
-const withEncodingOpts = (cmd: Command) => {
-  withGeneralOpts(cmd);
   encodingOpts.forEach((opt) =>
     cmd.addOption(opt().helpGroup("Encoding Options:")),
+  );
+  interpolationOpts.forEach((opt) =>
+    cmd.addOption(opt().helpGroup("Interpolation Options:")),
   );
   return cmd;
 };

@@ -29,7 +29,8 @@ Use npm (a `package-lock.json` exists; do not switch package managers).
 ## Architecture
 
 ```
-src/index.ts                  entry: create tmp dir -> parse args -> validate -> dispatch to one task
+src/index.ts                  entry: create tmp dir -> check ffmpeg -> parse args -> validate
+                              -> dispatch to one task
 src/cli/argsParser.ts         ArgsParser class: commander program, program-level -h/-v
                               options, command wiring
 src/cli/commands/             per-command option lists attached via helpGroup():
@@ -50,20 +51,28 @@ src/probe/                    ffprobe reads (index.ts: runFFprobe(), resolution,
                               (parsers.ts)
 src/workflow/util.ts          process + fs layer: runCommand(),
                               createMediaFile(), hasVideoExtension(),
-                              resolveFFmpegExecutable(), moveFile()
+                              resolveProgramExecutable(), checkDeps(), moveFile()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
 src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs
-                              (ffmpegArgs.ts: options -> ffmpeg CLI flag arrays)
+                              (ffmpegArgs.ts: options -> ffmpeg CLI flag arrays),
+                              Video2xArgs (video2xArgs.ts: options -> video2x
+                              CLI flag arrays)
 src/workflow/tasks/<task>/    index.ts orchestrator + util.ts; merge/ also has
                               filters.ts (encode/ has types.ts)
 ```
 
 Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**.
 
-- `index.ts` creates the temp dir before parsing, passes it into
-  `WorkflowSchema.parse()` (`tmpDir` is a required schema field), and removes it in
-  a `finally` block. Tasks receive it as `workflow.tmpDir` for stabilization files.
+- `index.ts` creates the temp dir before parsing, checks that `ffmpeg` is on PATH
+  via `checkDeps()`, passes the parsed options into `WorkflowSchema.parse()`
+  (`tmpDir` is a required schema field), and removes the dir in a `finally` block.
+  Tasks receive it as `workflow.tmpDir` for stabilization files.
+- `index.ts` also runs the per-command dependency checks: `checkDeps(["ffmpeg"])`
+  for every command and `checkDeps(["7z"])` for `update`. `encode` resolves and
+  checks for `video2x` inside the task, in the video2x interpolation branch: the
+  PATH check is skipped when `--video2x-path` is supplied, and the custom path is
+  validated by `resolveProgramExecutable()` instead.
 
 - `argsParser.ts` does **no** validation. It returns raw commander options plus a
   command name, which `index.ts` feeds into `WorkflowSchema.parse()`.
@@ -123,8 +132,10 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 - Invoke binaries with `spawnSync`/`execSync` and **argument arrays**, not
   interpolated shell strings, so file paths with spaces or quotes stay safe.
-  Requirement: `ffmpeg`, `ffprobe`; `update-ffmpeg` additionally needs `7z` and
-  `curl` on PATH (`which` is used to probe).
+  Requirements: `ffmpeg` (checked at startup for every command), `ffprobe`,
+  `video2x` only for `--interpolation-mode video2x`, and for `update-ffmpeg`
+  additionally `7z` (checked before the task runs) and `curl` (`which` is used to
+  probe).
 - Use the existing runners rather than writing new spawn blocks: `runCommand()`
   for ffmpeg/curl calls and `runFFprobe()` for any ffprobe call, exported from
   `src/workflow/util.ts` and `src/probe/index.ts` respectively. Both check
@@ -176,6 +187,9 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 - This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
   codec abstraction, cross-platform updater support, or new commands unless asked.
+  `video2x` is the one deliberate exception: an optional, encode-only external
+  tool for frame interpolation. It does not relax the codec or platform
+  constraints above.
 - Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to
   test and belong next to their concern: filter-string builders in
   `src/filtering/filters/`, chain/graph assemblers in
