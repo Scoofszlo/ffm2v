@@ -1,6 +1,8 @@
 import { APP_VERSION } from "@/constants.ts";
-import { Command } from "commander";
-import { applyCommonOptions } from "./commands.ts";
+import { Command, Option } from "commander";
+import { createEncodeCommand } from "./commands/encode.ts";
+import { createMergeCommand } from "./commands/merge.ts";
+import { createUpdateFFmpegCommand } from "./commands/updateFFmpeg.ts";
 import { print } from "./printer.ts";
 
 type ParsedOptions = Record<string, unknown>;
@@ -20,61 +22,48 @@ export class ArgsParser {
         print(str.replace(/^error:\s*/, "").trimEnd(), "error"),
     });
 
+    // Add help option with custom help group
+    this.program.addHelpOption(
+      new Option("-h, --help", "Display help information").helpGroup(
+        "General Options:",
+      ),
+    );
+
+    // Add version option and handle its action
+    this.program.addOption(
+      new Option("-v, --version", "Display app version").helpGroup(
+        "General Options:",
+      ),
+    );
+    this.program.on("option:version", () => {
+      console.log(APP_VERSION);
+      process.exit(0);
+    });
+
     // Generate program introduction and version
     this.program
       .name("ffm2v")
       .description(
         "A personalized FFmpeg tool for converting video files to H.265 with easy-to-run commands.",
-      )
-      .version(APP_VERSION);
-
-    // Define 'encode' command with options and validation
-    applyCommonOptions(
-      this.program
-        .command("encode")
-        .description("Encode a video file")
-        .option("-i, --input <file>", "Input video file"),
-    )
-      .action((options) => {
-        this.parseCommand = "encode";
-        this.parsedOptions = options;
-      })
-      .option(
-        "--keep-rotation-metadata",
-        "Keep the input video's rotation metadata instead of baking rotation into the pixels",
-        false,
       );
 
-    // Define 'merge' command with options and validation
-    applyCommonOptions(
-      this.program
-        .command("merge")
-        .description("Merge multiple video files")
-        .option("-i, --input <file...>", "Input video files"),
-      ["resolution"],
-    ).action((options) => {
+    // Define 'encode' command with options
+    createEncodeCommand(this.program).action((options) => {
+      this.parseCommand = "encode";
+      this.parsedOptions = options;
+    });
+
+    // Define 'merge' command with options
+    createMergeCommand(this.program).action((options) => {
       this.parseCommand = "merge";
       this.parsedOptions = options;
     });
 
     // Define 'update' command with options
-    this.program
-      .command("update-ffmpeg")
-      .description("Update locally installed FFmpeg to the latest version")
-      .option(
-        "--disable-archive",
-        "Deletes the installed FFmpeg instead of moving it to the archive folder",
-        false,
-      )
-      .option(
-        "-c, --check-only",
-        "Only check for updates without performing the update",
-        false,
-      )
-      .action((options) => {
-        this.parseCommand = "update";
-        this.parsedOptions = options;
-      });
+    createUpdateFFmpegCommand(this.program).action((options) => {
+      this.parseCommand = "update";
+      this.parsedOptions = options;
+    });
   }
 
   parseArgs(argv: string[] = process.argv) {
