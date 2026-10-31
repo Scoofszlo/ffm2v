@@ -4,7 +4,7 @@ import { getHighestResolution, getMaxFps } from "@/probe/index.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
-import { resolveFFmpegExecutable } from "@/workflow/util.ts";
+import { resolveProgramExecutable } from "@/workflow/util.ts";
 import chalk from "chalk";
 import { generateFiltergraph } from "./filters.ts";
 import {
@@ -55,7 +55,7 @@ function mergeVideos(
 export function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
   const encodingArgs = new FFmpegArgs(opts);
-  const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
+  const ffmpegPath = resolveProgramExecutable("ffmpeg", opts.ffmpegPath);
   const tmpDir = workflow.tmpDir;
 
   print(`\n${chalk.bold("Validating video files for merging...")}`);

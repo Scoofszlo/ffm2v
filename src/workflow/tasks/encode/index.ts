@@ -9,7 +9,7 @@ import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
-import { moveFile, resolveFFmpegExecutable } from "@/workflow/util.ts";
+import { moveFile, resolveProgramExecutable } from "@/workflow/util.ts";
 import chalk from "chalk";
 import {
   generateFFmpegCommand,
@@ -67,8 +67,9 @@ function encodeVideo(
 export function runEncode(workflow: EncodeWorkflow) {
   // Prepare core parameters for the encoding process
   const opts = workflow.options;
-  const encodingArgs = new FFmpegArgs(opts);
-  const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
+  const ffmpegArgs = new FFmpegArgs(opts);
+  const ffmpegPath = resolveProgramExecutable("ffmpeg", opts.ffmpegPath);
+  const video2xPath = resolveProgramExecutable("video2x", opts.video2xPath);
   const tmpDir = workflow.tmpDir;
   const inputSource = resolveInputSource(opts.input);
   const outputDir = resolveOutputDir(inputSource, opts.output);
@@ -118,7 +119,7 @@ export function runEncode(workflow: EncodeWorkflow) {
         outputPath,
         video2xArgs,
       );
-      encodeVideo(file.fullPath, outputPath, "video2x", command);
+      encodeVideo(file.fullPath, outputPath, video2xPath, command);
       continue;
     }
 
@@ -167,7 +168,7 @@ export function runEncode(workflow: EncodeWorkflow) {
     const command = generateFFmpegCommand(
       file.fullPath,
       outputPath,
-      encodingArgs,
+      ffmpegArgs,
       fch.getFilters(),
     );
 

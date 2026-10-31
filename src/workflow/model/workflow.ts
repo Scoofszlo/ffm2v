@@ -72,6 +72,7 @@ const encodeOptionsSchema = commonOptionsSchema
       .min(1, "FPS multiplier must be a positive integer")
       .nullable()
       .default(null),
+    video2xPath: z.string().nullable().default(null),
   })
   .superRefine((data, ctx) => {
     if (data.input === data.output) {

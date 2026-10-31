@@ -35,6 +35,11 @@ const interpolationOpts = [
       "--fps-multiplier <number>",
       "Multiply the input video's frame rate by this factor. Only works for video2x mode",
     ).default(null),
+  () =>
+    new Option(
+      "--video2x-path <path>",
+      "Path to the video2x executable. Only works for video2x mode",
+    ).default(null),
 ] as const;
 
 const withEncodingOpts = (cmd: Command) => {
