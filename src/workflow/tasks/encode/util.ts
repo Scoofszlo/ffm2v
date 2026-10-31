@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
+import type { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 import type { InputSource } from "./types.ts";
 
@@ -171,6 +172,31 @@ export function generateFFmpegCommand(
   command.push(...args.crf);
   command.push(...args.audioArgs);
   command.push(outputPath);
+
+  return command;
+}
+
+export function generateVideo2xCommand(
+  inputPath: string,
+  outputPath: string,
+  args: Video2xArgs,
+): string[] {
+  const command: string[] = [];
+
+  // Input path
+  command.push("-i", inputPath);
+  // Output path
+  command.push("-o", outputPath);
+  // Target FPS
+  command.push(...args.fpsMultiplier);
+  // Video codec
+  command.push(...args.videoCodec);
+  // CRF
+  command.push(...args.crf);
+  // Other common defaults
+  command.push("--processor", "rife");
+  command.push("--rife-model", "rife-v4.26");
+  command.push("-d", "1"); // TO-DO: Add logic to automatically target GPU
 
   return command;
 }
