@@ -92,6 +92,71 @@ export function resolveOutputPath(
 }
 
 /**
+ * Builds the audio arguments for the merged output. The audio comes from the
+ * concat filtergraph, and filtered streams cannot be stream-copied, so it is
+ * re-encoded as MP3 at 320k unless audio is disabled.
+ * @param opts - The merge options, used to determine whether audio is enabled.
+ * @returns The FFmpeg audio arguments, or `-an` when audio is disabled.
+ */
+function buildAudioArgs(opts: MergeWorkflowOpts): string[] {
+  if (opts.disableAudio) {
+    return ["-an"];
+  }
+
+  return ["-c:a", "libmp3lame", "-b:a", "320k"];
+}
+
+export function buildFFmpegInputArgs(
+  inputs: string[],
+  maxFps: number,
+  opts: MergeWorkflowOpts,
+  filtergraph: string,
+): string[] {
+  const command: string[] = [];
+
+  command.push(...inputs);
+  command.push("-filter_complex", filtergraph);
+  command.push("-map", "[outv]");
+
+  if (opts.disableAudio === false) {
+    command.push("-map", "[outa]");
+  }
+
+  if (opts.interpolationMode === "minterpolate" && opts.targetFps) {
+    command.push("-r", opts.targetFps.toString());
+  } else {
+    command.push("-r", maxFps.toString());
+  }
+
+  return command;
+}
+
+/**
+ * Assembles the FFmpeg arguments for the pre-stage of the merge video2x
+ * pipeline. The merged streams are written to stdout as a lossless Matroska
+ * stream that video2x reads from its stdin.
+ * @param input - The FFmpeg input arguments from {@link getInputPaths}.
+ * @param filtergraph - The filtergraph from `generateFiltergraph`.
+ * @param maxFps - The output frame rate used when interpolation is disabled.
+ * @param opts - The merge options controlling audio and interpolation.
+ * @returns The FFmpeg arguments, excluding the executable name.
+ */
+export function generateFFmpegPipeCommand(
+  input: string[],
+  filtergraph: string,
+  maxFps: number,
+  opts: MergeWorkflowOpts,
+) {
+  const command = buildFFmpegInputArgs(input, maxFps, opts, filtergraph);
+
+  command.push("-c:v", "ffv1");
+  command.push(...buildAudioArgs(opts));
+  command.push("-f", "matroska", "pipe:1");
+
+  return command;
+}
+
+/**
  * Assembles the FFmpeg argument array for merging videos. It includes the
  * inputs, filtergraph, output mapping, frame rate (the interpolation target
  * when set, otherwise `maxFps`), codec settings, and audio handling. Audio is
@@ -112,31 +177,12 @@ export function generateFFmpegCommand(
   args: FFmpegArgs,
   opts: MergeWorkflowOpts,
 ): string[] {
-  const command: string[] = [];
-
-  command.push(...input);
-  command.push("-filter_complex", filtergraph);
-  command.push("-map", "[outv]");
-
-  if (opts.disableAudio === false) {
-    command.push("-map", "[outa]");
-  }
-
-  if (opts.interpolationMode === "minterpolate" && opts.targetFps) {
-    command.push("-r", opts.targetFps.toString());
-  } else {
-    command.push("-r", maxFps.toString());
-  }
+  const command = buildFFmpegInputArgs(input, maxFps, opts, filtergraph);
 
   command.push(...args.videoCodec);
   command.push(...args.crf);
   command.push("-x265-params", "no-info=1");
-  if (opts.disableAudio) {
-    command.push("-an");
-  } else {
-    command.push("-c:a", "libmp3lame");
-    command.push("-b:a", "320k");
-  }
+  command.push(...buildAudioArgs(opts));
   command.push(outputPath);
   return command;
 }
