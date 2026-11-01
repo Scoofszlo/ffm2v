@@ -1,4 +1,4 @@
-import { spawnSync } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { VIDEO_EXTENSIONS } from "@/constants.ts";
@@ -159,4 +159,155 @@ export function checkDeps(deps: string[]) {
       `Missing dependencies: ${Array.from(missingDeps).join(", ")}. Please install them and ensure they are in your PATH.`,
     );
   }
+}
+
+/**
+ * One of the standard channels of a spawned command: `pipe` exposes it as a
+ * stream on the child process, `inherit` reuses our own channel (the terminal),
+ * and `ignore` discards it.
+ */
+export type StdioOption = "ignore" | "pipe" | "inherit";
+
+/**
+ * A command and the stdio wiring to give it when it is spawned.
+ */
+export type PipedCommand = {
+  command: string;
+  args: string[];
+  stdio: StdioOption[];
+};
+
+/**
+ * The outcome of one command in a two-command pipeline: the exit status (or
+ * `null` when the process was killed) and the spawn error when it could not be
+ * started.
+ */
+export type PipedCommandResult = {
+  status: number | null;
+  error: string | null;
+};
+
+/**
+ * Runs two commands concurrently, piping the first command's stdout straight
+ * into the second command's stdin, and resolves once both have exited. Neither
+ * command waits for the other to finish: data is copied chunk by chunk, and
+ * back-pressure from the consumer pauses the producer.
+ *
+ * The pipe is only wired when the first command's stdout and the second
+ * command's stdin are both `pipe` channels. Spawn failures are reported in the
+ * result rather than thrown, and the other command is killed so it cannot hang
+ * waiting for a stream that will never be closed. The first command is also
+ * stopped when the second one dies before consuming everything, since it would
+ * otherwise block writing to a pipe nobody reads.
+ * @param first - The command whose stdout is piped onward.
+ * @param second - The command whose stdin receives the piped output.
+ * @returns A promise with the exit status or spawn error of each command.
+ */
+export function runPipedCommands(
+  first: PipedCommand,
+  second: PipedCommand,
+): Promise<{ first: PipedCommandResult; second: PipedCommandResult }> {
+  return new Promise((resolve) => {
+    // Start both commands right away. spawn does not wait for the first one to
+    // finish: both run at the same time, and we connect their streams below.
+    //
+    // `stdio` picks where each channel goes. "pipe" hands us a JS stream
+    // (child.stdout / child.stdin), "inherit" sends it to our terminal, and
+    // "ignore" throws it away.
+    const firstProcess = spawn(first.command, first.args, {
+      stdio: first.stdio,
+    });
+    const secondProcess = spawn(second.command, second.args, {
+      stdio: second.stdio,
+    });
+
+    // Collect the outcome of each command here. Errors are stored instead of
+    // thrown so the caller can print a friendly message and keep going.
+    const firstResult: PipedCommandResult = { status: null, error: null };
+    const secondResult: PipedCommandResult = { status: null, error: null };
+
+    // "close" events can arrive in any order, so remember which command is
+    // finished and only resolve once both are done.
+    let firstDone = false;
+    let secondDone = false;
+
+    // If either command fails to start, the other one has nobody to talk to and
+    // could wait forever, so stop both.
+    const stopBoth = () => {
+      firstProcess.kill();
+      secondProcess.kill();
+    };
+
+    // Called from every handler below. The guard makes extra calls harmless:
+    // it only resolves once both commands have reported back.
+    const finish = () => {
+      if (!(firstDone && secondDone)) return;
+      resolve({ first: firstResult, second: secondResult });
+    };
+
+    // "error" fires when the process could not be started at all (e.g. the
+    // executable does not exist). There is no usable exit code in that case.
+    firstProcess.on("error", (error) => {
+      firstResult.error ??= `${first.command}: ${error.message}`;
+      firstDone = true;
+      stopBoth();
+      finish();
+    });
+    // "close" fires when the process has exited and its streams are closed.
+    // `code` is the exit status, or null when the process was killed.
+    firstProcess.on("close", (code) => {
+      firstResult.status = code;
+      firstDone = true;
+      finish();
+    });
+
+    // Same two events for the second command.
+    secondProcess.on("error", (error) => {
+      secondResult.error ??= `${second.command}: ${error.message}`;
+      secondDone = true;
+      stopBoth();
+      finish();
+    });
+    secondProcess.on("close", (code) => {
+      secondResult.status = code;
+      secondDone = true;
+      finish();
+    });
+
+    // The data travels through these two streams: everything the first command
+    // writes to its stdout, and everything the second command reads from its
+    // stdin. They only exist when the caller used "pipe" for those channels.
+    const firstStdout = firstProcess.stdout;
+    const secondStdin = secondProcess.stdin;
+
+    if (!firstStdout || !secondStdin) {
+      // The caller asked for a pipe but forgot to configure that channel as
+      // "pipe", so there is nothing to connect. Report the mistake instead of
+      // hanging around waiting for data that can never flow.
+      const command = firstStdout ? second.command : first.command;
+      const result = firstStdout ? secondResult : firstResult;
+      result.error ??= `${command}: stdio was not configured as a pipe.`;
+      stopBoth();
+      firstDone = true;
+      secondDone = true;
+      finish();
+      return;
+    }
+
+    // pipe() copies bytes as they arrive: firstStdout (what FFmpeg writes) is
+    // written into secondStdin (what video2x reads), chunk by chunk. It pauses
+    // the reading side when the writing side is full so memory stays bounded,
+    // and it ends secondStdin when firstStdout ends, which is how the second
+    // command learns that the input is complete.
+    //
+    // If the second command dies early (bad device, GPU crash, user abort), its
+    // end of the pipe is closed and the next write fails with EPIPE. Node treats
+    // an unhandled "error" event as fatal, and the first command would then
+    // block forever writing into a pipe nobody reads. So listen for it and kill
+    // the producer; the exit statuses already explain what happened.
+    secondStdin.on("error", () => {
+      firstProcess.kill();
+    });
+    firstStdout.pipe(secondStdin);
+  });
 }
