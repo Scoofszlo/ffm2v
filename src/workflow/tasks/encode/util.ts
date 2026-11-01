@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
-import type { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 import type { InputSource } from "./types.ts";
 
@@ -219,39 +218,6 @@ export function generateFFmpegPipeCommand(
   command.push("-c:v", "ffv1");
   command.push(...args.audioArgs);
   command.push("-f", "matroska", "pipe:1");
-
-  return command;
-}
-
-/**
- * Builds the video2x argument list that consumes the FFmpeg pre-stage stream.
- * The processor and model are fixed, while the codec, CRF, FPS multiplier, and
- * optional Vulkan device come from the user's options.
- * @param outputPath - The path video2x writes the interpolated video to.
- * @param args - The video2x flag fragments derived from the user options.
- * @returns The video2x arguments, excluding the executable name.
- * @throws Error if no FPS multiplier is set (thrown by `args.fpsMultiplier`).
- */
-export function generateVideo2xCommand(
-  outputPath: string,
-  args: Video2xArgs,
-): string[] {
-  const command: string[] = [];
-
-  // Read the lossless Matroska stream produced by the FFmpeg pre-stage.
-  command.push("-i", "pipe:0");
-  // Output path
-  command.push("-o", outputPath);
-  // Target FPS
-  command.push(...args.fpsMultiplier);
-  // Video codec
-  command.push(...args.videoCodec);
-  // CRF
-  command.push(...args.crf);
-  // Other common defaults
-  command.push("--processor", "rife");
-  command.push("--rife-model", "rife-v4.26");
-  command.push(...args.vulkanDeviceId);
 
   return command;
 }

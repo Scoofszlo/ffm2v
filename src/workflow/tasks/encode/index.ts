@@ -1,5 +1,6 @@
 import { spawnSync } from "child_process";
 import { print } from "@/cli/printer.ts";
+import { VIDEO2X_SUCCESS_EXIT_CODE } from "@/constants.ts";
 import { FilterchainHandler } from "@/filtering/filterchain/handler.ts";
 import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator.ts";
 import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets.ts";
@@ -10,6 +11,7 @@ import { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
 import {
+  generateVideo2xCommand,
   moveFile,
   resolveProgramExecutable,
   runPipedCommands,
@@ -18,14 +20,11 @@ import chalk from "chalk";
 import {
   generateFFmpegCommand,
   generateFFmpegPipeCommand,
-  generateVideo2xCommand,
   getFiles,
   resolveInputSource,
   resolveOutputDir,
   resolveOutputPath,
 } from "./util.ts";
-
-const VIDEO2X_SUCCESS_EXIT_CODE = 3221225477;
 
 /**
  * Runs a program to encode a single video and reports the result. Output is
