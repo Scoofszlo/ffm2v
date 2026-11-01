@@ -72,7 +72,7 @@ ffm2v encode -i input.mp4 --resolution -2:720 --output "C:\Users\User\Downloads"
 
 ### Interpolating a video
 
-Frame interpolation is available on `encode` with either `minterpolate` or `video2x`, and on `merge` with `minterpolate` only. Interpolating significantly increases processing time and the number of frames in the output, so expect longer runs and larger files.
+Frame interpolation means the process of adding new frames between existing ones to create smoother motion. This feature is available on both `encode` and `merge` with either `minterpolate` or `video2x` as the interpolation modes. Interpolating can increase processing time, (especially for `minterpolate`), so expect longer runs and larger files.
 
 The mode is selected with `--interpolation-mode <mode>`, and each mode has its own required flag.
 
@@ -85,15 +85,18 @@ The mode is selected with `--interpolation-mode <mode>`, and each mode has its o
 
 #### `video2x`
 
-- Requires the `video2x` executable on your PATH, or `--video2x-path <path>` to use a specific executable. It is only checked when this mode is used.
+- Requires the `video2x` executable on your PATH, or `--video2x-path <path>` to use a specific executable.
 - `--fps-multiplier <number>`: Multiply the input video's frame rate by this factor. Required when using this mode.
 - `--vulkan-device-id <number>`: The Vulkan device ID for `video2x` to use. Run `video2x -l` to list the available IDs. Setting this is recommended so that the appropriate GPU is selected. Optional.
+- `--keep-rotation-metadata` is not supported with this mode on `encode` and is rejected with an error, because `video2x` does not carry rotation metadata to its output.
 
 > [!TIP]
-> It is recommended to use `video2x` as a primary interpolation mode as it significantly has better speeds as it uses GPU and way less artifacts, though it doesn't support several options such as stabilization, disabling audio, among others. Use `minterpolate` otherwise if you need those features or if you don't have GPU.
+> `video2x` is usually the better interpolation mode as it runs on the GPU, which makes it significantly faster and produces fewer artifacts. Use `minterpolate` instead if you don't have a Vulkan-capable GPU.
 
-> [!IMPORTANT]
-> `video2x` interpolation is a separate pipeline from the regular encode flow. It ignores `--stabilize`, `--resolution`, `--disable-audio`, and `--keep-rotation-metadata`. Only the input, output, `--fps-multiplier`, `--vc`, `--crf`, and `--vulkan-device-id` are passed to `video2x`, which interpolates the video with its RIFE processor and writes the output file itself.
+> [!NOTE]
+> `video2x` interpolation runs as a pipeline: FFmpeg first applies the regular filters (`--stabilize`, `--resolution`, and the audio options), writes the result as a lossless FFV1 stream, and pipes it straight into `video2x`, which interpolates the frames using its RIFE processor and encodes the output with `--vc` and `--crf`. The extra lossless pass costs processing time and CPU, but it means the other options behave the same as in the regular encode flow. Because `--resolution` is applied in the pre-stage, `video2x` interpolates the already-scaled frames, unlike `minterpolate`, which scales after interpolating.
+
+On `merge`, the pre-stage first joins the videos (and any stabilization) into a single stream, so the merged output is interpolated as one continuous video rather than per input.
 
 #### Examples
 
@@ -106,6 +109,9 @@ ffm2v encode -i input.mp4 --interpolation-mode video2x --fps-multiplier 2 --vulk
 
 # Interpolate every merged input to 60 FPS
 ffm2v merge -i first.mp4 second.mp4 --interpolation-mode minterpolate --target-fps 60
+
+# Interpolate the merged video with video2x
+ffm2v merge -i first.mp4 second.mp4 --interpolation-mode video2x --fps-multiplier 2
 ```
 
 ### Merging videos
@@ -119,11 +125,11 @@ ffm2v merge -i <file...> [options]
 where `<file...>` is a space-separated list of video files to merge. The output file will be created in the same directory as the first input file, with `-merged` appended to the base name.
 
 > [!IMPORTANT]  
-> This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased. When `--interpolation-mode minterpolate` and `--target-fps <fps>` are used, the output frame rate is that value instead of the highest input frame rate.
+> This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased. When `--interpolation-mode minterpolate` and `--target-fps <fps>` are used, the output frame rate is that value instead of the highest input frame rate. When `--interpolation-mode video2x` is used, the output frame rate is the highest input frame rate multiplied by `--fps-multiplier`.
 
 The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits.
 
-Interpolation uses `--interpolation-mode minterpolate` and `--target-fps <fps>`; both flags must be set for it to take effect, and `minterpolate` is the only mode available for `merge`. See [Interpolating a video](#interpolating-a-video) for details. The `--disable-audio` and `--ffmpeg-path <path>` options are also supported, as in `encode`.
+Interpolation uses `--interpolation-mode` with `minterpolate` or `video2x`. With `minterpolate`, both `--interpolation-mode minterpolate` and `--target-fps <fps>` must be set for it to take effect; with `video2x`, `--fps-multiplier <number>` is required. See [Interpolating a video](#interpolating-a-video) for details. The `--stabilize`, `--disable-audio`, and `--ffmpeg-path <path>` options are also supported, as in `encode`.
 
 ## Updating ffmpeg
 

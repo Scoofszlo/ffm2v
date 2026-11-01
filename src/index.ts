@@ -19,10 +19,20 @@ try {
   if (workflow.type === "update") {
     checkDeps(["7z"]);
     runUpdate(workflow);
-  } else if (workflow.type === "encode") {
-    runEncode(workflow);
-  } else if (workflow.type === "merge") {
-    runMerge(workflow);
+  } else if (workflow.type === "encode" || workflow.type === "merge") {
+    const opts = workflow.options;
+
+    // A custom video2x path is validated by resolveProgramExecutable() when the
+    // pipeline is built, so only require video2x on PATH when none is given.
+    if (!opts.video2xPath && opts.interpolationMode === "video2x") {
+      checkDeps(["video2x"]);
+    }
+
+    if (workflow.type === "encode") {
+      await runEncode(workflow);
+    } else {
+      await runMerge(workflow);
+    }
   }
 } catch (error) {
   if (error instanceof ZodError) {

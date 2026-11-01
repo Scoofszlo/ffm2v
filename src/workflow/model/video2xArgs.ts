@@ -1,13 +1,14 @@
-import type { EncodeWorkflowOpts } from "./workflow.ts";
+import type { EncodeWorkflowOpts, MergeWorkflowOpts } from "./workflow.ts";
 
 /**
- * Derives video2x CLI flag fragments from the validated encode options. Each
- * getter returns the flags to append to the video2x argument array.
+ * Derives video2x CLI flag fragments from the validated encode or merge
+ * options. Each getter returns the flags to append to the video2x argument
+ * array.
  */
 export class Video2xArgs {
-  opts: EncodeWorkflowOpts;
+  opts: EncodeWorkflowOpts | MergeWorkflowOpts;
 
-  constructor(options: EncodeWorkflowOpts) {
+  constructor(options: EncodeWorkflowOpts | MergeWorkflowOpts) {
     this.opts = options;
   }
 

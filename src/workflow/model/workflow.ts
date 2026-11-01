@@ -30,6 +30,23 @@ const commonOptionsSchema = z.object({
     .min(1, "Target FPS must be a positive integer")
     .nullable()
     .default(null),
+  interpolationMode: z
+    .enum(["minterpolate", "video2x"])
+    .nullable()
+    .default(null),
+  fpsMultiplier: z.coerce
+    .number()
+    .int()
+    .min(1, "FPS multiplier must be a positive integer")
+    .nullable()
+    .default(null),
+  vulkanDeviceId: z.coerce
+    .number()
+    .int()
+    .min(0, "Vulkan device ID must be a non-negative integer")
+    .nullable()
+    .default(null),
+  video2xPath: z.string().nullable().default(null),
 });
 
 const encodeOptionsSchema = commonOptionsSchema
@@ -62,23 +79,6 @@ const encodeOptionsSchema = commonOptionsSchema
         return { width, height };
       }),
     keepRotationMetadata: z.boolean().default(false),
-    interpolationMode: z
-      .enum(["minterpolate", "video2x"])
-      .nullable()
-      .default(null),
-    fpsMultiplier: z.coerce
-      .number()
-      .int()
-      .min(1, "FPS multiplier must be a positive integer")
-      .nullable()
-      .default(null),
-    vulkanDeviceId: z.coerce
-      .number()
-      .int()
-      .min(0, "Vulkan device ID must be a non-negative integer")
-      .nullable()
-      .default(null),
-    video2xPath: z.string().nullable().default(null),
   })
   .superRefine((data, ctx) => {
     if (data.input === data.output) {
@@ -107,18 +107,42 @@ const encodeOptionsSchema = commonOptionsSchema
         path: ["fpsMultiplier"],
       });
     }
+
+    // video2x does not preserve rotation metadata in its output, so keeping the
+    // metadata would leave the video rotated with nothing telling players to
+    // rotate it back.
+    if (data.interpolationMode === "video2x" && data.keepRotationMetadata) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Rotation metadata cannot be kept when using video2x for frame interpolation.",
+        path: ["keepRotationMetadata"],
+      });
+    }
   });
 
-const mergeOptionsSchema = commonOptionsSchema.extend({
-  input: z
-    .array(
-      z
-        .string("Input file must be specified")
-        .min(1, "Input file must be specified"),
-    )
-    .min(1),
-  interpolationMode: z.enum(["minterpolate"]).nullable().default(null),
-});
+const mergeOptionsSchema = commonOptionsSchema
+  .extend({
+    input: z
+      .array(
+        z
+          .string("Input file must be specified")
+          .min(1, "Input file must be specified"),
+      )
+      .min(1),
+  })
+  .superRefine((data, ctx) => {
+    // video2x has no usable default multiplier, so require one here just like
+    // the encode schema does.
+    if (data.interpolationMode === "video2x" && !data.fpsMultiplier) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "FPS multiplier must be specified when using video2x for frame interpolation.",
+        path: ["fpsMultiplier"],
+      });
+    }
+  });
 
 const updateOptionsSchema = z.object({
   disableArchive: z.boolean().default(false),

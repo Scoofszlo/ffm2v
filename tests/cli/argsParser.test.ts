@@ -92,6 +92,9 @@ describe("ArgsParser", () => {
         ffmpegPath: null,
         interpolationMode: null,
         targetFps: null,
+        fpsMultiplier: null,
+        vulkanDeviceId: null,
+        video2xPath: null,
       },
     });
   });

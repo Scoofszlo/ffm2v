@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
 import type { MediaFile } from "@/workflow/model/mediaFile.ts";
-import type { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
 import type { InputSource } from "./types.ts";
 
@@ -141,6 +140,34 @@ export function resolveOutputPath(
 }
 
 /**
+ * Assembles the FFmpeg arguments shared by the normal encode and the video2x
+ * pre-stage: rotation handling, the input, and the filter chain.
+ * @param inputPath - The path to the input video.
+ * @param args - The encoding arguments derived from the user options.
+ * @param filterchain - The filter chain to apply, emitted via `-vf`; an
+ * empty string omits the flag.
+ * @returns The FFmpeg arguments up to and including the filter chain.
+ */
+function buildFFmpegInputArgs(
+  inputPath: string,
+  args: FFmpegArgs,
+  filterchain: string,
+): string[] {
+  const command: string[] = [];
+
+  if (args.keepRotationMetadata) {
+    command.push(...args.keepRotationMetadata);
+  }
+  command.push("-i", inputPath);
+
+  if (filterchain) {
+    command.push("-vf", filterchain);
+  }
+
+  return command;
+}
+
+/**
  * Assembles the FFmpeg argument array for encoding a single video, in the
  * order: rotation metadata, input, filter chain, video codec, CRF, audio
  * options, and output path.
@@ -157,16 +184,7 @@ export function generateFFmpegCommand(
   args: FFmpegArgs,
   filterchain: string,
 ): string[] {
-  const command: string[] = [];
-
-  if (args.keepRotationMetadata) {
-    command.push(...args.keepRotationMetadata);
-  }
-  command.push("-i", inputPath);
-
-  if (filterchain) {
-    command.push("-vf", filterchain);
-  }
+  const command = buildFFmpegInputArgs(inputPath, args, filterchain);
 
   command.push(...args.videoCodec);
   command.push(...args.crf);
@@ -177,36 +195,29 @@ export function generateFFmpegCommand(
 }
 
 /**
- * Builds the video2x argument list for a single input file. The processor and
- * model are fixed, while the codec, CRF, FPS multiplier, and optional Vulkan
- * device come from the user's options.
+ * Assembles the FFmpeg arguments for the pre-stage of the video2x pipeline.
+ * The filtered video is written to stdout as a lossless Matroska stream, which
+ * is piped into video2x's stdin. Matroska is used because it can be muxed to a
+ * non-seekable pipe, and a lossless codec keeps the pre-stage from adding
+ * another generation of compression before interpolation. Audio streams are
+ * copied through (or dropped with `-an`) so video2x can carry them to the
+ * output.
  * @param inputPath - The path to the input video.
- * @param outputPath - The path video2x writes the interpolated video to.
- * @param args - The video2x flag fragments derived from the user options.
- * @returns The video2x arguments, excluding the executable name.
- * @throws Error if no FPS multiplier is set (thrown by `args.fpsMultiplier`).
+ * @param args - The encoding arguments derived from the user options.
+ * @param filterchain - The filter chain to apply, emitted via `-vf`; an
+ * empty string omits the flag.
+ * @returns The FFmpeg arguments, excluding the executable name.
  */
-export function generateVideo2xCommand(
+export function generateFFmpegPipeCommand(
   inputPath: string,
-  outputPath: string,
-  args: Video2xArgs,
+  args: FFmpegArgs,
+  filterchain: string,
 ): string[] {
-  const command: string[] = [];
+  const command = buildFFmpegInputArgs(inputPath, args, filterchain);
 
-  // Input path
-  command.push("-i", inputPath);
-  // Output path
-  command.push("-o", outputPath);
-  // Target FPS
-  command.push(...args.fpsMultiplier);
-  // Video codec
-  command.push(...args.videoCodec);
-  // CRF
-  command.push(...args.crf);
-  // Other common defaults
-  command.push("--processor", "rife");
-  command.push("--rife-model", "rife-v4.26");
-  command.push(...args.vulkanDeviceId);
+  command.push("-c:v", "ffv1");
+  command.push(...args.audioArgs);
+  command.push("-f", "matroska", "pipe:1");
 
   return command;
 }

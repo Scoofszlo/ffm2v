@@ -51,7 +51,8 @@ src/probe/                    ffprobe reads (index.ts: runFFprobe(), resolution,
                               (parsers.ts)
 src/workflow/util.ts          process + fs layer: runCommand(),
                               createMediaFile(), hasVideoExtension(),
-                              resolveProgramExecutable(), checkDeps(), moveFile()
+                              resolveProgramExecutable(), checkDeps(), moveFile(),
+                              runPipedCommands()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
 src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs
@@ -69,16 +70,18 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   (`tmpDir` is a required schema field), and removes the dir in a `finally` block.
   Tasks receive it as `workflow.tmpDir` for stabilization files.
 - `index.ts` also runs the per-command dependency checks: `checkDeps(["ffmpeg"])`
-  for every command and `checkDeps(["7z"])` for `update`. `encode` resolves and
-  checks for `video2x` inside the task, in the video2x interpolation branch: the
-  PATH check is skipped when `--video2x-path` is supplied, and the custom path is
+  for every command, `checkDeps(["7z"])` for `update`, and `checkDeps(["video2x"])`
+  for `encode` and `merge` when video2x interpolation is selected. The video2x PATH
+  check is skipped when `--video2x-path` is supplied, and that custom path is
   validated by `resolveProgramExecutable()` instead.
 
 - `argsParser.ts` does **no** validation. It returns raw commander options plus a
   command name, which `index.ts` feeds into `WorkflowSchema.parse()`.
 - Each task is entered through `run<Task>(workflow)` in `tasks/<task>/index.ts` and
   is the only place allowed to orchestrate (`print` progress, call utils, invoke
-  ffmpeg). Reusable logic belongs in that task's `util.ts`.
+  ffmpeg). Reusable logic belongs in that task's `util.ts`. Tasks are `async` and
+  `index.ts` awaits them: the temp dir is removed in a `finally`, so a missing
+  `await` deletes stabilization files while FFmpeg is still starting up.
 
 ## Conventions
 
@@ -140,9 +143,11 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   for ffmpeg/curl calls and `runFFprobe()` for any ffprobe call, exported from
   `src/workflow/util.ts` and `src/probe/index.ts` respectively. Both check
   `result.error` (missing binary → `ENOENT`) **before** `result.status !== 0`,
-  so users get a real message instead of `stderr: undefined`. The one existing
-  exception is `extractAndMove()` in `tasks/update/util.ts`, which spawns `7z`
-  directly.
+  so users get a real message instead of `stderr: undefined`. Two cases spawn
+  directly instead: `extractAndMove()` in `tasks/update/util.ts` (spawns `7z`),
+  and `runPipedCommands()`, which pipes one command's stdout into another's
+  stdin (FFmpeg's lossless FFV1 Matroska stream into `video2x`), so both
+  processes must run concurrently and `spawnSync` cannot be used.
 - Prefer `spawnSync` over `execSync`: no shell parsing, no quoting bugs, and
   `execSync` throws on non-zero exit without exposing `result.error`.
 - Never assume FFmpeg/probe availability in tests — see below.
@@ -187,8 +192,8 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 - This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
   codec abstraction, cross-platform updater support, or new commands unless asked.
-  `video2x` is the one deliberate exception: an optional, encode-only external
-  tool for frame interpolation. It does not relax the codec or platform
+  `video2x` is the one deliberate exception: an optional external tool for frame
+  interpolation in `encode` and `merge`. It does not relax the codec or platform
   constraints above.
 - Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to
   test and belong next to their concern: filter-string builders in

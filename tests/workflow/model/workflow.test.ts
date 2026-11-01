@@ -137,6 +137,53 @@ describe("WorkflowSchema", () => {
         }),
       ).toThrow("Input and output files cannot be the same.");
     });
+
+    it("requires a target FPS when using minterpolate", () => {
+      expect(() =>
+        parseWorkflow({
+          type: "encode",
+          options: {
+            input: "video.mp4",
+            output: null,
+            interpolationMode: "minterpolate",
+          },
+        }),
+      ).toThrow(
+        "Target FPS must be specified when using minterpolate filter for frame interpolation.",
+      );
+    });
+
+    it("requires an FPS multiplier when using video2x", () => {
+      expect(() =>
+        parseWorkflow({
+          type: "encode",
+          options: {
+            input: "video.mp4",
+            output: null,
+            interpolationMode: "video2x",
+          },
+        }),
+      ).toThrow(
+        "FPS multiplier must be specified when using video2x for frame interpolation.",
+      );
+    });
+
+    it("rejects keepRotationMetadata with video2x interpolation", () => {
+      expect(() =>
+        parseWorkflow({
+          type: "encode",
+          options: {
+            input: "video.mp4",
+            output: null,
+            interpolationMode: "video2x",
+            fpsMultiplier: 2,
+            keepRotationMetadata: true,
+          },
+        }),
+      ).toThrow(
+        "Rotation metadata cannot be kept when using video2x for frame interpolation.",
+      );
+    });
   });
 
   describe("merge", () => {
@@ -159,8 +206,26 @@ describe("WorkflowSchema", () => {
           ffmpegPath: null,
           interpolationMode: null,
           targetFps: null,
+          fpsMultiplier: null,
+          vulkanDeviceId: null,
+          video2xPath: null,
         },
       });
+    });
+
+    it("requires an FPS multiplier when using video2x", () => {
+      expect(() =>
+        parseWorkflow({
+          type: "merge",
+          options: {
+            input: ["first.mp4", "second.mp4"],
+            output: null,
+            interpolationMode: "video2x",
+          },
+        }),
+      ).toThrow(
+        "FPS multiplier must be specified when using video2x for frame interpolation.",
+      );
     });
   });
 
