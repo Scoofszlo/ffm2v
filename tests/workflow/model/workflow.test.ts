@@ -206,11 +206,14 @@ describe("WorkflowSchema", () => {
           ffmpegPath: null,
           interpolationMode: null,
           targetFps: null,
+          fpsMultiplier: null,
+          vulkanDeviceId: null,
+          video2xPath: null,
         },
       });
     });
 
-    it("rejects video2x interpolation", () => {
+    it("requires an FPS multiplier when using video2x", () => {
       expect(() =>
         parseWorkflow({
           type: "merge",
@@ -218,10 +221,11 @@ describe("WorkflowSchema", () => {
             input: ["first.mp4", "second.mp4"],
             output: null,
             interpolationMode: "video2x",
-            targetFps: 60,
           },
         }),
-      ).toThrow();
+      ).toThrow(
+        "FPS multiplier must be specified when using video2x for frame interpolation.",
+      );
     });
   });
 
