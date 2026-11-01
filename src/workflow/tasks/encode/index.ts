@@ -6,12 +6,18 @@ import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/
 import { generateScaleFilter } from "@/filtering/filters/scale.ts";
 import { generateStabilizationFilter } from "@/filtering/filters/stabilization.ts";
 import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
+import { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
 import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
 import { generateStabilizationData } from "@/workflow/stabilization.ts";
-import { moveFile, resolveFFmpegExecutable } from "@/workflow/util.ts";
+import {
+  checkDeps,
+  moveFile,
+  resolveProgramExecutable,
+} from "@/workflow/util.ts";
 import chalk from "chalk";
 import {
   generateFFmpegCommand,
+  generateVideo2xCommand,
   getFiles,
   resolveInputSource,
   resolveOutputDir,
@@ -19,34 +25,34 @@ import {
 } from "./util.ts";
 
 /**
- * Runs FFmpeg to encode a single video and reports the result. Output is
- * streamed to the terminal.
+ * Runs a program to encode a single video and reports the result. Output is
+ * streamed to the terminal. Used for both FFmpeg and video2x.
  * @param filePath - The path to the input video, used for messages.
  * @param outputPath - The path the encoded video is written to, used for
  * messages.
- * @param ffmpegPath - The path to the FFmpeg executable.
- * @param command - The FFmpeg arguments, excluding the executable name.
+ * @param programPath - The path to the executable producing the output, either
+ * FFmpeg or video2x.
+ * @param command - The program arguments, excluding the executable name.
  */
 function encodeVideo(
   filePath: string,
   outputPath: string,
-  ffmpegPath: string,
+  programPath: string,
   command: string[],
 ) {
   print(`\n${chalk.bold(`Encoding '${filePath}' to '${outputPath}'`)}`);
 
-  print(
-    chalk.gray(`Running FFmpeg command: ${ffmpegPath} ${command.join(" ")}\n`),
-  );
+  print(chalk.gray(`Running command: ${programPath} ${command.join(" ")}\n`));
 
-  const result = spawnSync(ffmpegPath, command, {
+  const result = spawnSync(programPath, command, {
     stdio: "inherit",
   });
   if (result.error) {
     print(`\nError encoding '${filePath}': ${result.error.message}`, "error");
-  } else if (result.status !== 0) {
+    // video2x uses 3221225477 as a success code, so we ignore it here.
+  } else if (result.status !== 0 && result.status !== 3221225477) {
     print(
-      `\nFFmpeg exited with code ${result.status} while encoding '${filePath}'.`,
+      `\nProgram exited with code ${result.status} while encoding '${filePath}'.`,
       "error",
     );
   } else {
@@ -60,15 +66,17 @@ function encodeVideo(
 /**
  * Runs the encode workflow. Collects files from the input source, moves
  * non-video files to the output directory, and encodes each video.
- * Videos with stabilization enabled get a detection pass first.
+ * Videos with stabilization enabled get a detection pass first. Videos encoded
+ * with video2x interpolation skip the filterchain path entirely and are handed
+ * to video2x instead.
  * @param workflow - The validated encode workflow containing the
  * options and temp directory.
  */
 export function runEncode(workflow: EncodeWorkflow) {
   // Prepare core parameters for the encoding process
   const opts = workflow.options;
-  const encodingArgs = new FFmpegArgs(opts);
-  const ffmpegPath = resolveFFmpegExecutable(opts.ffmpegPath);
+  const ffmpegArgs = new FFmpegArgs(opts);
+  const ffmpegPath = resolveProgramExecutable("ffmpeg", opts.ffmpegPath);
   const tmpDir = workflow.tmpDir;
   const inputSource = resolveInputSource(opts.input);
   const outputDir = resolveOutputDir(inputSource, opts.output);
@@ -105,6 +113,28 @@ export function runEncode(workflow: EncodeWorkflow) {
       continue;
     }
 
+    // Get the output path for the encoded video, which may be different from the
+    // input path
+    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
+
+    // If user uses video2x interpolation, skip the rest of stuff and proceed in this
+    // block since most of the options after this block are not compatible with video2x
+    if (opts.interpolationMode === "video2x") {
+      if (!opts.video2xPath) {
+        checkDeps(["video2x"]);
+      }
+
+      const video2xPath = resolveProgramExecutable("video2x", opts.video2xPath);
+      const video2xArgs = new Video2xArgs(opts);
+      const command = generateVideo2xCommand(
+        file.fullPath,
+        outputPath,
+        video2xArgs,
+      );
+      encodeVideo(file.fullPath, outputPath, video2xPath, command);
+      continue;
+    }
+
     // If user supplies a stabilization value, generate stabilization data
     // for the video before encoding
     if (opts.stabilize) {
@@ -129,10 +159,10 @@ export function runEncode(workflow: EncodeWorkflow) {
 
     // If user supplies an interpolation value, generate the minterpolate
     // filter and add it to the filterchain
-    if (opts.interpolate) {
+    if (opts.interpolationMode === "minterpolate" && opts.targetFps) {
       const minterpFilter = generateMinterpolateFilter({
         ...MINTERPOLATE_BALANCED_PRESET,
-        fps: opts.interpolate,
+        fps: opts.targetFps,
       });
       fch.addFilter(minterpFilter);
     }
@@ -147,12 +177,10 @@ export function runEncode(workflow: EncodeWorkflow) {
       fch.addFilter(scaleFilter);
     }
 
-    const outputPath = resolveOutputPath(file, inputSource, outputDir, true);
-
     const command = generateFFmpegCommand(
       file.fullPath,
       outputPath,
-      encodingArgs,
+      ffmpegArgs,
       fch.getFilters(),
     );
 

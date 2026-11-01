@@ -122,8 +122,8 @@ export function generateFFmpegCommand(
     command.push("-map", "[outa]");
   }
 
-  if (opts.interpolate) {
-    command.push("-r", opts.interpolate.toString());
+  if (opts.interpolationMode === "minterpolate" && opts.targetFps) {
+    command.push("-r", opts.targetFps.toString());
   } else {
     command.push("-r", maxFps.toString());
   }

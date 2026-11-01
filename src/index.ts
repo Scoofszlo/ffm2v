@@ -7,14 +7,17 @@ import { WorkflowSchema } from "./workflow/model/workflow.ts";
 import { runEncode } from "./workflow/tasks/encode/index.ts";
 import { runMerge } from "./workflow/tasks/merge/index.ts";
 import { runUpdate } from "./workflow/tasks/update/index.ts";
+import { checkDeps } from "./workflow/util.ts";
 
 const tmpDir = createTmpDir();
 
 try {
+  checkDeps(["ffmpeg"]);
   const parsedArgs = argsParser.parseArgs();
   const workflow = WorkflowSchema.parse({ ...parsedArgs, tmpDir });
 
   if (workflow.type === "update") {
+    checkDeps(["7z"]);
     runUpdate(workflow);
   } else if (workflow.type === "encode") {
     runEncode(workflow);

@@ -74,22 +74,30 @@ export function hasVideoExtension(filePath: string): boolean {
 }
 
 /**
- * Returns the path to the ffmpeg executable. If a custom path is provided, it
- * will be resolved and returned. If no custom path is provided, "ffmpeg" will
- * be returned, which assumes that ffmpeg is in the system's PATH.
+ * Resolves the executable path for a program. If a custom path is provided, it
+ * is resolved with `which`; otherwise the bare program name is returned so the
+ * executable is looked up on the system PATH.
+ * @param programName - The program name, also used in error messages.
+ * @param customPath - The custom executable path, or `null` to use PATH.
+ * @returns The resolved executable path, or `programName` when no custom path
+ * is given.
+ * @throws Error if `customPath` cannot be resolved.
  */
-export function resolveFFmpegExecutable(customPath: string | null): string {
+export function resolveProgramExecutable(
+  programName: string,
+  customPath: string | null,
+): string {
   if (customPath) {
     try {
       const resolvedPath = which.sync(customPath);
       return resolvedPath;
     } catch (error) {
-      const errorMsg = `Failed to resolve custom FFmpeg path '${customPath}'.`;
+      const errorMsg = `Failed to resolve custom path for '${programName}' executable '${customPath}'.`;
       throw new Error(errorMsg, { cause: error });
     }
   }
 
-  return "ffmpeg";
+  return programName;
 }
 
 /**
@@ -126,5 +134,29 @@ export function moveFile({
     onSuccess?.();
   } catch (error) {
     onFailure?.(error);
+  }
+}
+
+/**
+ * Verifies that every given program is available on the system PATH.
+ * @param deps - The program names to check for.
+ * @throws Error listing every missing program, so the user knows what to
+ * install or add to PATH.
+ */
+export function checkDeps(deps: string[]) {
+  const missingDeps = new Set<string>();
+
+  for (const programName of deps) {
+    try {
+      which.sync(programName);
+    } catch {
+      missingDeps.add(programName);
+    }
+  }
+
+  if (missingDeps.size > 0) {
+    throw new Error(
+      `Missing dependencies: ${Array.from(missingDeps).join(", ")}. Please install them and ensure they are in your PATH.`,
+    );
   }
 }

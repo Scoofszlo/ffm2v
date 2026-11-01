@@ -12,6 +12,7 @@ This is really just a personal project and is not meant to be a replacement of f
 
 - Node.js (version 20.20 or higher)
 - npm (comes with Node.js)
+- FFmpeg (preferably the full master build from [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/))
 
 ### Steps
 
@@ -50,7 +51,7 @@ You can customize the encoding options using the available flags:
 - `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size.
 - `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
 - `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to a unique `ffm2v-` directory under the OS temp path; the file is reused for each video and the directory is removed when the command exits.
-- `--interpolate <fps>`: Interpolate the input video to the specified frame rate using FFmpeg's motion-compensated `minterpolate` filter. It runs after stabilization and before any `--resolution` scaling, and always uses a fixed "balanced" preset, so its quality/speed cannot be tuned. Interpolation significantly increases processing time and the number of frames in the output.
+- `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
 - `--disable-audio`: Disable audio in the output video.
 - `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
 - `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of baking the rotation into the pixels (default: false). Has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways, and `--resolution` will refer to the stored frame rather than the displayed frame (e.g. `--resolution -2:1080` on a 90°-rotated video produces a 1440x1080 stored frame that displays as 1080x1440).
@@ -69,6 +70,44 @@ To encode a video while maintaining the aspect ratio, setting the height to 720 
 ffm2v encode -i input.mp4 --resolution -2:720 --output "C:\Users\User\Downloads"
 ```
 
+### Interpolating a video
+
+Frame interpolation is available on `encode` with either `minterpolate` or `video2x`, and on `merge` with `minterpolate` only. Interpolating significantly increases processing time and the number of frames in the output, so expect longer runs and larger files.
+
+The mode is selected with `--interpolation-mode <mode>`, and each mode has its own required flag.
+
+#### `minterpolate`
+
+- `--target-fps <fps>`: The frame rate to interpolate to. Required when using this mode.
+- Uses FFmpeg's motion-compensated `minterpolate` filter with a fixed "balanced" preset, so its quality/speed cannot be tuned.
+- On `encode`, it runs after `--stabilize` and before any `--resolution` scaling.
+- On `merge`, it applies to every input video and the merged output uses that frame rate. Both `--interpolation-mode minterpolate` and `--target-fps` must be set for it to take effect.
+
+#### `video2x`
+
+- Requires the `video2x` executable on your PATH, or `--video2x-path <path>` to use a specific executable. It is only checked when this mode is used.
+- `--fps-multiplier <number>`: Multiply the input video's frame rate by this factor. Required when using this mode.
+- `--vulkan-device-id <number>`: The Vulkan device ID for `video2x` to use. Run `video2x -l` to list the available IDs. Setting this is recommended so that the appropriate GPU is selected. Optional.
+
+> [!TIP]
+> It is recommended to use `video2x` as a primary interpolation mode as it significantly has better speeds as it uses GPU and way less artifacts, though it doesn't support several options such as stabilization, disabling audio, among others. Use `minterpolate` otherwise if you need those features or if you don't have GPU.
+
+> [!IMPORTANT]
+> `video2x` interpolation is a separate pipeline from the regular encode flow. It ignores `--stabilize`, `--resolution`, `--disable-audio`, and `--keep-rotation-metadata`. Only the input, output, `--fps-multiplier`, `--vc`, `--crf`, and `--vulkan-device-id` are passed to `video2x`, which interpolates the video with its RIFE processor and writes the output file itself.
+
+#### Examples
+
+```bash
+# Interpolate to 60 FPS with FFmpeg's minterpolate filter
+ffm2v encode -i input.mp4 --interpolation-mode minterpolate --target-fps 60
+
+# Double the frame rate with video2x on Vulkan device 0
+ffm2v encode -i input.mp4 --interpolation-mode video2x --fps-multiplier 2 --vulkan-device-id 0
+
+# Interpolate every merged input to 60 FPS
+ffm2v merge -i first.mp4 second.mp4 --interpolation-mode minterpolate --target-fps 60
+```
+
 ### Merging videos
 
 To merge multiple videos, use the following command:
@@ -80,11 +119,11 @@ ffm2v merge -i <file...> [options]
 where `<file...>` is a space-separated list of video files to merge. The output file will be created in the same directory as the first input file, with `-merged` appended to the base name.
 
 > [!IMPORTANT]  
-> This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased. When `--interpolate <fps>` is used, the output frame rate is that value instead of the highest input frame rate.
+> This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased. When `--interpolation-mode minterpolate` and `--target-fps <fps>` are used, the output frame rate is that value instead of the highest input frame rate.
 
 The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits.
 
-The `--interpolate <fps>` option is also supported and applies to every input video, so all videos are interpolated to that frame rate and the merged output uses it. The `--disable-audio` and `--ffmpeg-path <path>` options are also supported, as in `encode`.
+Interpolation uses `--interpolation-mode minterpolate` and `--target-fps <fps>`; both flags must be set for it to take effect, and `minterpolate` is the only mode available for `merge`. See [Interpolating a video](#interpolating-a-video) for details. The `--disable-audio` and `--ffmpeg-path <path>` options are also supported, as in `encode`.
 
 ## Updating ffmpeg
 
