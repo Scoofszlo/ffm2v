@@ -70,16 +70,18 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   (`tmpDir` is a required schema field), and removes the dir in a `finally` block.
   Tasks receive it as `workflow.tmpDir` for stabilization files.
 - `index.ts` also runs the per-command dependency checks: `checkDeps(["ffmpeg"])`
-  for every command and `checkDeps(["7z"])` for `update`. `encode` resolves and
-  checks for `video2x` inside the task, in the video2x interpolation branch: the
-  PATH check is skipped when `--video2x-path` is supplied, and the custom path is
+  for every command, `checkDeps(["7z"])` for `update`, and `checkDeps(["video2x"])`
+  for `encode` and `merge` when video2x interpolation is selected. The video2x PATH
+  check is skipped when `--video2x-path` is supplied, and that custom path is
   validated by `resolveProgramExecutable()` instead.
 
 - `argsParser.ts` does **no** validation. It returns raw commander options plus a
   command name, which `index.ts` feeds into `WorkflowSchema.parse()`.
 - Each task is entered through `run<Task>(workflow)` in `tasks/<task>/index.ts` and
   is the only place allowed to orchestrate (`print` progress, call utils, invoke
-  ffmpeg). Reusable logic belongs in that task's `util.ts`.
+  ffmpeg). Reusable logic belongs in that task's `util.ts`. Tasks are `async` and
+  `index.ts` awaits them: the temp dir is removed in a `finally`, so a missing
+  `await` deletes stabilization files while FFmpeg is still starting up.
 
 ## Conventions
 
@@ -190,8 +192,8 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 - This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
   codec abstraction, cross-platform updater support, or new commands unless asked.
-  `video2x` is the one deliberate exception: an optional, encode-only external
-  tool for frame interpolation. It does not relax the codec or platform
+  `video2x` is the one deliberate exception: an optional external tool for frame
+  interpolation in `encode` and `merge`. It does not relax the codec or platform
   constraints above.
 - Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to
   test and belong next to their concern: filter-string builders in

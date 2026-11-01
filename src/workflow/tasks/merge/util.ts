@@ -106,6 +106,16 @@ function buildAudioArgs(opts: MergeWorkflowOpts): string[] {
   return ["-c:a", "libmp3lame", "-b:a", "320k"];
 }
 
+/**
+ * Assembles the FFmpeg arguments shared by the normal merge and the video2x
+ * pre-stage: the inputs, the filtergraph, the stream mapping, the output frame
+ * rate, and the audio mapping.
+ * @param inputs - The FFmpeg input arguments from {@link getInputPaths}.
+ * @param maxFps - The output frame rate used when interpolation is disabled.
+ * @param opts - The merge options controlling audio and interpolation.
+ * @param filtergraph - The filtergraph from `generateFiltergraph`.
+ * @returns The FFmpeg arguments up to and including the stream mappings.
+ */
 export function buildFFmpegInputArgs(
   inputs: string[],
   maxFps: number,
@@ -146,7 +156,7 @@ export function generateFFmpegPipeCommand(
   filtergraph: string,
   maxFps: number,
   opts: MergeWorkflowOpts,
-) {
+): string[] {
   const command = buildFFmpegInputArgs(input, maxFps, opts, filtergraph);
 
   command.push("-c:v", "ffv1");

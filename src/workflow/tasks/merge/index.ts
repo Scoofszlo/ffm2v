@@ -53,16 +53,15 @@ function mergeVideos(
 }
 
 /**
- * Runs the video2x pipeline for a single file. FFmpeg applies the filter chain
- * (stabilization, resolution scaling) and writes a lossless Matroska stream to
- * stdout, which is piped into video2x's stdin; video2x then interpolates the
- * frames and writes the output file. Both processes run concurrently, so this
- * resolves once they have both exited. Failures are reported through `print()`
- * instead of thrown, matching `encodeVideo()`.
+ * Runs the video2x pipeline for merged output. FFmpeg stabilizes and joins the
+ * inputs, writes the result as a lossless Matroska stream to stdout, which is
+ * piped into video2x's stdin; video2x then interpolates the frames and writes
+ * the output file. Both processes run concurrently, so this resolves once they
+ * have both exited. Failures are reported through `print()` instead of thrown,
+ * matching `mergeVideos()`.
  *
  * video2x exits with `3221225477` after a successful run, so that code counts
  * as success.
- * @param filePath - The path to the input video, used for messages.
  * @param outputPath - The path video2x writes the interpolated video to, used
  * for messages.
  * @param ffmpegPath - The resolved FFmpeg executable.
@@ -123,6 +122,7 @@ async function encodeVideoWithVideo2x(
  * videos into a single file.
  * @param workflow - The validated merge workflow containing the options and
  * temp directory.
+ * @returns A promise that resolves once the merge has finished.
  */
 export async function runMerge(workflow: MergeWorkflow) {
   const opts = workflow.options;
