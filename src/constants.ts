@@ -1,7 +1,7 @@
 import pkgDetails from "../package.json" with { type: "json" };
 
 export const APP_VERSION = pkgDetails.version;
-
+export const VIDEO2X_SUCCESS_EXIT_CODE = 3221225477;
 export const VIDEO_EXTENSIONS = [
   ".mp4",
   ".mkv",

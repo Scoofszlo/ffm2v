@@ -28,7 +28,7 @@ try {
 
     await runEncode(workflow);
   } else if (workflow.type === "merge") {
-    runMerge(workflow);
+    await runMerge(workflow);
   }
 } catch (error) {
   if (error instanceof ZodError) {
