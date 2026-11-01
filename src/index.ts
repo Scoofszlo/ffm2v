@@ -20,7 +20,13 @@ try {
     checkDeps(["7z"]);
     runUpdate(workflow);
   } else if (workflow.type === "encode") {
-    runEncode(workflow);
+    const opts = workflow.options;
+
+    if (!opts.video2xPath && opts.interpolationMode === "video2x") {
+      checkDeps(["video2x"]);
+    }
+
+    await runEncode(workflow);
   } else if (workflow.type === "merge") {
     runMerge(workflow);
   }
