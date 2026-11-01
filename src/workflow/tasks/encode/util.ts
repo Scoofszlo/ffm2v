@@ -141,6 +141,34 @@ export function resolveOutputPath(
 }
 
 /**
+ * Assembles the FFmpeg arguments shared by the normal encode and the video2x
+ * pre-stage: rotation handling, the input, and the filter chain.
+ * @param inputPath - The path to the input video.
+ * @param args - The encoding arguments derived from the user options.
+ * @param filterchain - The filter chain to apply, emitted via `-vf`; an
+ * empty string omits the flag.
+ * @returns The FFmpeg arguments up to and including the filter chain.
+ */
+function buildFFmpegInputArgs(
+  inputPath: string,
+  args: FFmpegArgs,
+  filterchain: string,
+): string[] {
+  const command: string[] = [];
+
+  if (args.keepRotationMetadata) {
+    command.push(...args.keepRotationMetadata);
+  }
+  command.push("-i", inputPath);
+
+  if (filterchain) {
+    command.push("-vf", filterchain);
+  }
+
+  return command;
+}
+
+/**
  * Assembles the FFmpeg argument array for encoding a single video, in the
  * order: rotation metadata, input, filter chain, video codec, CRF, audio
  * options, and output path.
@@ -157,16 +185,7 @@ export function generateFFmpegCommand(
   args: FFmpegArgs,
   filterchain: string,
 ): string[] {
-  const command: string[] = [];
-
-  if (args.keepRotationMetadata) {
-    command.push(...args.keepRotationMetadata);
-  }
-  command.push("-i", inputPath);
-
-  if (filterchain) {
-    command.push("-vf", filterchain);
-  }
+  const command = buildFFmpegInputArgs(inputPath, args, filterchain);
 
   command.push(...args.videoCodec);
   command.push(...args.crf);
@@ -177,24 +196,50 @@ export function generateFFmpegCommand(
 }
 
 /**
- * Builds the video2x argument list for a single input file. The processor and
- * model are fixed, while the codec, CRF, FPS multiplier, and optional Vulkan
- * device come from the user's options.
+ * Assembles the FFmpeg arguments for the pre-stage of the video2x pipeline.
+ * The filtered video is written to stdout as a lossless Matroska stream, which
+ * is piped into video2x's stdin. Matroska is used because it can be muxed to a
+ * non-seekable pipe, and a lossless codec keeps the pre-stage from adding
+ * another generation of compression before interpolation. Audio streams are
+ * copied through (or dropped with `-an`) so video2x can carry them to the
+ * output.
  * @param inputPath - The path to the input video.
+ * @param args - The encoding arguments derived from the user options.
+ * @param filterchain - The filter chain to apply, emitted via `-vf`; an
+ * empty string omits the flag.
+ * @returns The FFmpeg arguments, excluding the executable name.
+ */
+export function generateFFmpegPipeCommand(
+  inputPath: string,
+  args: FFmpegArgs,
+  filterchain: string,
+): string[] {
+  const command = buildFFmpegInputArgs(inputPath, args, filterchain);
+
+  command.push("-c:v", "ffv1");
+  command.push(...args.audioArgs);
+  command.push("-f", "matroska", "pipe:1");
+
+  return command;
+}
+
+/**
+ * Builds the video2x argument list that consumes the FFmpeg pre-stage stream.
+ * The processor and model are fixed, while the codec, CRF, FPS multiplier, and
+ * optional Vulkan device come from the user's options.
  * @param outputPath - The path video2x writes the interpolated video to.
  * @param args - The video2x flag fragments derived from the user options.
  * @returns The video2x arguments, excluding the executable name.
  * @throws Error if no FPS multiplier is set (thrown by `args.fpsMultiplier`).
  */
 export function generateVideo2xCommand(
-  inputPath: string,
   outputPath: string,
   args: Video2xArgs,
 ): string[] {
   const command: string[] = [];
 
-  // Input path
-  command.push("-i", inputPath);
+  // Read the lossless Matroska stream produced by the FFmpeg pre-stage.
+  command.push("-i", "pipe:0");
   // Output path
   command.push("-o", outputPath);
   // Target FPS
