@@ -1,5 +1,9 @@
 import { Command, Option } from "commander";
-import { commonEncodingOpts, commonGeneralOpts } from "./common.ts";
+import {
+  commonEncodingOpts,
+  commonGeneralOpts,
+  commonInterpolationOpts,
+} from "./common.ts";
 
 const generalOpts = [
   () => new Option("-i, --input <file...>", "Input video files"),
@@ -8,21 +12,6 @@ const generalOpts = [
 
 const encodingOpts = [...commonEncodingOpts];
 
-const interpolationOpts = [
-  () =>
-    new Option(
-      "--interpolation-mode <mode>",
-      "Mode to use for interpolation. Only minterpolate is supported for now.",
-    )
-      .choices(["minterpolate"])
-      .default(null),
-  () =>
-    new Option(
-      "--target-fps <fps>",
-      "Interpolate the input video to the target frame rate.",
-    ).default(null),
-] as const;
-
 const withEncodingOpts = (cmd: Command) => {
   generalOpts.forEach((opt) =>
     cmd.addOption(opt().helpGroup("General Options:")),
@@ -30,7 +19,7 @@ const withEncodingOpts = (cmd: Command) => {
   encodingOpts.forEach((opt) =>
     cmd.addOption(opt().helpGroup("Encoding Options:")),
   );
-  interpolationOpts.forEach((opt) =>
+  commonInterpolationOpts.forEach((opt) =>
     cmd.addOption(opt().helpGroup("Interpolation Options:")),
   );
   return cmd;
