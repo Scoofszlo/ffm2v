@@ -107,6 +107,18 @@ const encodeOptionsSchema = commonOptionsSchema
         path: ["fpsMultiplier"],
       });
     }
+
+    // video2x does not preserve rotation metadata in its output, so keeping the
+    // metadata would leave the video rotated with nothing telling players to
+    // rotate it back.
+    if (data.interpolationMode === "video2x" && data.keepRotationMetadata) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Rotation metadata cannot be kept when using video2x for frame interpolation.",
+        path: ["keepRotationMetadata"],
+      });
+    }
   });
 
 const mergeOptionsSchema = commonOptionsSchema.extend({
