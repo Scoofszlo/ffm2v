@@ -88,12 +88,13 @@ The mode is selected with `--interpolation-mode <mode>`, and each mode has its o
 - Requires the `video2x` executable on your PATH, or `--video2x-path <path>` to use a specific executable. It is only checked when this mode is used.
 - `--fps-multiplier <number>`: Multiply the input video's frame rate by this factor. Required when using this mode.
 - `--vulkan-device-id <number>`: The Vulkan device ID for `video2x` to use. Run `video2x -l` to list the available IDs. Setting this is recommended so that the appropriate GPU is selected. Optional.
+- `--keep-rotation-metadata` is not supported in this mode and is rejected with an error, because `video2x` does not carry rotation metadata to its output.
 
 > [!TIP]
-> It is recommended to use `video2x` as a primary interpolation mode as it significantly has better speeds as it uses GPU and way less artifacts, though it doesn't support several options such as stabilization, disabling audio, among others. Use `minterpolate` otherwise if you need those features or if you don't have GPU.
+> `video2x` is usually the better interpolation mode as it runs on the GPU, which makes it significantly faster and produces fewer artifacts. Use `minterpolate` instead if you don't have a Vulkan-capable GPU.
 
-> [!IMPORTANT]
-> `video2x` interpolation is a separate pipeline from the regular encode flow. It ignores `--stabilize`, `--resolution`, `--disable-audio`, and `--keep-rotation-metadata`. Only the input, output, `--fps-multiplier`, `--vc`, `--crf`, and `--vulkan-device-id` are passed to `video2x`, which interpolates the video with its RIFE processor and writes the output file itself.
+> [!NOTE]
+> `video2x` interpolation runs as a pipeline: FFmpeg first applies the regular filters (`--stabilize`, `--resolution`, and the audio options), writes the result as a lossless FFV1 stream, and pipes it straight into `video2x`, which interpolates the frames using its RIFE processor and encodes the output with `--vc` and `--crf`. The extra lossless pass costs processing time and CPU, but it means the other options behave the same as in the regular encode flow. Because `--resolution` is applied in the pre-stage, `video2x` interpolates the already-scaled frames, unlike `minterpolate`, which scales after interpolating.
 
 #### Examples
 

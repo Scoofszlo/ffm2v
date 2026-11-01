@@ -51,7 +51,8 @@ src/probe/                    ffprobe reads (index.ts: runFFprobe(), resolution,
                               (parsers.ts)
 src/workflow/util.ts          process + fs layer: runCommand(),
                               createMediaFile(), hasVideoExtension(),
-                              resolveProgramExecutable(), checkDeps(), moveFile()
+                              resolveProgramExecutable(), checkDeps(), moveFile(),
+                              runPipedCommands()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
 src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs
@@ -140,9 +141,11 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
   for ffmpeg/curl calls and `runFFprobe()` for any ffprobe call, exported from
   `src/workflow/util.ts` and `src/probe/index.ts` respectively. Both check
   `result.error` (missing binary → `ENOENT`) **before** `result.status !== 0`,
-  so users get a real message instead of `stderr: undefined`. The one existing
-  exception is `extractAndMove()` in `tasks/update/util.ts`, which spawns `7z`
-  directly.
+  so users get a real message instead of `stderr: undefined`. Two cases spawn
+  directly instead: `extractAndMove()` in `tasks/update/util.ts` (spawns `7z`),
+  and `runPipedCommands()`, which pipes one command's stdout into another's
+  stdin (FFmpeg's lossless FFV1 Matroska stream into `video2x`), so both
+  processes must run concurrently and `spawnSync` cannot be used.
 - Prefer `spawnSync` over `execSync`: no shell parsing, no quoting bugs, and
   `execSync` throws on non-zero exit without exposing `result.error`.
 - Never assume FFmpeg/probe availability in tests — see below.
