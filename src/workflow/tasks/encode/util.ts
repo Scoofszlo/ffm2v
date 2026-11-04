@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
-import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
-import type { MediaFile } from "@/workflow/model/mediaFile.ts";
-import { createMediaFile, hasVideoExtension } from "@/workflow/util.ts";
-import type { InputSource } from "./types.ts";
+import type { FFmpegArgs } from "@/workflow/model/ffmpegArgs";
+import type { MediaFile } from "@/workflow/model/mediaFile";
+import { createMediaFile, hasVideoExtension } from "@/workflow/util";
+import type { InputSource } from "./types";
 
 /**
  * Resolves the input source, which can be either a directory or a single video

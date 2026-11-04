@@ -1,4 +1,4 @@
-import type { MinterpolateFilterOpts } from "./model.ts";
+import type { MinterpolateFilterOpts } from "./model";
 
 /**
  * Fastest interpolation preset. Blends adjacent frames instead of calculating

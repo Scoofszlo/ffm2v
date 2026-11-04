@@ -1,21 +1,21 @@
 import { spawnSync } from "child_process";
-import { print } from "@/cli/printer.ts";
-import { VIDEO2X_SUCCESS_EXIT_CODE } from "@/constants.ts";
-import { FilterchainHandler } from "@/filtering/filterchain/handler.ts";
-import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator.ts";
-import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets.ts";
-import { generateScaleFilter } from "@/filtering/filters/scale.ts";
-import { generateStabilizationFilter } from "@/filtering/filters/stabilization.ts";
-import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
-import { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
-import type { EncodeWorkflow } from "@/workflow/model/workflow.ts";
-import { generateStabilizationData } from "@/workflow/stabilization.ts";
+import { print } from "@/cli/printer";
+import { VIDEO2X_SUCCESS_EXIT_CODE } from "@/constants";
+import { FilterchainHandler } from "@/filtering/filterchain/handler";
+import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator";
+import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets";
+import { generateScaleFilter } from "@/filtering/filters/scale";
+import { generateStabilizationFilter } from "@/filtering/filters/stabilization";
+import { FFmpegArgs } from "@/workflow/model/ffmpegArgs";
+import { Video2xArgs } from "@/workflow/model/video2xArgs";
+import type { EncodeWorkflow } from "@/workflow/model/workflow";
+import { generateStabilizationData } from "@/workflow/stabilization";
 import {
   generateVideo2xCommand,
   moveFile,
   resolveProgramExecutable,
   runPipedCommands,
-} from "@/workflow/util.ts";
+} from "@/workflow/util";
 import chalk from "chalk";
 import {
   generateFFmpegCommand,
@@ -24,7 +24,7 @@ import {
   resolveInputSource,
   resolveOutputDir,
   resolveOutputPath,
-} from "./util.ts";
+} from "./util";
 
 /**
  * Runs a program to encode a single video and reports the result. Output is

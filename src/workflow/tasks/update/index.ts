@@ -1,8 +1,8 @@
 import os from "os";
 import path from "path";
-import { print, spinnerPrint } from "@/cli/printer.ts";
-import { buildFFmpegDownloadUrl } from "@/constants.ts";
-import type { UpdateWorkflow } from "@/workflow/model/workflow.ts";
+import { print, spinnerPrint } from "@/cli/printer";
+import { buildFFmpegDownloadUrl } from "@/constants";
+import type { UpdateWorkflow } from "@/workflow/model/workflow";
 import chalk from "chalk";
 import {
   archiveOldVersion,
@@ -15,7 +15,7 @@ import {
   getLocalFFmpegVersion,
   getRemoteFFmpegVersion,
   isVersionOutdated,
-} from "./util.ts";
+} from "./util";
 
 function runUpdate(workflow: UpdateWorkflow) {
   const opts = workflow.options;

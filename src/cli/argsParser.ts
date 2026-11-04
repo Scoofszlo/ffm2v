@@ -1,9 +1,9 @@
-import { APP_VERSION } from "@/constants.ts";
+import { APP_VERSION } from "@/constants";
 import { Command, Option } from "commander";
-import { createEncodeCommand } from "./commands/encode.ts";
-import { createMergeCommand } from "./commands/merge.ts";
-import { createUpdateFFmpegCommand } from "./commands/updateFFmpeg.ts";
-import { print } from "./printer.ts";
+import { createEncodeCommand } from "./commands/encode";
+import { createMergeCommand } from "./commands/merge";
+import { createUpdateFFmpegCommand } from "./commands/updateFFmpeg";
+import { print } from "./printer";
 
 type ParsedOptions = Record<string, unknown>;
 

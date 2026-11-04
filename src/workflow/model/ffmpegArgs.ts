@@ -1,7 +1,7 @@
 import type {
   EncodeWorkflowOpts,
   MergeWorkflowOpts,
-} from "@/workflow/model/workflow.ts";
+} from "@/workflow/model/workflow";
 
 /**
  * Derives FFmpeg CLI flag fragments from the validated user options. Each

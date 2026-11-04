@@ -1,11 +1,11 @@
 import { spawn, spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { VIDEO_EXTENSIONS } from "@/constants.ts";
-import { checkHasAudio, getVideoDuration } from "@/probe/index.ts";
+import { VIDEO_EXTENSIONS } from "@/constants";
+import { checkHasAudio, getVideoDuration } from "@/probe/index";
 import which from "which";
-import { MediaFile } from "./model/mediaFile.ts";
-import type { Video2xArgs } from "./model/video2xArgs.ts";
+import { MediaFile } from "./model/mediaFile";
+import type { Video2xArgs } from "./model/video2xArgs";
 
 type SpawnSyncOptions = {
   stdio?: "pipe" | "ignore" | "inherit";
