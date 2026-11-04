@@ -86,10 +86,16 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 ## Conventions
 
 - **TypeScript, ESM, Node >= 20.20.** `"type": "module"`.
-- **Relative imports must include the `.ts` extension** (`allowImportingTsExtensions`,
-  e.g. `import { print } from "../../../cli/printer.ts"`). The `@/` alias maps to
-  `src/` and is wired in both `tsconfig.json` and `vitest.config.ts`; cross-tree
-  imports use `@/...`, sibling imports use `./...`.
+- **Import specifiers are extensionless** (e.g.
+  `import { print } from "../../../cli/printer"`). This works because
+  `tsconfig.json` sets `moduleResolution: "bundler"`; `nodenext`/`node16` would
+  require every path to end in `.ts`, and `allowImportingTsExtensions` is
+  deliberately **not** enabled so a suffixed specifier fails `npm run type`. The
+  type checker therefore resolves modules the way tsdown/tsx/vitest do, not the
+  way raw Node ESM does — keep sources bundle-only (no `tsc` emit, no plain
+  `node src/index.ts`). The `@/` alias maps to `src/` and is wired in both
+  `tsconfig.json` and `vitest.config.ts`; cross-tree imports use `@/...`, sibling
+  imports use `./...`.
 - `verbatimModuleSyntax` is on: **use `import type`** for type-only imports.
 - Strict flags that bite: `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
   `noUnusedLocals`, `noUnusedParameters`, `noPropertyAccessFromIndexSignature`,
