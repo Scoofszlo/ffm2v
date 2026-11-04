@@ -1,11 +1,20 @@
 {
-  "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
 
-    "allowImportingTsExtensions": true,
+    // Bundler resolution accepts extensionless import specifiers and mirrors how
+    // tsdown/tsx/vitest load files. `nodenext`/`node16` would require every
+    // import path to end in `.ts`.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+
     "noEmit": true,
     "resolveJsonModule": true,
+
+    // Was inherited from @tsconfig/node20 before this config stopped extending it.
+    "target": "es2022",
+    "lib": ["es2023"],
+    "esModuleInterop": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -32,9 +41,7 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"]
-    },
-    "module": "esnext",
-    "moduleResolution": "bundler"
+    }
   },
   "include": ["./src/**/*", "./tests/**/*"],
   "exclude": ["./node_modules/**/*", "./dist/**/*", "./scripts/**/*"]
