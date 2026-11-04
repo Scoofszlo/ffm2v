@@ -1,4 +1,4 @@
-import type { EncodeWorkflowOpts, MergeWorkflowOpts } from "./workflow.ts";
+import type { EncodeWorkflowOpts, MergeWorkflowOpts } from "./workflow";
 
 /**
  * Derives video2x CLI flag fragments from the validated encode or merge

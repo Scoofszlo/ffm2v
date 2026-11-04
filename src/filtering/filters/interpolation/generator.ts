@@ -1,7 +1,7 @@
 import {
   MinterpolateFilterOptsSchema,
   type MinterpolateFilterOpts,
-} from "./model.ts";
+} from "./model";
 
 /**
  * Builds an FFmpeg `minterpolate` filter expression from the supplied options.

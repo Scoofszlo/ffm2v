@@ -3,7 +3,7 @@ import {
   commonEncodingOpts,
   commonGeneralOpts,
   commonInterpolationOpts,
-} from "./common.ts";
+} from "./common";
 
 const generalOpts = [
   () => new Option("-i, --input <file>", "Input video file"),

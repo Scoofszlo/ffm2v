@@ -1,11 +1,11 @@
-import { FilterchainHandler } from "@/filtering/filterchain/handler.ts";
-import { FiltergraphHandler } from "@/filtering/filtergraph/handler.ts";
-import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator.ts";
-import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets.ts";
-import { generateStabilizationFilter } from "@/filtering/filters/stabilization.ts";
-import type { Resolution } from "@/types.ts";
-import type { MediaFile } from "@/workflow/model/mediaFile.ts";
-import type { MergeWorkflowOpts } from "@/workflow/model/workflow.ts";
+import { FilterchainHandler } from "@/filtering/filterchain/handler";
+import { FiltergraphHandler } from "@/filtering/filtergraph/handler";
+import { generateMinterpolateFilter } from "@/filtering/filters/interpolation/generator";
+import { MINTERPOLATE_BALANCED_PRESET } from "@/filtering/filters/interpolation/presets";
+import { generateStabilizationFilter } from "@/filtering/filters/stabilization";
+import type { Resolution } from "@/types";
+import type { MediaFile } from "@/workflow/model/mediaFile";
+import type { MergeWorkflowOpts } from "@/workflow/model/workflow";
 
 /**
  * Builds the `concat` segment of the filtergraph that joins all per-video

@@ -1,12 +1,12 @@
 import { spawnSync } from "child_process";
-import type { Resolution } from "@/types.ts";
-import type { MediaFile } from "@/workflow/model/mediaFile.ts";
+import type { Resolution } from "@/types";
+import type { MediaFile } from "@/workflow/model/mediaFile";
 import {
   parseFps,
   parseResolution,
   pickHighestResolution,
   pickMaxFps,
-} from "./parsers.ts";
+} from "./parsers";
 
 /**
  * Runs ffprobe with the given arguments (plus the target file) and returns its

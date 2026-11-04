@@ -1,25 +1,25 @@
 import { spawnSync } from "child_process";
-import { print } from "@/cli/printer.ts";
-import { VIDEO2X_SUCCESS_EXIT_CODE } from "@/constants.ts";
-import { getHighestResolution, getMaxFps } from "@/probe/index.ts";
-import { FFmpegArgs } from "@/workflow/model/ffmpegArgs.ts";
-import { Video2xArgs } from "@/workflow/model/video2xArgs.ts";
-import type { MergeWorkflow } from "@/workflow/model/workflow.ts";
-import { generateStabilizationData } from "@/workflow/stabilization.ts";
+import { print } from "@/cli/printer";
+import { VIDEO2X_SUCCESS_EXIT_CODE } from "@/constants";
+import { getHighestResolution, getMaxFps } from "@/probe/index";
+import { FFmpegArgs } from "@/workflow/model/ffmpegArgs";
+import { Video2xArgs } from "@/workflow/model/video2xArgs";
+import type { MergeWorkflow } from "@/workflow/model/workflow";
+import { generateStabilizationData } from "@/workflow/stabilization";
 import {
   generateVideo2xCommand,
   resolveProgramExecutable,
   runPipedCommands,
-} from "@/workflow/util.ts";
+} from "@/workflow/util";
 import chalk from "chalk";
-import { generateFiltergraph } from "./filters.ts";
+import { generateFiltergraph } from "./filters";
 import {
   generateFFmpegCommand,
   generateFFmpegPipeCommand,
   getFiles,
   getInputPaths,
   resolveOutputPath,
-} from "./util.ts";
+} from "./util";
 
 /**
  * Runs FFmpeg to merge the videos and reports the result. Output is streamed to

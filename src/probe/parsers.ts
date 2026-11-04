@@ -1,4 +1,4 @@
-import type { Resolution } from "@/types.ts";
+import type { Resolution } from "@/types";
 
 /**
  * Picks the largest resolution (by pixel area). All videos are scaled to this

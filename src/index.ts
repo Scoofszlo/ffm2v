@@ -1,13 +1,13 @@
 import fs from "fs";
 import { ZodError } from "zod";
-import { argsParser } from "./cli/argsParser.ts";
-import { print } from "./cli/printer.ts";
-import { createTmpDir } from "./util.ts";
-import { WorkflowSchema } from "./workflow/model/workflow.ts";
-import { runEncode } from "./workflow/tasks/encode/index.ts";
-import { runMerge } from "./workflow/tasks/merge/index.ts";
-import { runUpdate } from "./workflow/tasks/update/index.ts";
-import { checkDeps } from "./workflow/util.ts";
+import { argsParser } from "./cli/argsParser";
+import { print } from "./cli/printer";
+import { createTmpDir } from "./util";
+import { WorkflowSchema } from "./workflow/model/workflow";
+import { runEncode } from "./workflow/tasks/encode/index";
+import { runMerge } from "./workflow/tasks/merge/index";
+import { runUpdate } from "./workflow/tasks/update/index";
+import { checkDeps } from "./workflow/util";
 
 const tmpDir = createTmpDir();
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WorkflowSchema } from "../../../src/workflow/model/workflow.ts";
+import { WorkflowSchema } from "../../../src/workflow/model/workflow";
 
 // tmpDir is created at runtime by the CLI entry, so tests pass a fixed string
 // instead of touching the filesystem.
