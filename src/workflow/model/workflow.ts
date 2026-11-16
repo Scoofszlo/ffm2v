@@ -90,16 +90,6 @@ const encodeOptionsSchema = commonOptionsSchema
       });
     }
 
-    // Throw an error if user tries to use video2x with svtav1 encoder, since
-    // video2x does not support it
-    if (data.interpolationMode === "video2x" && data.videoCodec === "av1") {
-      ctx.addIssue({
-        code: "custom",
-        message: "video2x is not compatible with AV1.",
-        path: ["videoCodec"],
-      });
-    }
-
     // If interpolation mode used is minterpolate, then target FPS must be specified
     if (data.interpolationMode === "minterpolate" && !data.targetFps) {
       ctx.addIssue({
@@ -153,16 +143,6 @@ const mergeOptionsSchema = commonOptionsSchema
         message:
           "FPS multiplier must be specified when using video2x for frame interpolation.",
         path: ["fpsMultiplier"],
-      });
-    }
-
-    // video2x does not support the AV1 encoder, so reject the combination here
-    // just like the encode schema does.
-    if (data.interpolationMode === "video2x" && data.videoCodec === "av1") {
-      ctx.addIssue({
-        code: "custom",
-        message: "video2x is not compatible with AV1.",
-        path: ["videoCodec"],
       });
     }
   });

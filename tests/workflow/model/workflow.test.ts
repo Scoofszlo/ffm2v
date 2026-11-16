@@ -189,19 +189,23 @@ describe("WorkflowSchema", () => {
       );
     });
 
-    it("rejects video2x interpolation with the av1 codec", () => {
-      expect(() =>
-        parseWorkflow({
-          type: "encode",
-          options: {
-            input: "video.mp4",
-            output: null,
-            videoCodec: "av1",
-            interpolationMode: "video2x",
-            fpsMultiplier: 2,
-          },
-        }),
-      ).toThrow("video2x is not compatible with AV1.");
+    it("accepts av1 with video2x interpolation", () => {
+      const workflow = parseWorkflow({
+        type: "encode",
+        options: {
+          input: "video.mp4",
+          output: null,
+          videoCodec: "av1",
+          interpolationMode: "video2x",
+          fpsMultiplier: 2,
+        },
+      });
+
+      if (workflow.type !== "encode") {
+        throw new Error("Expected the encode workflow");
+      }
+
+      expect(workflow.options.encoder).toEqual("libsvtav1");
     });
 
     it("rejects keepRotationMetadata with video2x interpolation", () => {
@@ -265,19 +269,23 @@ describe("WorkflowSchema", () => {
       );
     });
 
-    it("rejects video2x interpolation with the av1 codec", () => {
-      expect(() =>
-        parseWorkflow({
-          type: "merge",
-          options: {
-            input: ["first.mp4", "second.mp4"],
-            output: null,
-            videoCodec: "av1",
-            interpolationMode: "video2x",
-            fpsMultiplier: 2,
-          },
-        }),
-      ).toThrow("video2x is not compatible with AV1.");
+    it("accepts av1 with video2x interpolation", () => {
+      const workflow = parseWorkflow({
+        type: "merge",
+        options: {
+          input: ["first.mp4", "second.mp4"],
+          output: null,
+          videoCodec: "av1",
+          interpolationMode: "video2x",
+          fpsMultiplier: 2,
+        },
+      });
+
+      if (workflow.type !== "merge") {
+        throw new Error("Expected the merge workflow");
+      }
+
+      expect(workflow.options.encoder).toEqual("libsvtav1");
     });
   });
 
