@@ -5,11 +5,11 @@ Guidance for agents and contributors working in this repository.
 ## What this project is
 
 `ffm2v` is a personal, published CLI tool that wraps FFmpeg/FFprobe for two video
-workflows (**encode** to H.265, **merge** multiple videos) plus a Windows-only
-**update-ffmpeg** self-updater. It is a single-package repo (`src/` + `tests/`),
-not a monorepo, and intentionally small in scope: simple workflows only, no
-plugin architecture, no elaborate option surface. Prefer the smallest change
-that fits `src/` as it exists.
+workflows (**encode** to H.264, H.265, or AV1, **merge** multiple videos) plus a
+Windows-only **update-ffmpeg** self-updater. It is a single-package repo (`src/` +
+`tests/`), not a monorepo, and intentionally small in scope: simple workflows
+only, no plugin architecture, no elaborate option surface. Prefer the smallest
+change that fits `src/` as it exists.
 
 ## Commands
 
@@ -49,13 +49,19 @@ src/filtering/filters/        pure filter-string builders: scale.ts, unsharp.ts,
 src/probe/                    ffprobe reads (index.ts: runFFprobe(), resolution,
                               fps, audio, duration) + pure parsers/math
                               (parsers.ts)
+src/videoCodecs/              per-codec members of the videoCodec
+                              discriminated union: h264.ts (libx264), h265.ts
+                              (libx265, the default), av1.ts (libsvtav1). Each
+                              owns its encoder and CRF range/default.
 src/workflow/util.ts          process + fs layer: runCommand(),
                               createMediaFile(), hasVideoExtension(),
                               resolveProgramExecutable(), checkDeps(), moveFile(),
                               runPipedCommands()
 src/workflow/stabilization.ts vidstabdetect pass shared by encode and merge:
                               generateStabilizationData()
-src/workflow/model/           WorkflowSchema (zod), MediaFile, FFmpegArgs
+src/workflow/model/           WorkflowSchema (zod; encode and merge options are
+                              intersected with the codec union), MediaFile,
+                              FFmpegArgs
                               (ffmpegArgs.ts: options -> ffmpeg CLI flag arrays),
                               Video2xArgs (video2xArgs.ts: options -> video2x
                               CLI flag arrays)
@@ -118,11 +124,17 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 ## Validation and errors
 
-- **All option validation, coercion, and defaults live in the zod schemas in
-  `src/workflow/model/workflow.ts`.** Adding a flag means: define it in the
-  matching module under `src/cli/commands/` and attach it with `helpGroup` so it
-  lands in the right help section, then extend the matching zod schema so
-  defaults and types appear downstream.
+- **All option validation, coercion, and defaults live in zod schemas.** Adding a
+  flag means: define it in the matching module under `src/cli/commands/` and
+  attach it with `helpGroup` so it lands in the right help section, then extend
+  the matching zod schema so defaults and types appear downstream.
+  - Command-level options live in `src/workflow/model/workflow.ts`.
+  - The `videoCodec`-specific fields (the codec literal, `encoder`, and the CRF
+    range/default) live in `src/videoCodecs/*.ts`. `encode` and `merge` pull them
+    in with `.and(videoCodecsSchema)`, a `z.discriminatedUnion("videoCodec", …)`.
+  - Adding a codec therefore touches three places: a new schema in
+    `src/videoCodecs/`, the union in `workflow.ts`, and the `choices([...])` on
+    `--vc` in `src/cli/commands/common.ts`.
 - Error messages are user-facing prose; custom messages in zod are expected
   (e.g. `"CRF must be between 0 and 51"`).
 - `index.ts` deliberately prints only `error.issues[0].message` to avoid dumping a
@@ -196,11 +208,13 @@ Flow is strictly one-way: **CLI → zod → typed workflow → task → ffmpeg**
 
 ## Scope discipline
 
-- This tool targets FFmpeg's `libx265` and the Gyan Doshi Windows build. Don't add
-  codec abstraction, cross-platform updater support, or new commands unless asked.
-  `video2x` is the one deliberate exception: an optional external tool for frame
-  interpolation in `encode` and `merge`. It does not relax the codec or platform
-  constraints above.
+- This tool targets FFmpeg's `libx264`, `libx265`, and `libsvtav1` encoders and
+  the Gyan Doshi Windows build. Don't add more encoders, codec abstraction
+  beyond the `src/videoCodecs/` union, cross-platform updater support, or new
+  commands unless asked. `video2x` is the one deliberate exception: an optional
+  external tool for frame interpolation in `encode` and `merge`. It does not
+  relax the platform constraints above, and it is handed the selected encoder
+  via `-c`, so a codec added here must also be encodable by `video2x`.
 - Keep FFmpeg work on the CLI boundary. Pure helpers and utilities are cheap to
   test and belong next to their concern: filter-string builders in
   `src/filtering/filters/`, chain/graph assemblers in

@@ -12,7 +12,7 @@ This is really just a personal project and is not meant to be a replacement of f
 
 - Node.js (version 20.20 or higher)
 - npm (comes with Node.js)
-- FFmpeg (preferably the full master build from [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/))
+- FFmpeg (preferably the full master build from [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/)).
 
 ### Steps
 
@@ -47,8 +47,8 @@ By default, the video will be encoded using the H.265 codec with a CRF of 23, wh
 You can customize the encoding options using the available flags:
 
 - `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, an error will pop up.
-- `--vc, --video-codec <codec>`: Specify the video codec to use (default: libx265). Currently, only H.265 is supported as this is really just my preferred codec so there's no point on using this flag. I just added this for future additional codec support.
-- `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size.
+- `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). Each codec maps to its FFmpeg encoder (`libx264`, `libx265`, or `libsvtav1`), which must be available in your FFmpeg build.
+- `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size. The valid range depends on the codec: 0 to 51 for `h264` and `h265`, and 1 to 63 for `av1`.
 - `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
 - `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to a unique `ffm2v-` directory under the OS temp path; the file is reused for each video and the directory is removed when the command exits.
 - `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
@@ -62,6 +62,12 @@ To encode a video with CRF value of 14 and a resolution of 1280x720, you can use
 
 ```bash
 ffm2v encode -i input.mp4 --crf 14 --resolution 1280:720
+```
+
+To encode a video with AV1 instead of the default H.265:
+
+```bash
+ffm2v encode -i input.mp4 --vc av1 --crf 30
 ```
 
 To encode a video while maintaining the aspect ratio, setting the height to 720 pixels, and outputs to your Downloads folder, you can use:
@@ -89,6 +95,7 @@ The mode is selected with `--interpolation-mode <mode>`, and each mode has its o
 - `--fps-multiplier <number>`: Multiply the input video's frame rate by this factor. Required when using this mode.
 - `--vulkan-device-id <number>`: The Vulkan device ID for `video2x` to use. Run `video2x -l` to list the available IDs. Setting this is recommended so that the appropriate GPU is selected. Optional.
 - `--keep-rotation-metadata` is not supported with this mode on `encode` and is rejected with an error, because `video2x` does not carry rotation metadata to its output.
+- `--vc` and `--crf` select the codec and quality `video2x` encodes with: `--vc` maps to `-c <encoder>` (e.g. `-c libx265`) and `--crf` maps to `-e crf=<number>`.
 
 > [!TIP]
 > `video2x` is usually the better interpolation mode as it runs on the GPU, which makes it significantly faster and produces fewer artifacts. Use `minterpolate` instead if you don't have a Vulkan-capable GPU.
@@ -129,9 +136,9 @@ where `<file...>` is a space-separated list of video files to merge. The output 
 
 The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits.
 
-Interpolation uses `--interpolation-mode` with `minterpolate` or `video2x`. With `minterpolate`, both `--interpolation-mode minterpolate` and `--target-fps <fps>` must be set for it to take effect; with `video2x`, `--fps-multiplier <number>` is required. See [Interpolating a video](#interpolating-a-video) for details. The `--stabilize`, `--disable-audio`, and `--ffmpeg-path <path>` options are also supported, as in `encode`.
+Interpolation uses `--interpolation-mode` with `minterpolate` or `video2x`. With `minterpolate`, both `--interpolation-mode minterpolate` and `--target-fps <fps>` must be set for it to take effect; with `video2x`, `--fps-multiplier <number>` is required. See [Interpolating a video](#interpolating-a-video) for details. The `--vc`, `--crf`, `--stabilize`, `--disable-audio`, and `--ffmpeg-path <path>` options are also supported, as in `encode`.
 
-## Updating ffmpeg
+## Updating FFmpeg
 
 This command updates the locally installed ffmpeg to the latest version available. It only works if you are using the full master build of [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/) and if you are on Windows. It also requires `7z` and `curl` to be available on your PATH. If you attempt to use this command without using this build, it will result in an error.
 
@@ -163,9 +170,9 @@ ffm2v update-ffmpeg --disable-archive
 
 ## FAQs
 
-### Why use H.265 as main and only codec?
+### Why is H.265 the default codec?
 
-H.265 is my preferred video codec as it provides better file size while maintaining good video quality compared to H.264. You can achieve same quality between the two codecs but H.265 will typically have a smaller file size that's why.
+H.265 is my preferred video codec as it provides better file size while maintaining good video quality compared to H.264. You can achieve same quality between the two codecs but H.265 will typically have a smaller file size that's why. H.264 and AV1 are also selectable with `--vc`, but H.265 stays the default since it is what I use most of the time.
 
 ### Will you support more params and complex filterchains for encoding?
 
