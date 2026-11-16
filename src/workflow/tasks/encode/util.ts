@@ -186,7 +186,7 @@ export function generateFFmpegCommand(
 ): string[] {
   const command = buildFFmpegInputArgs(inputPath, args, filterchain);
 
-  command.push(...args.videoCodec);
+  command.push(...args.encoder);
   command.push(...args.crf);
   command.push(...args.audioArgs);
   command.push(outputPath);

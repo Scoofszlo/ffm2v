@@ -39,7 +39,8 @@ describe("WorkflowSchema", () => {
         options: {
           input: "video.mp4",
           output: null,
-          videoCodec: "libx265",
+          videoCodec: "h265",
+          encoder: "libx265",
           crf: 0,
           resolution: { width: 1920, height: 1080 },
           disableAudio: false,
@@ -105,7 +106,7 @@ describe("WorkflowSchema", () => {
       },
     );
 
-    it.each(["libx264", "h264"])(
+    it.each(["libx264", "libx265", "hevc"])(
       "rejects the unsupported codec %s",
       (videoCodec) => {
         expect(() =>
@@ -114,6 +115,26 @@ describe("WorkflowSchema", () => {
             options: { input: "video.mp4", output: null, videoCodec },
           }),
         ).toThrow();
+      },
+    );
+
+    it.each([
+      { videoCodec: "h264", encoder: "libx264" },
+      { videoCodec: "h265", encoder: "libx265" },
+      { videoCodec: "av1", encoder: "libsvtav1" },
+    ])(
+      "maps the $videoCodec codec to the $encoder encoder",
+      ({ videoCodec, encoder }) => {
+        const workflow = parseWorkflow({
+          type: "encode",
+          options: { input: "video.mp4", output: null, videoCodec },
+        });
+
+        if (workflow.type !== "encode") {
+          throw new Error("Expected the encode workflow");
+        }
+
+        expect(workflow.options.encoder).toEqual(encoder);
       },
     );
 
@@ -168,6 +189,25 @@ describe("WorkflowSchema", () => {
       );
     });
 
+    it("accepts av1 with video2x interpolation", () => {
+      const workflow = parseWorkflow({
+        type: "encode",
+        options: {
+          input: "video.mp4",
+          output: null,
+          videoCodec: "av1",
+          interpolationMode: "video2x",
+          fpsMultiplier: 2,
+        },
+      });
+
+      if (workflow.type !== "encode") {
+        throw new Error("Expected the encode workflow");
+      }
+
+      expect(workflow.options.encoder).toEqual("libsvtav1");
+    });
+
     it("rejects keepRotationMetadata with video2x interpolation", () => {
       expect(() =>
         parseWorkflow({
@@ -199,7 +239,8 @@ describe("WorkflowSchema", () => {
         options: {
           input: ["first.mp4", "second.mp4"],
           output: null,
-          videoCodec: "libx265",
+          videoCodec: "h265",
+          encoder: "libx265",
           crf: 23,
           disableAudio: false,
           stabilize: null,
@@ -226,6 +267,25 @@ describe("WorkflowSchema", () => {
       ).toThrow(
         "FPS multiplier must be specified when using video2x for frame interpolation.",
       );
+    });
+
+    it("accepts av1 with video2x interpolation", () => {
+      const workflow = parseWorkflow({
+        type: "merge",
+        options: {
+          input: ["first.mp4", "second.mp4"],
+          output: null,
+          videoCodec: "av1",
+          interpolationMode: "video2x",
+          fpsMultiplier: 2,
+        },
+      });
+
+      if (workflow.type !== "merge") {
+        throw new Error("Expected the merge workflow");
+      }
+
+      expect(workflow.options.encoder).toEqual("libsvtav1");
     });
   });
 

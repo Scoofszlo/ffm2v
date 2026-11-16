@@ -189,9 +189,13 @@ export function generateFFmpegCommand(
 ): string[] {
   const command = buildFFmpegInputArgs(input, maxFps, opts, filtergraph);
 
-  command.push(...args.videoCodec);
+  command.push(...args.encoder);
   command.push(...args.crf);
-  command.push("-x265-params", "no-info=1");
+  // `no-info=1` suppresses the x265 version banner in the output file, which
+  // only applies to libx265.
+  if (opts.videoCodec === "h265") {
+    command.push("-x265-params", "no-info=1");
+  }
   command.push(...buildAudioArgs(opts));
   command.push(outputPath);
   return command;

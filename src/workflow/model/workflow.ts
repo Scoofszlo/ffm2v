@@ -1,20 +1,20 @@
+import { av1Schema } from "@/videoCodecs/av1";
+import { h264Schema } from "@/videoCodecs/h264";
+import { h265Schema } from "@/videoCodecs/h265";
 import * as z from "zod";
 
 const SCALE_REGEX = /^(-2|-1|[1-9][0-9]*):(-2|-1|[1-9][0-9]*)$/;
 
+const videoCodecsSchema = z.discriminatedUnion(
+  "videoCodec",
+  [h264Schema, h265Schema, av1Schema],
+  {
+    error: "Invalid video codec. Available options are: h264, h265, av1",
+  },
+);
+
 const commonOptionsSchema = z.object({
   output: z.string().min(1).nullable(),
-  videoCodec: z
-    .enum(["libx265"], {
-      message: "Invalid video codec. Available options are: libx265",
-    })
-    .default("libx265"),
-  crf: z.coerce
-    .number()
-    .int()
-    .min(0, { message: "CRF must be between 0 and 51" })
-    .max(51, { message: "CRF must be be between 0 and 51" })
-    .default(23),
   stabilize: z.coerce
     .number()
     .int()
@@ -80,6 +80,7 @@ const encodeOptionsSchema = commonOptionsSchema
       }),
     keepRotationMetadata: z.boolean().default(false),
   })
+  .and(videoCodecsSchema)
   .superRefine((data, ctx) => {
     if (data.input === data.output) {
       ctx.addIssue({
@@ -88,6 +89,7 @@ const encodeOptionsSchema = commonOptionsSchema
         path: ["output"],
       });
     }
+
     // If interpolation mode used is minterpolate, then target FPS must be specified
     if (data.interpolationMode === "minterpolate" && !data.targetFps) {
       ctx.addIssue({
@@ -131,6 +133,7 @@ const mergeOptionsSchema = commonOptionsSchema
       )
       .min(1),
   })
+  .and(videoCodecsSchema)
   .superRefine((data, ctx) => {
     // video2x has no usable default multiplier, so require one here just like
     // the encode schema does.
