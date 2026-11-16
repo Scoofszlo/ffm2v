@@ -12,10 +12,9 @@ export const commonGeneralOpts = [
 
 export const commonEncodingOpts = [
   () =>
-    new Option(
-      "--vc, --video-codec <codec>",
-      "Video codec to use for encoding",
-    ).default("libx265"),
+    new Option("--vc, --video-codec <codec>", "Video codec to use for encoding")
+      .default("h265")
+      .choices(["h264", "h265", "av1"]),
   () => new Option("--crf <number>", "Constant rate factor").default(23),
   () =>
     new Option(
