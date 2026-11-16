@@ -12,8 +12,12 @@ export class Video2xArgs {
     this.opts = options;
   }
 
-  get videoCodec() {
-    return ["-c", this.opts.videoCodec];
+  /**
+   * video2x encoder flags. `encoder` is the encoder name derived from the
+   * user's codec choice, e.g. `libx265` for `h265`.
+   */
+  get encoder() {
+    return ["-c", this.opts.encoder];
   }
 
   get crf() {

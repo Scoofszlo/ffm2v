@@ -6,7 +6,7 @@ import type {
 /**
  * Derives FFmpeg CLI flag fragments from the validated user options. Each
  * getter returns the flags to append to the FFmpeg argument array. The
- * `videoCodec` and `crf` getters are shared by the encode and merge tasks,
+ * `encoder` and `crf` getters are shared by the encode and merge tasks,
  * while the audio and rotation getters are task-specific.
  */
 class FFmpegArgs {
@@ -16,8 +16,12 @@ class FFmpegArgs {
     this.opts = options;
   }
 
-  get videoCodec() {
-    return ["-c:v", this.opts.videoCodec];
+  /**
+   * FFmpeg encoder flags. `encoder` is the FFmpeg encoder name derived from the
+   * user's codec choice, e.g. `libx265` for `h265`.
+   */
+  get encoder() {
+    return ["-c:v", this.opts.encoder];
   }
 
   get crf() {

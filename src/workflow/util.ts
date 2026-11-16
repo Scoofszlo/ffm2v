@@ -334,8 +334,8 @@ export function generateVideo2xCommand(
   command.push("-o", outputPath);
   // Target FPS
   command.push(...args.fpsMultiplier);
-  // Video codec
-  command.push(...args.videoCodec);
+  // Video encoder to use according to video codec
+  command.push(...args.encoder);
   // CRF
   command.push(...args.crf);
   // Other common defaults
