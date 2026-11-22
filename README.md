@@ -272,12 +272,10 @@ ffm2v merge -i <file...> [options]
 
 where `<file...>` is a space-separated list of video files to merge. The output file will be created in the same directory as the first input file, with `-merged` appended to the base name.
 
+All encoding flags except `--resolution` are available for `merge`. The output resolution that will be used is always the largest among the inputs, so `--resolution` is not available.
+
 > [!IMPORTANT]  
 > This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased. When `--interpolation-mode minterpolate` and `--target-fps <fps>` are used, the output frame rate is that value instead of the highest input frame rate. When `--interpolation-mode video2x` is used, the output frame rate is the highest input frame rate multiplied by `--fps-multiplier`.
-
-The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits.
-
-Interpolation uses `--interpolation-mode` with `minterpolate` or `video2x`. With `minterpolate`, both `--interpolation-mode minterpolate` and `--target-fps <fps>` must be set for it to take effect; with `video2x`, `--fps-multiplier <number>` is required. See [Interpolating a video](#interpolating-a-video) for details. The `--vc`, `--crf`, `--stabilize`, `--disable-audio`, and `--ffmpeg-path <path>` options are also supported, as in `encode`.
 
 ## Updating FFmpeg
 
