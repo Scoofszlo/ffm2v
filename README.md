@@ -1,6 +1,35 @@
-# ffm2v
+# ffm2v <!-- omit from toc -->
 
 ffm2v is my personalized CLI tool that uses FFmpeg for video processing tasks such as encoding, merging, or frame interpolation of videos. It is built using TypeScript and Node.js, and is designed to be used easily for my needs.
+
+- [Why ffm2v?](#why-ffm2v)
+- [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Steps](#steps)
+- [Usage](#usage)
+  - [Encoding a video](#encoding-a-video)
+    - [Examples](#examples)
+  - [Setting the resolution](#setting-the-resolution)
+    - [Some notes to remember](#some-notes-to-remember)
+  - [Stabilizing a video](#stabilizing-a-video)
+    - [Some notes to remember:](#some-notes-to-remember-1)
+  - [Interpolating a video](#interpolating-a-video)
+    - [`minterpolate`](#minterpolate)
+    - [`video2x`](#video2x)
+    - [Examples](#examples-1)
+  - [Merging videos](#merging-videos)
+- [Updating FFmpeg](#updating-ffmpeg)
+- [FAQs](#faqs)
+  - [Why is H.265 the default codec?](#why-is-h265-the-default-codec)
+  - [Will you support more params and complex filterchains for encoding?](#will-you-support-more-params-and-complex-filterchains-for-encoding)
+  - [Is audio re-encoded?](#is-audio-re-encoded)
+  - [Why merging doesn't result in lossless format?](#why-merging-doesnt-result-in-lossless-format)
+- [Project versioning policy](#project-versioning-policy)
+- [AI Disclosure Statement](#ai-disclosure-statement)
+  - [AI/LLM Usage Rules](#aillm-usage-rules)
+- [License](#license)
+- [Contact](#contact)
+
 
 ## Why ffm2v?
 
