@@ -1,10 +1,13 @@
 # ffm2v
 
-ffm2v is my personalized CLI tool that uses ffmpeg for video processing tasks such as encoding and merging videos. It is built using TypeScript and Node.js, and is designed to be used easily for my needs.
+ffm2v is my personalized CLI tool that uses FFmpeg for video processing tasks such as encoding, merging, or frame interpolation of videos. It is built using TypeScript and Node.js, and is designed to be used easily for my needs.
 
 ## Why ffm2v?
 
-This is really just a personal project and is not meant to be a replacement of ffmpeg or any other tools you know for video processing. I created ffm2v to simplify my video processing workflow just with simple commands and to have a tool that I can easily customize and extend as needed. This is not really intended to be a full-featured video processing tool. Plus, I created this project to explore the JavaScript/TypeScript ecosystem as I was more familiar with Python from my previous projects.
+This is really just a personal project and is not meant to be a replacement of FFmpeg or any other tools you know for video processing. I created ffm2v to simplify my video processing workflow just with simple commands and to have a tool that I can easily customize and extend as needed.
+
+Initially, it is not meant to be a full-featured tool, but with the integration of frame interpolation, this project may not be just a simple FFmpeg wrapper anymore as more features might be added especially if it's related to frame interpolation.
+
 
 ## Installation
 
@@ -17,7 +20,7 @@ This is really just a personal project and is not meant to be a replacement of f
 ### Steps
 
 1. Install Node.js.
-2. Install `ffmpeg` and make sure it is added to your system's PATH, or pass its location with `--ffmpeg-path` option.
+2. Install FFmpeg and make sure it is added to your system's PATH.
 3. Install `ffm2v` globally using npm:
 
    ```bash
