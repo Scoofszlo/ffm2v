@@ -9,6 +9,7 @@ ffm2v is my personalized CLI tool that uses FFmpeg for video processing tasks su
 - [Usage](#usage)
   - [Encoding a video](#encoding-a-video)
     - [Examples](#examples)
+  - [Setting encode quality using CRF](#setting-encode-quality-using-crf)
   - [Setting the resolution](#setting-the-resolution)
     - [Some notes to remember](#some-notes-to-remember)
   - [Stabilizing a video](#stabilizing-a-video)
@@ -80,7 +81,7 @@ You can customize the encoding options using the available flags:
 
 - `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, an error will pop up.
 - `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). Each codec maps to its FFmpeg encoder (`libx264`, `libx265`, or `libsvtav1`), which must be available in your FFmpeg build.
-- `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size. The valid range depends on the codec: 0 to 51 for `h264` and `h265`, and 1 to 63 for `av1`.
+- `--crf <number>`: Set the encoding quality using Constant Rate Factor (CRF) (lower is better, default: 23). See [Setting encode quality using CRF](#setting-encode-quality-using-crf) for more information.
 - `--resolution <width:height>`: Set the video output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). See [Setting the resolution](#setting-the-resolution) for more information.
 - `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). See [Stabilizing a video](#stabilizing-a-video) for more information.
 - `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
@@ -107,6 +108,32 @@ To encode a video while maintaining the aspect ratio, setting the height to 720 
 ```bash
 ffm2v encode -i input.mp4 --resolution -2:720 --output "C:\Users\User\Downloads"
 ```
+
+### Setting encode quality using CRF
+
+CRF (Constant Rate Factor) controls the quality of the encoded video. Use `--crf <number>` on `encode` or `merge`:
+
+```bash
+ffm2v encode -i input.mp4 --crf 18
+```
+
+The default is `23`. A lower number means higher quality and a larger file. A higher number means lower quality and a smaller file.
+
+The valid range depends on the video codec used:
+
+| Codec | `--vc` value | CRF range | Default |
+| --- | --- | --- | --- |
+| H.265 (default) | `h265` | 0 to 51 | 23 |
+| H.264 | `h264` | 0 to 51 | 23 |
+| AV1 | `av1` | 1 to 63 | 23 |
+
+A value outside the range stops the command with an error.
+
+> [!NOTE]
+> CRF is a **QUALITY TARGET** not a **FILE SIZE TARGET**. The output size depends on how much detail and motion the video contains, so two videos encoded with the same CRF can end up very different in size.
+
+> [!NOTE]
+> The CRF scales differ between codecs. A CRF value of 23 in H.265 does not give the same quality in H.264 and AV1, so compare results within one codec.
 
 ### Setting the resolution
 
