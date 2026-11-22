@@ -52,7 +52,7 @@ You can customize the encoding options using the available flags:
 - `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, an error will pop up.
 - `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). Each codec maps to its FFmpeg encoder (`libx264`, `libx265`, or `libsvtav1`), which must be available in your FFmpeg build.
 - `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size. The valid range depends on the codec: 0 to 51 for `h264` and `h265`, and 1 to 63 for `av1`.
-- `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
+- `--resolution <width:height>`: Set the video output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). See [Setting the resolution](#setting-the-resolution) for more information.
 - `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to a unique `ffm2v-` directory under the OS temp path; the file is reused for each video and the directory is removed when the command exits.
 - `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
 - `--disable-audio`: Disable audio in the output video.
@@ -78,6 +78,40 @@ To encode a video while maintaining the aspect ratio, setting the height to 720 
 ```bash
 ffm2v encode -i input.mp4 --resolution -2:720 --output "C:\Users\User\Downloads"
 ```
+
+### Setting the resolution
+
+Use `--resolution <width:height>` on `encode` to change the video's resolution. Without it, the video keeps its original resolution.
+
+```bash
+ffm2v encode -i input.mp4 --resolution 1920:1080
+```
+
+Each side can be:
+
+- **A pixel value**, such as `1920` or `720`. Both sides are set exactly, so the aspect ratio may change if the values don't match the original.
+- **`-2`**, which calculates that side from the other one to keep the aspect ratio, rounded to an even number (required by most codecs). This is the safest choice when you only care about one dimension.
+- **`-1`**, which works like `-2` but without the even-number rounding.
+
+For example:
+
+| Goal | Command |
+| --- | --- |
+| 1080p (landscape) | `--resolution 1920:1080` |
+| 720px tall, aspect ratio kept | `--resolution -2:720` |
+| 1920px wide, aspect ratio kept | `--resolution 1920:-2` |
+
+
+Values must be whole numbers greater than zero, or `-1`/`-2`. Formats like `1920x1080` are rejected; use a colon.
+
+
+ffm2v does not stop you from setting a size larger than the source (called as upscaling). However, upscaling makes the file bigger without adding real detail and doesn't really have any benefits, so pick a size no larger than the original resolution to avoid wasting file size.
+
+#### Some notes to remember
+
+- **Interpolation:** With `--interpolation-mode minterpolate`, scaling happens after interpolation. With `--interpolation-mode video2x`, scaling happens before interpolation, so `video2x` works on the already-scaled frames.
+- **Rotated videos:** If you use `--keep-rotation-metadata` together with `--resolution`, the resolution refers to the stored frame instead of the displayed frame. For example, `--resolution -2:1080` on a 90°-rotated 3840x2160 video produces a 1920x1080 stored frame that displays as 1080x1920. Otherwise, the rotation is baked into the pixels before scaling, so `--resolution` refers to the displayed frame. With the same example, `--resolution -2:1080` produces a 608x1080 video that displays upright at that size.
+- **Merging:** `merge` has no `--resolution` option. Every input is scaled to the largest resolution among the inputs.
 
 ### Interpolating a video
 
