@@ -80,15 +80,15 @@ By default, the video will be encoded using the H.265 codec with a CRF of 23, wh
 
 You can customize the encoding options using the available flags:
 
-- `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, an error will pop up.
-- `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). See [Choosing a video codec](#choosing-a-video-codec) for more information.
+- `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, the program will throw an error.
+- `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). Default is generally the best. See [Choosing a video codec](#choosing-a-video-codec) for more information.
 - `--crf <number>`: Set the encoding quality using Constant Rate Factor (CRF) (lower is better, default: 23). See [Setting encode quality using CRF](#setting-encode-quality-using-crf) for more information.
 - `--resolution <width:height>`: Set the video output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). See [Setting the resolution](#setting-the-resolution) for more information.
 - `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). See [Stabilizing a video](#stabilizing-a-video) for more information.
-- `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
+- `--interpolation-mode <mode>`: Allow smoother motion vidoes by enabling frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
 - `--disable-audio`: Disable audio in the output video.
-- `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
 - `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of rotating the pixels (default: false). It has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways. Using this flag together with `--resolution` will refer to the stored frame rather than the displayed frame. For example, on a 3840x2160 video rotated 90°, `--resolution -2:1080` produces 1920x1080 stored frames that display as 1080x1920.
+- `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
 
 #### Examples
 
@@ -219,14 +219,14 @@ Because of this, encode may take longer than a normal encode.
 
 ### Interpolating a video
 
-Frame interpolation means the process of adding new frames between existing ones to create smoother motion. This feature is available on both `encode` and `merge` with either `minterpolate` or `video2x` as the interpolation modes. Interpolating can increase processing time, (especially for `minterpolate`), so expect longer runs and larger files.
+Frame interpolation means the process of adding new frames between existing ones to create smoother video. This feature is available on both `encode` and `merge` with either `minterpolate` or `video2x` as the interpolation modes. Interpolating can increase processing time, (especially for `minterpolate`), so expect longer runs and larger files.
 
 The mode is selected with `--interpolation-mode <mode>`, and each mode has its own required flag.
 
 #### `minterpolate`
 
 - `--target-fps <fps>`: The frame rate to interpolate to. Required when using this mode.
-- Uses FFmpeg's motion-compensated `minterpolate` filter with a fixed "balanced" preset, so its quality/speed cannot be tuned.
+- Uses FFmpeg's motion-compensated `minterpolate` filter with a fixed "balanced" preset that I hardcoded in the source code, so its options can't be tuned yet.
 - On `encode`, it runs after `--stabilize` and before any `--resolution` scaling.
 - On `merge`, it applies to every input video and the merged output uses that frame rate. Both `--interpolation-mode minterpolate` and `--target-fps` must be set for it to take effect.
 
@@ -236,7 +236,8 @@ The mode is selected with `--interpolation-mode <mode>`, and each mode has its o
 - `--fps-multiplier <number>`: Multiply the input video's frame rate by this factor. Required when using this mode.
 - `--vulkan-device-id <number>`: The Vulkan device ID for `video2x` to use. Run `video2x -l` to list the available IDs. Setting this is recommended so that the appropriate GPU is selected. Optional.
 - `--keep-rotation-metadata` is not supported with this mode on `encode` and is rejected with an error, because `video2x` does not carry rotation metadata to its output.
-- `--vc` and `--crf` select the codec and quality `video2x` encodes with: `--vc` maps to `-c <encoder>` (e.g. `-c libx265`) and `--crf` maps to `-e crf=<number>`.
+
+On `merge`, the pre-stage first joins the videos (and any stabilization) into a single stream, so the merged output is interpolated as one continuous video rather than per input.
 
 > [!TIP]
 > `video2x` is usually the better interpolation mode as it runs on the GPU, which makes it significantly faster and produces fewer artifacts. Use `minterpolate` instead if you don't have a Vulkan-capable GPU.
@@ -244,7 +245,6 @@ The mode is selected with `--interpolation-mode <mode>`, and each mode has its o
 > [!NOTE]
 > `video2x` interpolation runs as a pipeline: FFmpeg first applies the regular filters (`--stabilize`, `--resolution`, and the audio options), writes the result as a lossless FFV1 stream, and pipes it straight into `video2x`, which interpolates the frames using its RIFE processor and encodes the output with `--vc` and `--crf`. The extra lossless pass costs processing time and CPU, but it means the other options behave the same as in the regular encode flow. Because `--resolution` is applied in the pre-stage, `video2x` interpolates the already-scaled frames, unlike `minterpolate`, which scales after interpolating.
 
-On `merge`, the pre-stage first joins the videos (and any stabilization) into a single stream, so the merged output is interpolated as one continuous video rather than per input.
 
 #### Examples
 
