@@ -88,7 +88,7 @@ You can customize the encoding options using the available flags:
 - `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
 - `--disable-audio`: Disable audio in the output video.
 - `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
-- `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of baking the rotation into the pixels (default: false). Has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways, and `--resolution` will refer to the stored frame rather than the displayed frame (e.g. `--resolution -2:1080` on a 90°-rotated video produces a 1440x1080 stored frame that displays as 1080x1440).
+- `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of rotating the pixels (default: false). It has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways. Using this flag together with `--resolution` will refer to the stored frame rather than the displayed frame. For example, on a 3840x2160 video rotated 90°, `--resolution -2:1080` produces 1920x1080 stored frames that display as 1080x1920.
 
 #### Examples
 
