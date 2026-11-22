@@ -15,7 +15,11 @@ export const commonEncodingOpts = [
     new Option("--vc, --video-codec <codec>", "Video codec to use for encoding")
       .default("h265")
       .choices(["h264", "h265", "av1"]),
-  () => new Option("--crf <number>", "Constant rate factor").default(23),
+  () =>
+    new Option(
+      "--crf <number>",
+      "Controls the encoding quality. Lower values result in higher quality and larger file size",
+    ).default(23),
   () =>
     new Option(
       "--stabilize <strength>",
