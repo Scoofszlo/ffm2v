@@ -1,10 +1,44 @@
-# ffm2v
+# ffm2v <!-- omit from toc -->
 
-ffm2v is my personalized CLI tool that uses ffmpeg for video processing tasks such as encoding and merging videos. It is built using TypeScript and Node.js, and is designed to be used easily for my needs.
+ffm2v is my personalized CLI tool that uses FFmpeg for video processing tasks such as encoding, merging, or frame interpolation of videos. It is built using TypeScript and Node.js, and is designed to be used easily for my needs.
+
+- [Why ffm2v?](#why-ffm2v)
+- [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Steps](#steps)
+- [Usage](#usage)
+  - [Encoding a video](#encoding-a-video)
+    - [Examples](#examples)
+  - [Choosing a video codec](#choosing-a-video-codec)
+  - [Setting encode quality using CRF](#setting-encode-quality-using-crf)
+  - [Setting the resolution](#setting-the-resolution)
+    - [Some notes to remember](#some-notes-to-remember)
+  - [Stabilizing a video](#stabilizing-a-video)
+    - [Some notes to remember:](#some-notes-to-remember-1)
+  - [Interpolating a video](#interpolating-a-video)
+    - [`minterpolate`](#minterpolate)
+    - [`video2x`](#video2x)
+    - [Examples](#examples-1)
+  - [Merging videos](#merging-videos)
+- [Updating FFmpeg](#updating-ffmpeg)
+- [FAQs](#faqs)
+  - [Why is H.265 the default codec?](#why-is-h265-the-default-codec)
+  - [Will you support more params and complex filterchains for encoding?](#will-you-support-more-params-and-complex-filterchains-for-encoding)
+  - [Is audio re-encoded?](#is-audio-re-encoded)
+  - [Why merging doesn't result in lossless format?](#why-merging-doesnt-result-in-lossless-format)
+- [Project versioning policy](#project-versioning-policy)
+- [AI Disclosure Statement](#ai-disclosure-statement)
+  - [AI/LLM Usage Rules](#aillm-usage-rules)
+- [License](#license)
+- [Contact](#contact)
+
 
 ## Why ffm2v?
 
-This is really just a personal project and is not meant to be a replacement of ffmpeg or any other tools you know for video processing. I created ffm2v to simplify my video processing workflow just with simple commands and to have a tool that I can easily customize and extend as needed. This is not really intended to be a full-featured video processing tool. Plus, I created this project to explore the JavaScript/TypeScript ecosystem as I was more familiar with Python from my previous projects.
+This is really just a personal project and is not meant to be a replacement of FFmpeg or any other tools you know for video processing. I created ffm2v to simplify my video processing workflow just with simple commands and to have a tool that I can easily customize and extend as needed.
+
+Initially, it is not meant to be a full-featured tool, but with the integration of frame interpolation, this project may not be just a simple FFmpeg wrapper anymore as more features might be added especially if it's related to frame interpolation.
+
 
 ## Installation
 
@@ -17,7 +51,7 @@ This is really just a personal project and is not meant to be a replacement of f
 ### Steps
 
 1. Install Node.js.
-2. Install `ffmpeg` and make sure it is added to your system's PATH, or pass its location with `--ffmpeg-path` option.
+2. Install FFmpeg and make sure it is added to your system's PATH.
 3. Install `ffm2v` globally using npm:
 
    ```bash
@@ -46,15 +80,15 @@ By default, the video will be encoded using the H.265 codec with a CRF of 23, wh
 
 You can customize the encoding options using the available flags:
 
-- `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, an error will pop up.
-- `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). Each codec maps to its FFmpeg encoder (`libx264`, `libx265`, or `libsvtav1`), which must be available in your FFmpeg build.
-- `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size. The valid range depends on the codec: 0 to 51 for `h264` and `h265`, and 1 to 63 for `av1`.
-- `--resolution <width:height>`: Set the output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). You can use `-2` to maintain the aspect ratio based on the other dimension.
-- `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to a unique `ffm2v-` directory under the OS temp path; the file is reused for each video and the directory is removed when the command exits.
-- `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
+- `-o, --output <dir>`: Specify the output directory. If provided folder does not exist, the program will throw an error.
+- `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). Default is generally the best. See **[Choosing a video codec](#choosing-a-video-codec)** for more information.
+- `--crf <number>`: Set the encoding quality using Constant Rate Factor (CRF) (lower is better, default: 23). See **[Setting encode quality using CRF](#setting-encode-quality-using-crf)**.
+- `--resolution <width:height>`: Set the video output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). See **[Setting the resolution](#setting-the-resolution)**.
+- `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). See **[Stabilizing a video](#stabilizing-a-video)**.
+- `--interpolation-mode <mode>`: Allow smoother motion vidoes by enabling frame interpolation using `minterpolate` or `video2x`. See **[Interpolating a video](#interpolating-a-video)** for the mode-specific options and requirements.
 - `--disable-audio`: Disable audio in the output video.
+- `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of rotating the pixels (default: false). It has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways. Using this flag together with `--resolution` will refer to the stored frame rather than the displayed frame. For example, on a 3840x2160 video rotated 90°, `--resolution -2:1080` produces 1920x1080 stored frames that display as 1080x1920.
 - `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
-- `--keep-rotation-metadata`: Keep the input video's rotation metadata instead of baking the rotation into the pixels (default: false). Has no effect if the video has no rotation metadata. With this flag, players that respect rotation metadata will display the video upright, while players that ignore it will show it sideways, and `--resolution` will refer to the stored frame rather than the displayed frame (e.g. `--resolution -2:1080` on a 90°-rotated video produces a 1440x1080 stored frame that displays as 1080x1440).
 
 #### Examples
 
@@ -76,16 +110,116 @@ To encode a video while maintaining the aspect ratio, setting the height to 720 
 ffm2v encode -i input.mp4 --resolution -2:720 --output "C:\Users\User\Downloads"
 ```
 
+### Choosing a video codec
+
+Use `--vc <codec>` on `encode` or `merge` to choose the video codec:
+
+```bash
+ffm2v encode -i input.mp4 --vc h264
+```
+
+| `--vc` value | Codec | FFmpeg encoder |
+| --- | --- | --- |
+| `h265` (default) | H.265 / HEVC | `libx265` |
+| `h264` | H.264 / AVC | `libx264` |
+| `av1` | AV1 | `libsvtav1` |
+
+H.265 is the default because it usually gives a smaller file than H.264 at similar quality. H.264 is the most widely supported option, so it is a safer choice if the video will be played on older devices or edited in older software. AV1 can give the smallest files, but it is usually slower to encode and may not be supported on some older devices.
+
+> [!NOTE]
+> The encoder must be included in your FFmpeg build. To check which encoders are available, run `ffmpeg -encoders`.
+
+> [!NOTE]
+> Each codec has its own CRF range and scale. See **[Setting encode quality using CRF](#setting-encode-quality-using-crf)** before changing `--vc` and `--crf` together.
+
+### Setting encode quality using CRF
+
+CRF (Constant Rate Factor) controls the quality of the encoded video. Use `--crf <number>` on `encode` or `merge`:
+
+```bash
+ffm2v encode -i input.mp4 --crf 18
+```
+
+The default is `23`. A lower number means higher quality and a larger file. A higher number means lower quality and a smaller file.
+
+The valid range depends on the video codec used:
+
+| Codec | `--vc` value | CRF range | Default |
+| --- | --- | --- | --- |
+| H.265 (default) | `h265` | 0 to 51 | 23 |
+| H.264 | `h264` | 0 to 51 | 23 |
+| AV1 | `av1` | 1 to 63 | 23 |
+
+A value outside the range stops the command with an error.
+
+> [!NOTE]
+> CRF is a **QUALITY TARGET** not a **FILE SIZE TARGET**. The output size depends on how much detail and motion the video contains, so two videos encoded with the same CRF can end up very different in size.
+
+> [!NOTE]
+> The CRF scales differ between codecs. A CRF value of 23 in H.265 does not give the same quality in H.264 and AV1, so compare results for each one.
+
+### Setting the resolution
+
+Use `--resolution <width:height>` on `encode` to change the video's resolution. Without it, the video keeps its original resolution.
+
+```bash
+ffm2v encode -i input.mp4 --resolution 1920:1080
+```
+
+Each side can be:
+
+- **A pixel value**, such as `1920` or `720`. Both sides are set exactly, so the aspect ratio may change if the values don't match the original.
+- **`-2`**, which calculates that side from the other one to keep the aspect ratio, rounded to an even number (required by most codecs). This is the safest choice when you only care about one dimension.
+- **`-1`**, which works like `-2` but without the even-number rounding.
+
+For example:
+
+| Goal | Command |
+| --- | --- |
+| 1080p (landscape) | `--resolution 1920:1080` |
+| 720px tall, aspect ratio kept | `--resolution -2:720` |
+| 1920px wide, aspect ratio kept | `--resolution 1920:-2` |
+
+
+Values must be whole numbers greater than zero, or `-1`/`-2`. Formats like `1920x1080` are rejected; use a colon.
+
+
+ffm2v does not stop you from setting a size larger than the source (called as upscaling). However, upscaling makes the file bigger without adding real detail and doesn't really have any benefits, so pick a size no larger than the original resolution to avoid wasting file size.
+
+#### Some notes to remember
+
+- **Interpolation:** With `--interpolation-mode minterpolate`, scaling happens after interpolation. With `--interpolation-mode video2x`, scaling happens before interpolation, so `video2x` works on the already-scaled frames.
+- **Rotated videos:** If you use `--keep-rotation-metadata` together with `--resolution`, the resolution refers to the stored frame instead of the displayed frame. For example, `--resolution -2:1080` on a 90°-rotated 3840x2160 video produces a 1920x1080 stored frame that displays as 1080x1920. Otherwise, the rotation is baked into the pixels before scaling, so `--resolution` refers to the displayed frame. With the same example, `--resolution -2:1080` produces a 608x1080 video that displays upright at that size.
+- **Merging:** `merge` has no `--resolution` option. Every input is scaled to the largest resolution among the inputs.
+
+### Stabilizing a video
+
+Use `--stabilize <strength>` on `encode` or `merge` to reduce camera shake. The strength goes from `1` (weakest) to `5` (strongest):
+
+```bash
+ffm2v encode -i shaky.mp4 --stabilize 3
+```
+Choosing a strength:
+
+- Use a low value (`1` or `2`) for slight wobble, such as handheld walking shots.
+- Use a higher value (`4` or `5`) for heavy shake, such as footage from a moving vehicle.
+- Start around `3` and adjust from there. Higher values smooth more motion, but they also rely more on the correction, which can result in more cropping/zooming.
+
+#### Some notes to remember:
+
+- On `encode`, stabilization runs before `--resolution` scaling and before any `minterpolate` interpolation.
+- On `merge`, each input video is stabilized separately before the videos are joined.
+
 ### Interpolating a video
 
-Frame interpolation means the process of adding new frames between existing ones to create smoother motion. This feature is available on both `encode` and `merge` with either `minterpolate` or `video2x` as the interpolation modes. Interpolating can increase processing time, (especially for `minterpolate`), so expect longer runs and larger files.
+Frame interpolation allows creation of smoother video. This feature is available on both `encode` and `merge` with either `minterpolate` or `video2x` as the interpolation modes. Interpolating can increase processing time, (especially for `minterpolate`), so expect longer runs and larger files.
 
 The mode is selected with `--interpolation-mode <mode>`, and each mode has its own required flag.
 
 #### `minterpolate`
 
 - `--target-fps <fps>`: The frame rate to interpolate to. Required when using this mode.
-- Uses FFmpeg's motion-compensated `minterpolate` filter with a fixed "balanced" preset, so its quality/speed cannot be tuned.
+- Uses FFmpeg's motion-compensated `minterpolate` filter with a fixed "balanced" preset that I hardcoded in the source code, so its options can't be tuned yet.
 - On `encode`, it runs after `--stabilize` and before any `--resolution` scaling.
 - On `merge`, it applies to every input video and the merged output uses that frame rate. Both `--interpolation-mode minterpolate` and `--target-fps` must be set for it to take effect.
 
@@ -95,15 +229,15 @@ The mode is selected with `--interpolation-mode <mode>`, and each mode has its o
 - `--fps-multiplier <number>`: Multiply the input video's frame rate by this factor. Required when using this mode.
 - `--vulkan-device-id <number>`: The Vulkan device ID for `video2x` to use. Run `video2x -l` to list the available IDs. Setting this is recommended so that the appropriate GPU is selected. Optional.
 - `--keep-rotation-metadata` is not supported with this mode on `encode` and is rejected with an error, because `video2x` does not carry rotation metadata to its output.
-- `--vc` and `--crf` select the codec and quality `video2x` encodes with: `--vc` maps to `-c <encoder>` (e.g. `-c libx265`) and `--crf` maps to `-e crf=<number>`.
+
+On `merge`, all videos are joined/merged into a single stream, so the merged output is interpolated as one continuous video rather than per input.
 
 > [!TIP]
 > `video2x` is usually the better interpolation mode as it runs on the GPU, which makes it significantly faster and produces fewer artifacts. Use `minterpolate` instead if you don't have a Vulkan-capable GPU.
 
 > [!NOTE]
-> `video2x` interpolation runs as a pipeline: FFmpeg first applies the regular filters (`--stabilize`, `--resolution`, and the audio options), writes the result as a lossless FFV1 stream, and pipes it straight into `video2x`, which interpolates the frames using its RIFE processor and encodes the output with `--vc` and `--crf`. The extra lossless pass costs processing time and CPU, but it means the other options behave the same as in the regular encode flow. Because `--resolution` is applied in the pre-stage, `video2x` interpolates the already-scaled frames, unlike `minterpolate`, which scales after interpolating.
+> `video2x` interpolation runs as a pipeline: FFmpeg first applies the regular filters (`--stabilize`, `--resolution`, etc.), if applicable, writes the result as a lossless FFV1 stream, and pipes it straight into `video2x`, which interpolates the frames using its RIFE processor and encodes the output with `--vc` and `--crf`. The extra lossless pass costs processing time and CPU, but it means the other options behave the same as in the regular encode flow. Because `--resolution` is applied in the pre-stage, `video2x` interpolates the already-scaled frames, unlike `minterpolate`, which scales after interpolating.
 
-On `merge`, the pre-stage first joins the videos (and any stabilization) into a single stream, so the merged output is interpolated as one continuous video rather than per input.
 
 #### Examples
 
@@ -131,18 +265,16 @@ ffm2v merge -i <file...> [options]
 
 where `<file...>` is a space-separated list of video files to merge. The output file will be created in the same directory as the first input file, with `-merged` appended to the base name.
 
+All encoding flags except `--resolution` are available for `merge`. The output resolution that will be used is always the largest among the inputs, so `--resolution` is not available.
+
 > [!IMPORTANT]  
 > This operation does not merge videos losslessly. The videos will be re-encoded to match the highest resolution and frame rate among the input videos. This means videos that are lower than the highest resolution and frame rate will be rescaled and have their frame rates increased. When `--interpolation-mode minterpolate` and `--target-fps <fps>` are used, the output frame rate is that value instead of the highest input frame rate. When `--interpolation-mode video2x` is used, the output frame rate is the highest input frame rate multiplied by `--fps-multiplier`.
 
-The `--stabilize <strength>` option (1 to 5) is also supported. Each input video is stabilized before merging, using the same analysis pass as `encode`, but with temporary files named `transforms-<index>.trf` in a unique `ffm2v-` directory under the OS temp path. These files are removed when the command exits.
-
-Interpolation uses `--interpolation-mode` with `minterpolate` or `video2x`. With `minterpolate`, both `--interpolation-mode minterpolate` and `--target-fps <fps>` must be set for it to take effect; with `video2x`, `--fps-multiplier <number>` is required. See [Interpolating a video](#interpolating-a-video) for details. The `--vc`, `--crf`, `--stabilize`, `--disable-audio`, and `--ffmpeg-path <path>` options are also supported, as in `encode`.
-
 ## Updating FFmpeg
 
-This command updates the locally installed ffmpeg to the latest version available. It only works if you are using the full master build of [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/) and if you are on Windows. It also requires `7z` and `curl` to be available on your PATH. If you attempt to use this command without using this build, it will result in an error.
+This command updates the locally installed FFmpeg to the latest version available. It only works if you are using the full master build of [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/) and if you are on Windows. It also requires `7z` and `curl` to be available on your PATH. If you attempt to use this command without using this build, it will result in an error.
 
-To update locally installed ffmpeg, you can use the following command:
+To update locally installed FFmpeg, you can use the following command:
 
 ```bash
 ffm2v update-ffmpeg
@@ -156,17 +288,17 @@ ffm2v update-ffmpeg --check-only
 ffm2v update-ffmpeg -c
 ```
 
-When updating and you want to disable archiving of old installed ffmpeg, use the `--disable-archive` flag:
+When updating and you want to disable archiving of old installed FFmpeg, use the `--disable-archive` flag:
 
 ```bash
 ffm2v update-ffmpeg --disable-archive
 ```
 
 > [!IMPORTANT]
-> I highly suggest to not use this update command as this is tweaked for my own use and might not work well for your ffmpeg setup.
+> I highly suggest to not use this update command as this is tweaked for my own use and might not work well for your FFmpeg setup.
 
 > [!WARNING]  
-> This operation will touch your ffmpeg installation directory and by default, the old version will be archived properly but might fail if error occurs midway. Make sure to backup your ffmpeg installation if you have custom configurations or builds that you have there before performing the update.
+> This operation will touch your ffmpeg installation directory and by default, the old version will be archived properly but might fail if error occurs midway. Make sure to backup your FFmpeg installation if you have custom configurations or builds that you have there before performing the update.
 
 ## FAQs
 
