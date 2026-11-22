@@ -53,7 +53,7 @@ You can customize the encoding options using the available flags:
 - `--vc, --video-codec <codec>`: Specify the video codec to use: `h264`, `h265`, or `av1` (default: `h265`). Each codec maps to its FFmpeg encoder (`libx264`, `libx265`, or `libsvtav1`), which must be available in your FFmpeg build.
 - `--crf <number>`: Set the Constant Rate Factor (CRF) for encoding quality (lower is better, default: 23). A lower CRF value will result in higher quality and larger file size, while a higher CRF value will result in lower quality and smaller file size. The valid range depends on the codec: 0 to 51 for `h264` and `h265`, and 1 to 63 for `av1`.
 - `--resolution <width:height>`: Set the video output resolution (e.g., `1920:1080`, `-2:1080`, `1920:-2`). See [Setting the resolution](#setting-the-resolution) for more information.
-- `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). Stabilization runs an analysis pass on each video before encoding, so encoding takes longer. The analysis writes a temporary `transforms.trf` file to a unique `ffm2v-` directory under the OS temp path; the file is reused for each video and the directory is removed when the command exits.
+- `--stabilize <strength>`: Stabilize shaky footage, with `<strength>` from 1 (weakest) to 5 (strongest). See [Stabilizing a video](#stabilizing-a-video) for more information.
 - `--interpolation-mode <mode>`: Enable frame interpolation using `minterpolate` or `video2x`. See [Interpolating a video](#interpolating-a-video) for the mode-specific options and requirements.
 - `--disable-audio`: Disable audio in the output video.
 - `--ffmpeg-path <path>`: Use a specific FFmpeg executable instead of the one found on your PATH. The command fails with an error if the path cannot be resolved.
@@ -112,6 +112,31 @@ ffm2v does not stop you from setting a size larger than the source (called as up
 - **Interpolation:** With `--interpolation-mode minterpolate`, scaling happens after interpolation. With `--interpolation-mode video2x`, scaling happens before interpolation, so `video2x` works on the already-scaled frames.
 - **Rotated videos:** If you use `--keep-rotation-metadata` together with `--resolution`, the resolution refers to the stored frame instead of the displayed frame. For example, `--resolution -2:1080` on a 90°-rotated 3840x2160 video produces a 1920x1080 stored frame that displays as 1080x1920. Otherwise, the rotation is baked into the pixels before scaling, so `--resolution` refers to the displayed frame. With the same example, `--resolution -2:1080` produces a 608x1080 video that displays upright at that size.
 - **Merging:** `merge` has no `--resolution` option. Every input is scaled to the largest resolution among the inputs.
+
+### Stabilizing a video
+
+Use `--stabilize <strength>` on `encode` or `merge` to reduce camera shake. The strength goes from `1` (weakest) to `5` (strongest):
+
+```bash
+ffm2v encode -i shaky.mp4 --stabilize 3
+```
+Choosing a strength:
+
+- Use a low value (`1` or `2`) for slight wobble, such as handheld walking shots.
+- Use a higher value (`4` or `5`) for heavy shake, such as footage from a moving vehicle.
+- Start around `3` and adjust from there. Higher values smooth more motion, but they also rely more on the correction, so they may introduce more artifacts.
+
+Stabilization works in two passes:
+
+1. **Analysis:** FFmpeg's `vidstabdetect` filter studies the camera motion in the video and writes it to a `transforms.trf` file.
+2. **Correction:** `vidstabtransform` uses that file to shift each frame back into place, then an `unsharp` filter sharpens the result to offset the softening that correction causes.
+
+Because of this, encode may take longer than a normal encode.
+
+#### Some notes to remember:
+
+- On `encode`, stabilization runs before `--resolution` scaling and before any `minterpolate` interpolation.
+- On `merge`, each input video is stabilized separately before the videos are joined.
 
 ### Interpolating a video
 
